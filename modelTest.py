@@ -13,22 +13,32 @@ from sklearn.preprocessing import StandardScaler
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
-        if (logs.get('val_loss') <= 0.13):
-            print('\n\nValuation loss reach 0.1232 so training stopped.\n\n')
+        if (logs.get('val_loss') <= 0.1):
+            print('\n\nValuation loss reach 0.115 so training stopped.\n\n')
             self.model.stop_training = True
 
 
-def binModelSplit(pt, pv):
+def binModelSplit(pt, track=None, pv):
     # scaling 
     columnPT = pt.reshape(pt.shape[0]*pt.shape[1], 1)
     scaler = StandardScaler().fit(columnPT)
     ptScale = scaler.transform(columnPT)
     pt = ptScale.reshape(pt.shape[0], pt.shape[1])
 
+    if track != None:
+        columnT = track.reshape(track.shape[0]*track.shape[1], 1)
+        scaler = StandardScaler().fit(columnT)
+        tScale = scaler.transform(columnT)
+        track = tScale.reshape(pt.shape[0], pt.shape[1])
+
+        binDataAll = np.stack((track,pt), axis=1)
+    else:
+        binDataAll = pt
+
     # splitting data into test, validation and training data
     t = len(pt)//10
     v = (len(pt)//10) * 3
-    xTest, xValid, xTrain = pt[:t], pt[t:v], pt[v:]
+    xTest, xValid, xTrain = binDataAll[:t], binDataAll[t:v], binDataAll[v:]
     yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
 
     return xTrain, yTrain, xValid, yValid, xTest, yTest
@@ -37,21 +47,21 @@ def binModelSplit(pt, pv):
 def convModel(shape):
     model = keras.models.Sequential([
         # convolutional layer
-        keras.layers.Conv1D(5, kernel_size=8, activation='relu', input_shape=(shape)),
+        keras.layers.Conv1D(12, kernel_size=8, activation='relu', input_shape=(shape)),
         keras.layers.MaxPool1D(pool_size=4),
 
-        keras.layers.Conv1D(5, kernel_size=8, activation='relu'),
-        keras.layers.MaxPool1D(pool_size=2),
+        keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
+        keras.layers.MaxPool1D(pool_size=4),
 
-        # keras.layers.Conv1D(5, kernel_size=4, activation='relu'),
-        # keras.layers.MaxPool1D(pool_size=2),
+        keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
+        keras.layers.MaxPool1D(pool_size=2),
 
 
         # multi later perceptron
         keras.layers.Flatten(),
-        keras.layers.Dense(25, activation="relu"),
+        keras.layers.Dense(15, activation="relu"),
         # keras.layers.Dropout(rate=0.3),
-        # keras.layers.Dense(10, activation="relu"),
+        keras.layers.Dense(5, activation="relu"),
         # keras.layers.Dropout(rate=0.3),
         keras.layers.Dense(1)
     ])
@@ -59,7 +69,10 @@ def convModel(shape):
 
 
 def binModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
-    form = (xTrain.shape[1],1)
+    if xTrain.shape[2]:
+        form = (2, xTrain.shape[1])
+    else:
+        form = (1, xTrain.shape[1])
 
     # creating model
     # model = keras.models.Sequential([
@@ -75,8 +88,8 @@ def binModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
     model = convModel(form)
     model.summary()
 
-    op = keras.optimizers.Adam()
-    lossFunc = keras.losses.Huber()
+    op = keras.optimizers.Adam(learning_rate=0.008)
+    lossFunc = keras.losses.MeanSquaredError()
 
     # saving the model and best weights
     weights = "Bin_model_conv_weights_{t}.h5".format(t=clock)
@@ -85,15 +98,15 @@ def binModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.4, patience=2, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
     stopTraining = haltCallback()
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=3)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)
 
     model.compile(optimizer=op,
     loss=lossFunc)
     
-    epochNo = 10
+    epochNo = 500
     history = model.fit(xTrain, yTrain, epochs=epochNo, validation_data=(xValid, yValid), callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
 
     checkpointFilename = os.path.join(modelDirectory, weights)
@@ -133,7 +146,7 @@ def rawModelSplit(z, pt, pv):
 
 
 def rawModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
-    form = (xTrain.shape[1],1)
+    form = (2, xTrain.shape[1])
 
     # creating model
     model = keras.models.Sequential([
@@ -185,6 +198,9 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     model.evaluate(xValid, yValid)
 
     yPredicted = model.predict(xTest)
+    diff = abs(yPredicted.flatten() - yTest.flatten())
+    print(max(diff), min(diff))
+    print(np.std(diff), np.mean(diff))
 
     # plot of epochs against training and validation loss
     print()
@@ -201,13 +217,10 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name))
 
+
     # histogram of difference on test sample
     print()
     plt.clf()
-    diff = abs(yPredicted.flatten() - yTest.flatten())
-    print(diff[:5])
-    print(max(diff), min(diff))
-    print(np.std(diff), np.mean(diff))
     plt.hist(diff, bins=200)
     plt.title('Loss of predicted vs test Histogram')
     plt.savefig("Hist_loss_{}.png".format(name))
@@ -215,24 +228,27 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     # plotting % of predictions vs loss
     print()
     plt.clf()
-    percent = (np.arange(0,len(diff),1)*100)/len(diff)
-    percentile = np.zeros(len(diff)) + 90
-    tolerance = np.zeros(len(diff)) + 0.2
-    sortedDiff = np.sort(diff)
-    index = np.where(sortedDiff <= 0.2)
-    print(len(sortedDiff))
-    print(index[0])
-    print(index[0][-1])
-    print(percent[index[0][-1]])
+    per = 90
+    tol = 0.15
+    shortenedDiff = diff[diff<2]
+    percent = (np.arange(0,len(shortenedDiff),1)*100)/len(shortenedDiff)
+    percentile = np.zeros(len(shortenedDiff)) + per
+    tolerance = np.zeros(len(shortenedDiff)) + tol
+    sortedDiff = np.sort(shortenedDiff)
+    tolIndex = np.where(sortedDiff <= tol)
+    perIndex = np.where(percent <= per)
+    print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
+    print('Value of', per, 'th percentil:', sortedDiff[perIndex[0][-1]])
     fig, ax = plt.subplots()
-    plt.plot(sortedDiff, percent, color="green")
-    plt.plot(sortedDiff, percentile, color='blue')
-    plt.plot(tolerance, percent, color='red')
+    plt.plot(sortedDiff, percent, color="green", label=name)
+    plt.plot(sortedDiff, percentile, color='blue', label=str(per)+"th percentile")
+    plt.plot(tolerance, percent, color='red', label=str(tol)+" tolerance")
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     plt.title("Percentage of values vs loss")
-    plt.savefig("Percentage_vs_loss_{}.png".format(name))
+    plt.legend()
+    plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
 
 
 def comparison(models, xTest, yTest):
@@ -248,19 +264,20 @@ def comparison(models, xTest, yTest):
         yPredicted[i] = modelLoaded.predict(xTest).flatten()
 
         diff = abs(yPredicted[i].flatten() - yTest.flatten())
-        sortedDiff = np.sort(diff)
-        percent = (np.arange(0,len(diff),1)*100)/len(diff)
+        sortedDiff = np.sort(diff[diff<2])
+        percent = (np.arange(0,len(sortedDiff),1)*100)/len(sortedDiff)
 
-        percentile = np.zeros(len(diff)) + 90
-        tolerance = np.zeros(len(diff)) + 0.1
+        percentile = np.zeros(len(sortedDiff)) + 90
+        tolerance = np.zeros(len(sortedDiff)) + 0.1
 
-        plt.plot(sortedDiff, percent)
+        plt.plot(sortedDiff, percent, label=models[i])
 
+    plt.legend()
     plt.title("Percentage of values vs loss")
     # plt.plot(sortedDiff, percentile, color='blue')
     # plt.plot(tolerance, percent, color='red')
     name = "Bin_model_comparison_{t}".format(t=clock)
-    plt.savefig("Percentage_vs_loss_{}.png".format(name))
+    plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
 
 
 def loadModel(name):
@@ -326,10 +343,10 @@ def testLoadedModel(model, xTest, yTest):
 # ----------------------------------------------------- main --------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-rawD = np.load('TTbarRaw3.npz')
-binD = np.load('TTbarBin3.npz')
-zRaw, ptRaw, pvRaw = rawD['z'], rawD['pt'], rawD['pv']
-ptBin = binD['ptB']
+# rawD = np.load('TTbarRaw3.npz')
+binD = np.load('TTbarBin4.npz')
+# zRaw, ptRaw, pvRaw = rawD['z'], rawD['pt'], rawD['pv']
+ptBin, trackBin = binD['ptB'], binD['tb']
 # trackLength, maxTrack = rawD['tl'], rawD['maxValue']
 
 clock = int(time.time())
@@ -339,7 +356,7 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten())
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten())
 model, history, name = binModel(xTrain, yTrain, xValid, yValid, xTest, yTest)
 testing(model, history, xValid, yValid, xTest, yTest, name)
 
@@ -359,11 +376,9 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 # model = "Bin_model_1720443577.h5"
 # testLoadedModel(model, xTest, yTest)
 
-# models = np.array(['Bin_model_dropout_adam_huber_loss_1720518813',\
-#         'Bin_model_<keras.optimizers.optimizer_v2.adam.Adam object at 0x7f9600370b80>_huber_1720449668',\
-#         'Bin_model_<keras.optimizers.optimizer_v2.adam.Adam object at 0x7f707c7e8b50>_huber_1720452269',\
-#         'Bin_model_adam_<keras.losses.Huber object at 0x7faaf059d2e0>_1720514485',\
-#         'Bin_model_adam_<keras.losses.Huber object at 0x7f4c5413e2e0>_1720514906',\
-#         'Bin_model_adam_huber_1720464056',\
-#         'Bin_model_adam_huber_1720455533'])
+# models = np.array(['Bin_model_conv_adam_huber_loss_1720602236',\
+#         'Bin_model_conv_adam_huber_loss_1720598900',\
+#         'Bin_model_conv_adam_huber_loss_1720540765',\
+#         'Bin_model_conv_adam_huber_loss_1720539647',\
+#         'Bin_model_conv_adam_huber_loss_1720539003'])
 # comparison(models, xTest, yTest)
