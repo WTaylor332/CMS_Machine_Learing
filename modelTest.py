@@ -6,7 +6,6 @@ import tqdm
 print()
 import tensorflow as tf 
 from tensorflow import keras
-from tensorflow.keras.callbacks import TensorBoard
 print()
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
@@ -18,14 +17,14 @@ class haltCallback(keras.callbacks.Callback):
             self.model.stop_training = True
 
 
-def binModelSplit(pt, track=None, pv):
+def binModelSplit(pt, pv, track=np.array([])):
     # scaling 
     columnPT = pt.reshape(pt.shape[0]*pt.shape[1], 1)
     scaler = StandardScaler().fit(columnPT)
     ptScale = scaler.transform(columnPT)
     pt = ptScale.reshape(pt.shape[0], pt.shape[1])
 
-    if track != None:
+    if len(track) != 0:
         columnT = track.reshape(track.shape[0]*track.shape[1], 1)
         scaler = StandardScaler().fit(columnT)
         tScale = scaler.transform(columnT)
@@ -45,38 +44,69 @@ def binModelSplit(pt, track=None, pv):
 
 
 def convModel(shape):
-    model = keras.models.Sequential([
-        # convolutional layer
-        keras.layers.Conv1D(12, kernel_size=8, activation='relu', input_shape=(shape)),
-        keras.layers.MaxPool1D(pool_size=4),
+    op = keras.optimizers.Adam(learning_rate=0.008)
+    lossFunc = keras.losses.Huber()
+    if shape[1] < 2:
+        #1D model
+        model = keras.models.Sequential([
+            # convolutional layer
+            keras.layers.Conv1D(12, kernel_size=8, activation='relu', input_shape=(shape)),
+            keras.layers.MaxPool1D(pool_size=4),
 
-        keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
-        keras.layers.MaxPool1D(pool_size=4),
+            keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
+            keras.layers.MaxPool1D(pool_size=4),
 
-        keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
-        keras.layers.MaxPool1D(pool_size=2),
+            keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
+            keras.layers.MaxPool1D(pool_size=2),
 
 
-        # multi later perceptron
-        keras.layers.Flatten(),
-        keras.layers.Dense(15, activation="relu"),
-        # keras.layers.Dropout(rate=0.3),
-        keras.layers.Dense(5, activation="relu"),
-        # keras.layers.Dropout(rate=0.3),
-        keras.layers.Dense(1)
-    ])
+            # multi later perceptron
+            keras.layers.Flatten(),
+            keras.layers.Dense(15, activation="relu"),
+            # keras.layers.Dropout(rate=0.3),
+            keras.layers.Dense(5, activation="relu"),
+            # keras.layers.Dropout(rate=0.3),
+            keras.layers.Dense(1)
+        ])
+
+    else:
+        # 2D model
+        model = keras.models.Sequential([
+            # convolutional layer
+            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(shape)),
+            keras.layers.MaxPool2D(pool_size=(4,4)),
+
+            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(4,4)),
+
+            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(2,2)),
+
+
+            # multi later perceptron
+            keras.layers.Flatten(),
+            keras.layers.Dense(15, activation="relu"),
+            # keras.layers.Dropout(rate=0.3),
+            keras.layers.Dense(5, activation="relu"),
+            # keras.layers.Dropout(rate=0.3),
+            keras.layers.Dense(1)
+        ])
+        model.compile(optimizer=op,
+        loss=lossFunc)
+        model.summary()
     return model
 
 
 def binModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
-    if xTrain.shape[2]:
-        form = (2, xTrain.shape[1])
+    print(xTrain.shape)
+    print(len(xTrain.shape))
+    if len(xTrain.shape) > 2:
+        form = (xTrain.shape[1], 2, 1)
     else:
-        form = (1, xTrain.shape[1])
+        form = (xTrain.shape[1], 1)
 
     # creating model
     # model = keras.models.Sequential([
-    #     
     #     # multi later perceptron
     #     keras.Input(shape=form),
     #     keras.layers.Dense(100, activation="relu"),
@@ -85,11 +115,8 @@ def binModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
     #     keras.layers.Dropout(rate=0.3),
     #     keras.layers.Dense(1)
     # ])
-    model = convModel(form)
-    model.summary()
 
-    op = keras.optimizers.Adam(learning_rate=0.008)
-    lossFunc = keras.losses.MeanSquaredError()
+    model = convModel(form)
 
     # saving the model and best weights
     weights = "Bin_model_conv_weights_{t}.h5".format(t=clock)
@@ -103,9 +130,6 @@ def binModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
     stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)
 
-    model.compile(optimizer=op,
-    loss=lossFunc)
-    
     epochNo = 500
     history = model.fit(xTrain, yTrain, epochs=epochNo, validation_data=(xValid, yValid), callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
 
@@ -259,8 +283,11 @@ def comparison(models, xTest, yTest):
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     yPredicted = np.zeros((len(models), len(yTest)))
-    for i in range(len(models)):
-        modelLoaded = loadModel(models[i])
+    for i in range(2, len(models)):
+        # if models[i][-2:] == 'h5':
+        modelLoaded = loadWeights(models[i])
+        # else:
+        # modelLoaded = loadModel(models[i])
         yPredicted[i] = modelLoaded.predict(xTest).flatten()
 
         diff = abs(yPredicted[i].flatten() - yTest.flatten())
@@ -276,26 +303,31 @@ def comparison(models, xTest, yTest):
     plt.title("Percentage of values vs loss")
     # plt.plot(sortedDiff, percentile, color='blue')
     # plt.plot(tolerance, percent, color='red')
-    name = "Bin_model_comparison_{t}".format(t=clock)
+    name = "Bin_model_comparison_of_loss_functions_{t}".format(t=clock)
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
 
 
 def loadModel(name):
-    loadedModel = keras.models.load_model(name)
+    mod = name # + '/saved_model'
+    loadedModel = tf.keras.models.load_model(mod)
     loadedModel.summary()
     return loadedModel
 
 
 def loadWeights(name):
-    loadedModel = loadModel(name)
-    weights = loadedModel.load_weights(name)
-    loadedModel.summary()
-    return weights
+    if len(xTrain.shape) > 2:
+        form = (xTrain.shape[1], 2, 1)
+    else:
+        form = (xTrain.shape[1], 1)
+    model = convModel(form)
+    model.load_weights(name)
+    model.summary()
+    return model
 
 
-def testLoadedModel(model, xTest, yTest):
+def testLoadedModel(model, xTest, yTest,name):
     modelLoaded = loadModel(model)
-    history = pd.read_csv('training.log', sep=',', engine='python')
+    hist = pd.read_csv('training.log', sep=',', engine='python')
 
     yPredicted = modelLoaded.predict(xTest)
 
@@ -343,11 +375,11 @@ def testLoadedModel(model, xTest, yTest):
 # ----------------------------------------------------- main --------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# rawD = np.load('TTbarRaw3.npz')
+rawD = np.load('TTbarRaw3.npz')
 binD = np.load('TTbarBin4.npz')
-# zRaw, ptRaw, pvRaw = rawD['z'], rawD['pt'], rawD['pv']
-ptBin, trackBin = binD['ptB'], binD['tb']
-# trackLength, maxTrack = rawD['tl'], rawD['maxValue']
+zRaw, ptRaw, pvRaw = rawD['z'], rawD['pt'], rawD['pv']
+ptBin, trackBin = binD['ptB'], binD['tB']
+trackLength, maxTrack = rawD['tl'], rawD['maxValue']
 
 clock = int(time.time())
 
@@ -356,9 +388,9 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten())
-model, history, name = binModel(xTrain, yTrain, xValid, yValid, xTest, yTest)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid, xTest, yTest)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
@@ -369,16 +401,32 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # Loaded model test and comparison to other models
 
-# print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten())
+print()
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten())
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
 
 # model = "Bin_model_1720443577.h5"
 # testLoadedModel(model, xTest, yTest)
 
-# models = np.array(['Bin_model_conv_adam_huber_loss_1720602236',\
-#         'Bin_model_conv_adam_huber_loss_1720598900',\
-#         'Bin_model_conv_adam_huber_loss_1720540765',\
-#         'Bin_model_conv_adam_huber_loss_1720539647',\
-#         'Bin_model_conv_adam_huber_loss_1720539003'])
+models = np.array(['Bin_model_conv_weights_1720610206.h5',\
+                'Bin_model_conv_weights_1720610318.h5',\
+                'Bin_model_conv_weights_1720614426.h5'])
+m = ['Bin_model_conv_weights_1720604460.h5',\
+     'Bin_model_conv_weights_1720607215.h5']
+
+training = np.array([
+                    'training_Bin_model_conv_adam_huber_loss_1720610206.log',\
+                    'training_Bin_model_conv_adam_huber_loss_1720610318.log',\
+                    'training_Bin_model_conv_adam_huber_loss_1720614426.log'])
+t = ['training_Bin_model_conv_adam_huber_loss_1720604460.log',\
+     'training_Bin_model_conv_adam_huber_loss_1720607215.log']
+
+for i in range(len(models)):
+    print(i)
+    model = loadWeights(models[i])
+    hist = pd.read_csv(training[i], sep=',', engine='python')
+    val_loss = hist.history['val_loss']
+    print(val_loss)
+
+                   
 # comparison(models, xTest, yTest)
