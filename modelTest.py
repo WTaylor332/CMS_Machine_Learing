@@ -12,8 +12,8 @@ from sklearn.preprocessing import StandardScaler
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
-        if (logs.get('val_loss') <= 0.1):
-            print('\n\nValuation loss reach 0.115 so training stopped.\n\n')
+        if (logs.get('val_loss') < 0.1):
+            print('\n\nValuation loss reach 0.1 so training stopped.\n\n')
             self.model.stop_training = True
 
 
@@ -43,9 +43,7 @@ def binModelSplit(pt, pv, track=np.array([])):
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
 
-def convModel(shape):
-    op = keras.optimizers.Adam(learning_rate=0.008)
-    lossFunc = keras.losses.Huber()
+def convModel(shape, op, lossFunc):
     if shape[1] < 2:
         #1D model
         model = keras.models.Sequential([
@@ -91,9 +89,9 @@ def convModel(shape):
             # keras.layers.Dropout(rate=0.3),
             keras.layers.Dense(1)
         ])
-        model.compile(optimizer=op,
-        loss=lossFunc)
-        model.summary()
+    model.compile(optimizer=op,
+    loss=lossFunc)
+    model.summary()
     return model
 
 
@@ -115,11 +113,12 @@ def binModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
     #     keras.layers.Dropout(rate=0.3),
     #     keras.layers.Dense(1)
     # ])
-
-    model = convModel(form)
-
+    op = keras.optimizers.Adam(learning_rate=0.008)
+    lossFunc = keras.losses.Huber()
+    model = convModel(form, op, lossFunc)
+    
     # saving the model and best weights
-    weights = "Bin_model_conv_weights_{t}.h5".format(t=clock)
+    weights = "Bin_model_conv_weights_{o}_{l}_{t}.weights.h5".format(o='adam', l=lossFunc.name, t=clock)
     modelDirectory = "models"
     modelName = "Bin_model_conv_{o}_{l}_{t}".format(o='adam', l=lossFunc.name, t=clock)
     
@@ -128,9 +127,10 @@ def binModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
     lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
     stopTraining = haltCallback()
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=20)
 
     epochNo = 500
+    print(modelName)
     history = model.fit(xTrain, yTrain, epochs=epochNo, validation_data=(xValid, yValid), callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
 
     checkpointFilename = os.path.join(modelDirectory, weights)
@@ -140,7 +140,7 @@ def binModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
         print("Created directory:" , modelDirectory)
 
     # saves full model
-    modelName = "Bin_model_conv_{o}_{l}_{t}".format(o='adam', l=lossFunc.name, t=clock)
+    modelName = "Bin_model_conv_{o}_{l}_{t}.keras".format(o='adam', l=lossFunc.name, t=clock)
     modelFilename = os.path.join(modelDirectory, modelName)
     model.save(modelName)
 
@@ -319,6 +319,7 @@ def loadWeights(name):
         form = (xTrain.shape[1], 2, 1)
     else:
         form = (xTrain.shape[1], 1)
+    print(form)
     model = convModel(form)
     model.load_weights(name)
     model.summary()
@@ -388,9 +389,9 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-# model, history, name = binModel(xTrain, yTrain, xValid, yValid, xTest, yTest)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten()) #, track=trackBin)
+model, history, name = binModel(xTrain, yTrain, xValid, yValid, xTest, yTest)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
@@ -402,31 +403,32 @@ print()
 # Loaded model test and comparison to other models
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten())
+#xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten())
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
 
 # model = "Bin_model_1720443577.h5"
 # testLoadedModel(model, xTest, yTest)
 
-models = np.array(['Bin_model_conv_weights_1720610206.h5',\
-                'Bin_model_conv_weights_1720610318.h5',\
-                'Bin_model_conv_weights_1720614426.h5'])
-m = ['Bin_model_conv_weights_1720604460.h5',\
-     'Bin_model_conv_weights_1720607215.h5']
+#models = np.array(['Bin_model_conv_weights_1720686776.h5',\
+#        'Bin_model_conv_weights_1720614498.h5'])
 
-training = np.array([
-                    'training_Bin_model_conv_adam_huber_loss_1720610206.log',\
-                    'training_Bin_model_conv_adam_huber_loss_1720610318.log',\
-                    'training_Bin_model_conv_adam_huber_loss_1720614426.log'])
-t = ['training_Bin_model_conv_adam_huber_loss_1720604460.log',\
-     'training_Bin_model_conv_adam_huber_loss_1720607215.log']
 
-for i in range(len(models)):
-    print(i)
-    model = loadWeights(models[i])
-    hist = pd.read_csv(training[i], sep=',', engine='python')
-    val_loss = hist.history['val_loss']
-    print(val_loss)
+#training = np.array(['training_Bin_model_conv_adam_huber_loss_1720614426.log',\
+#        'training_Bin_model_conv_adam_mean_squared_error_1720686776.log',\
+#        'training_Bin_model_conv_adam_mean_absolute_error_1720614498.log'])
 
-                   
+
+#for i in range(len(models)):
+#    print(i)
+#    print(xTrain.shape)
+#    model = loadWeights(models[i])
+#    hist = pd.read_csv(training[i], sep=',', engine='python')
+#    val_loss = hist.history['val_loss']
+#    print(val_loss)
+
+
 # comparison(models, xTest, yTest)
+
+
+
+
