@@ -42,13 +42,13 @@ def convModel(shape, op, lossFunc):
         model = keras.models.Sequential([
             # convolutional layers
             keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(shape)),
-            keras.layers.MaxPool2D(pool_size=(4,4)),
+            keras.layers.MaxPool2D(pool_size=(4,1)),
 
             keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(4,4)),
+            keras.layers.MaxPool2D(pool_size=(4,1)),
 
             keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(2,2)),
+            keras.layers.MaxPool2D(pool_size=(2,1)),
 
             # multi later perceptron
             keras.layers.Flatten(),
