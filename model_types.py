@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 
-def multiLayerPerceptron(form):
+def multiLayerPerceptron(form, op, lossFunc):
     model = keras.models.Sequential([
         keras.Input(shape=form),
         keras.layers.Dense(100, activation="relu"),
@@ -10,6 +10,8 @@ def multiLayerPerceptron(form):
         keras.layers.Dropout(rate=0.3),
         keras.layers.Dense(1)
     ])
+    model.compile(optimizer=op, loss=lossFunc)
+    model.summary()
     return model
 
 
