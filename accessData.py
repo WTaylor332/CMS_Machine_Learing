@@ -102,28 +102,29 @@ def histogramData(z, pt):
     print(ptBinnedMatrix[:2])
     return ptBinnedMatrix, trackBinnedMatrix
 
-# name = "TTbar.root"
-# n = "GTTObjects_ttbar200PU_1.root"
-# eventZ,  eventPT, eventPV = loadData(name)
+name = "QCD_Pt-15To3000.root"
+eventZ,  eventPT, eventPV = loadData(name)
 
-# zRaw, ptRaw, trackLength, mv = rawPaddedData(eventZ, eventPT)
+zRaw, ptRaw, trackLength, mv = rawPaddedData(eventZ, eventPT)
 
 # # print()
 # # print(zRaw[0])
 # # print(ptRaw[0])
 
-# mv = np.array([mv])
+np.savez('QCD_Pt-15To3000', z=zRaw, pt=ptRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
 
-# np.savez('TTbarRaw3', z=zRaw, pt=ptRaw, pv=np.array(eventPV), tl=trackLength, maxValue=mv)
 
-rawD = np.load('TTbarRaw3.npz')
+rawD = np.load('QCD_Pt-15To3000.npz')
 zRaw, ptRaw = rawD['z'], rawD['pt']
-ptBin, trackBin = histogramData(zRaw, ptRaw)
+t = rawD['tl']
+m = rawD['maxValue']
+print(zRaw[0], ptRaw[0], t[0], m)
+# ptBin, trackBin = histogramData(zRaw, ptRaw)
 
-np.savez('TTbarBin4', ptB=ptBin, tB=trackBin)
+# np.savez('TTbarBin4', ptB=ptBin, tB=trackBin)
 
-q = np.load('TTbarBin4.npz')
-print(q['ptB'].shape)
-print(q['tB'].shape)
+# q = np.load('TTbarBin4.npz')
+# print(q['ptB'].shape)
+# print(q['tB'].shape)
 
 
