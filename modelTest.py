@@ -30,7 +30,6 @@ def binModelSplit(pt, pv, track=np.array([])):
         scaler = StandardScaler().fit(columnT)
         tScale = scaler.transform(columnT)
         track = tScale.reshape(pt.shape[0], pt.shape[1])
-
         binDataAll = np.stack((track,pt), axis=1)
     else:
         binDataAll = pt
@@ -44,32 +43,25 @@ def binModelSplit(pt, pv, track=np.array([])):
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
 
-def binModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
+def binModel(xTrain, yTrain, xValid, yValid):
     print(xTrain.shape)
     print(len(xTrain.shape))
     if len(xTrain.shape) > 2:
-        form = (xTrain.shape[1], 2, 1)
+        form = (xTrain.shape[2], 2, 1)
+        print(form)
+        xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+        xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
     else:
         form = (xTrain.shape[1], 1)
 
-    # creating model
-    # model = keras.models.Sequential([
-    #     # multi later perceptron
-    #     keras.Input(shape=form),
-    #     keras.layers.Dense(100, activation="relu"),
-    #     keras.layers.Dropout(rate=0.3),
-    #     keras.layers.Dense(50, activation="relu"),
-    #     keras.layers.Dropout(rate=0.3),
-    #     keras.layers.Dense(1)
-    # ])
     op = keras.optimizers.Adam(learning_rate=0.008)
     lossFunc = keras.losses.Huber()
     model = cnn(form, op, lossFunc)
     
     # saving the model and best weights
-    weights = "Bin_model_conv_weights_{o}_{l}_{t}.weights.h5".format(o='adam', l=lossFunc.name, t=clock)
+    weights = "Bin_model_2inputs_conv_weights_{o}_{l}_{t}.weights.h5".format(o='adam', l=lossFunc.name, t=clock)
     modelDirectory = "models"
-    modelName = "Bin_model_conv_{o}_{l}_{t}".format(o='adam', l=lossFunc.name, t=clock)
+    modelName = "Bin_model_2inputs_conv_{o}_{l}_{t}".format(o='adam', l=lossFunc.name, t=clock)
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
@@ -89,7 +81,6 @@ def binModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
         print("Created directory:" , modelDirectory)
 
     # saves full model
-    modelName = "Bin_model_conv_{o}_{l}_{t}.keras".format(o='adam', l=lossFunc.name, t=clock)
     modelFilename = os.path.join(modelDirectory, modelName)
     model.save(modelName)
 
@@ -118,7 +109,7 @@ def rawModelSplit(z, pt, pv):
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
 
-def rawModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
+def rawModel(xTrain, yTrain, xValid, yValid):
     form = (2, xTrain.shape[1])
 
     # creating model
@@ -168,6 +159,9 @@ def rawModel(xTrain, yTrain, xValid, yValid, xTest, yTest):
 
 def testing(model, hist, xValid, yValid, xTest, yTest, name):
     print()
+    if xValid.shape > 2:
+        xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+        xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
     model.evaluate(xValid, yValid)
 
     yPredicted = model.predict(xTest)
@@ -269,7 +263,7 @@ def loadWeights(name):
     else:
         form = (xTrain.shape[1], 1)
     print(form)
-    model = convModel(form)
+    model = cnn(form)
     model.load_weights(name)
     model.summary()
     return model
@@ -338,13 +332,13 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten()) #, track=trackBin)
-model, history, name = binModel(xTrain, yTrain, xValid, yValid, xTest, yTest)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+model, history, name = binModel(xTrain, yTrain, xValid, yValid)
 testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid, xTest, yTest)
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 # testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
