@@ -13,7 +13,7 @@ def multiLayerPerceptron(form):
     return model
 
 
-def convModel(shape):
+def convModel(shape, op, lossFunc):
     if shape[1] < 2:
         #1D model
         model = keras.models.Sequential([
@@ -56,6 +56,8 @@ def convModel(shape):
             # keras.layers.Dropout(rate=0.3),
             keras.layers.Dense(1)
         ])
+    model.compile(optimizer=op, loss=lossFunc)
+    model.summary()
     return model
 
 
