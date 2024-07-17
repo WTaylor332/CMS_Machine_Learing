@@ -180,22 +180,9 @@ def pureCNN(form, op, lossFunc):
             keras.layers.MaxPool2D(pool_size=(4,1)),
 
             keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(2,1)),
+            keras.layers.MaxPool2D(pool_size=(4,1)),
 
-            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(2,1)),
-
-            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(2,1)),
-
-            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(2,1)),
-
-            # keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            # keras.layers.MaxPool2D(pool_size=(2,1)),
-
-            # keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            # keras.layers.MaxPool2D(pool_size=(2,1)),
+            keras.layers.Conv2D(1, kernel_size=(2,1), activation='relu'),
 
             keras.layers.Flatten()
         ])
