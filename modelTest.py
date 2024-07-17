@@ -6,6 +6,7 @@ import tqdm
 print()
 import tensorflow as tf 
 from tensorflow import keras
+import h5py
 print()
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
@@ -57,8 +58,9 @@ def binModel(xTrain, yTrain, xValid, yValid):
         num = 1
 
     op = keras.optimizers.Adam()
-    lossFunc = keras.losses.Huber()
+    lossFunc = keras.losses.MeanAbsoluteError()
     model = cnn(form, op, lossFunc)
+    model.summary()
     
     # saving the model and best weights
     weights = "Bin_model_{n}inputs_conv_weights_{o}_{l}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, t=clock)
@@ -194,7 +196,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.title('Loss of predicted vs test Histogram')
     plt.savefig("Hist_loss_{}.png".format(name))
 
-    # plotting % of predictions vs loss
+    # plotting % of predictions vs difference
     print()
     plt.clf()
     per = 90
@@ -220,7 +222,8 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
 
 
-def comparison(models, xTest, yTest):
+def comparison(models, train, xTest, yTest):
+    print()
     # Percentage vs difference plot comparsion
     plt.clf()
     fig, ax = plt.subplots()
@@ -228,17 +231,27 @@ def comparison(models, xTest, yTest):
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     # yPredicted = np.zeros((len(models), len(yTest)))
-    labels = np.array(['Huber', 'MSE', 'MAE'])
+    labels = np.array(['A2', 'A2', 'A3', 'A1'])
     for i in range(0, len(models)):
+        print(i)
+        if i == 1:
+            print(xTest.shape)
+            xTest = xTest[:,:,0,:]
+            print(xTest.shape)
+        
         if models[i][-2:] == 'h5':
-            modelLoaded = loadWeights(models[i])
+            modelLoaded = loadWeights(models[i], xTest)
         else:
-            modelLoaded = loadModel(models[i])
+            modelLoaded = loadModel(models[i], xTest)
+        
+        hist = pd.read_csv(train[i], sep=',', engine='python')
+        val_loss = hist['val_loss']
+        print(np.sort(val_loss)[:5])
         yPredicted = modelLoaded.predict(xTest).flatten()
         per = 90
         tol = 0.15
         diff = abs(yPredicted - yTest.flatten())
-        print(max(diff), min(diff))
+        print(max(diff), min(diff), np.mean(diff))
         print(np.std(diff), np.mean(diff))
         sortedDiff = np.sort(diff[diff<2])
         percent = (np.arange(0,len(sortedDiff),1)*100)/len(sortedDiff)
@@ -251,12 +264,12 @@ def comparison(models, xTest, yTest):
         tolerance = np.zeros(len(sortedDiff)) + 0.1
 
         plt.plot(sortedDiff, percent, label=labels[i])
-
+        print()
     plt.legend()
     plt.title("Percentage of values vs loss")
     # plt.plot(sortedDiff, percentile, color='blue')
     # plt.plot(tolerance, percent, color='red')
-    name = "Bin_model_comparison_of_loss_functions_{t}".format(t=clock)
+    name = "Bin_model_comparison_of_architectures_{t}".format(t=clock)
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
 
 
@@ -267,11 +280,11 @@ def loadModel(name):
     return loadedModel
 
 
-def loadWeights(name):
-    if len(xTest.shape) > 2:
-        form = (xTrain.shape[1], 2, 1)
+def loadWeights(name, x):
+    if len(x.shape) > 3:
+        form = (x.shape[1], 2, 1)
     else:
-        form = (xTest.shape[1], 1)
+        form = (x.shape[1], 1)
     print(form)
     model = cnn(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.Huber())
     model.load_weights(name)
@@ -362,13 +375,15 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatte
 # testLoadedModel(model, xTest, yTest)
 
 models = np.array(['Bin_model_2inputs_conv_weights_adam_huber_loss_1721056475.weights.h5',\
-                   'Bin_model_2inputs_conv_adam_mean_squared_error_1721058703.keras',\
-                   'Bin_model_2inputs_conv_adam_mean_absolute_error_1721143185.keras'])
+                   'Bin_model_conv_weights_1720614426.h5',\
+                   'Bin_model_2inputs_conv_adam_huber_loss_1721144270.keras',\
+                   'Bin_model_2inputs_conv_adam_huber_loss_1721145153.keras'])
 
 
-#training = np.array(['training_Bin_model_conv_adam_huber_loss_1720614426.log',\
-#        'training_Bin_model_conv_adam_mean_squared_error_1720686776.log',\
-#        'training_Bin_model_conv_adam_mean_absolute_error_1720614498.log'])
+training = np.array(['training_Bin_model_2inputs_conv_adam_huber_loss_1721056475.log',\
+                    'training_Bin_model_conv_adam_huber_loss_1720614426.log'
+                    'training_Bin_model_2inputs_conv_adam_huber_loss_1721144270.log',\
+                    'training_Bin_model_2inputs_conv_adam_huber_loss_1721145153.log'])
 
 
 #for i in range(len(models)):
@@ -380,7 +395,13 @@ models = np.array(['Bin_model_2inputs_conv_weights_adam_huber_loss_1721056475.we
 #    print(val_loss)
 
 xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
-comparison(models, xTest, yTest)
+# comparison(models, training, xTest, yTest)
+
+# finding architecture of model from weights file
+f = h5py.File(models[1], 'r')
+print(f)
+print(f.attrs.get('keras_version'))
+f.attrs.values()
 
 
 

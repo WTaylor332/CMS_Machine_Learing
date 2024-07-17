@@ -36,26 +36,6 @@ def convModel(shape, op, lossFunc):
         #     keras.layers.Dense(1)
         # ])
         # A2
-        # model = keras.models.Sequential([
-        #     # convolutional layers
-        #     keras.layers.Conv1D(12, kernel_size=8, activation='relu', input_shape=(shape)),
-        #     keras.layers.MaxPool1D(pool_size=4),
-
-        #     keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
-        #     keras.layers.MaxPool1D(pool_size=4),
-
-        #     keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
-        #     keras.layers.MaxPool1D(pool_size=2),
-
-        #     # multi later perceptron
-        #     keras.layers.Flatten(),
-        #     keras.layers.Dense(15, activation="relu"),
-        #     # keras.layers.Dropout(rate=0.3),
-        #     keras.layers.Dense(5, activation="relu"),
-        #     # keras.layers.Dropout(rate=0.3),
-        #     keras.layers.Dense(1)
-        # ])
-        # A3
         model = keras.models.Sequential([
             # convolutional layers
             keras.layers.Conv1D(12, kernel_size=8, activation='relu', input_shape=(shape)),
@@ -71,12 +51,32 @@ def convModel(shape, op, lossFunc):
             keras.layers.Flatten(),
             keras.layers.Dense(15, activation="relu"),
             # keras.layers.Dropout(rate=0.3),
-            keras.layers.Dense(10, activation="relu"),
-            # keras.layers.Dropout(rate=0.3),
             keras.layers.Dense(5, activation="relu"),
             # keras.layers.Dropout(rate=0.3),
             keras.layers.Dense(1)
         ])
+        # A3
+        # model = keras.models.Sequential([
+        #     # convolutional layers
+        #     keras.layers.Conv1D(12, kernel_size=8, activation='relu', input_shape=(shape)),
+        #     keras.layers.MaxPool1D(pool_size=4),
+
+        #     keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
+        #     keras.layers.MaxPool1D(pool_size=4),
+
+        #     keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
+        #     keras.layers.MaxPool1D(pool_size=2),
+
+        #     # multi later perceptron
+        #     keras.layers.Flatten(),
+        #     keras.layers.Dense(15, activation="relu"),
+        #     # keras.layers.Dropout(rate=0.3),
+        #     keras.layers.Dense(10, activation="relu"),
+        #     # keras.layers.Dropout(rate=0.3),
+        #     keras.layers.Dense(5, activation="relu"),
+        #     # keras.layers.Dropout(rate=0.3),
+        #     keras.layers.Dense(1)
+        # ])
         
     else:
         # 2D model
@@ -99,26 +99,6 @@ def convModel(shape, op, lossFunc):
         #     keras.layers.Dense(1)
         # ])
         # A2
-        # model = keras.models.Sequential([
-        #     # convolutional layers
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(shape)),
-        #     keras.layers.MaxPool2D(pool_size=(4,1)),
-
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(4,1)),
-
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(2,1)),
-
-        #     # multi later perceptron
-        #     keras.layers.Flatten(),
-        #     keras.layers.Dense(15, activation="relu"),
-        #     # keras.layers.Dropout(rate=0.3),
-        #     keras.layers.Dense(5, activation="relu"),
-        #     # keras.layers.Dropout(rate=0.3),
-        #     keras.layers.Dense(1)
-        # ])
-        # A3
         model = keras.models.Sequential([
             # convolutional layers
             keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(shape)),
@@ -134,15 +114,34 @@ def convModel(shape, op, lossFunc):
             keras.layers.Flatten(),
             keras.layers.Dense(15, activation="relu"),
             # keras.layers.Dropout(rate=0.3),
-            keras.layers.Dense(10, activation="relu"),
-            # keras.layers.Dropout(rate=0.3),
             keras.layers.Dense(5, activation="relu"),
             # keras.layers.Dropout(rate=0.3),
             keras.layers.Dense(1)
         ])
+        # A3
+        # model = keras.models.Sequential([
+        #     # convolutional layers
+        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(shape)),
+        #     keras.layers.MaxPool2D(pool_size=(4,1)),
+
+        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(4,1)),
+
+        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(2,1)),
+
+        #     # multi later perceptron
+        #     keras.layers.Flatten(),
+        #     keras.layers.Dense(15, activation="relu"),
+        #     # keras.layers.Dropout(rate=0.3),
+        #     keras.layers.Dense(10, activation="relu"),
+        #     # keras.layers.Dropout(rate=0.3),
+        #     keras.layers.Dense(5, activation="relu"),
+        #     # keras.layers.Dropout(rate=0.3),
+        #     keras.layers.Dense(1)
+        # ])
 
     model.compile(optimizer=op, loss=lossFunc)
-    model.summary()
     return model
 
 def pureCNN(form, op, lossFunc):
