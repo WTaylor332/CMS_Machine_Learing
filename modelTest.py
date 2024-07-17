@@ -13,7 +13,7 @@ from model_types import convModel as cnn, multiLayerPerceptron as mlp
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
-        if (logs.get('val_loss') < 0.1):
+        if (logs.get('val_loss') < 0.05):
             print('\n\nValuation loss reach 0.1 so training stopped.\n\n')
             self.model.stop_training = True
 
@@ -50,11 +50,13 @@ def binModel(xTrain, yTrain, xValid, yValid):
         xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1], 1)
         xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1], 1)
         num = 2
+        print(form)
+        print(xTrain.shape)
     else:
         form = (xTrain.shape[1], 1)
         num = 1
 
-    op = keras.optimizers.Adam(learning_rate=0.008)
+    op = keras.optimizers.Adam()
     lossFunc = keras.losses.Huber()
     model = cnn(form, op, lossFunc)
     
@@ -65,10 +67,10 @@ def binModel(xTrain, yTrain, xValid, yValid):
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
     stopTraining = haltCallback()
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=50)
 
     epochNo = 500
     print(modelName)
@@ -82,7 +84,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     # saves full model
     modelFilename = os.path.join(modelDirectory, modelName)
-    model.save(modelName)
+    model.save(modelName+".keras")
 
     return model, history, modelName
 
@@ -159,9 +161,9 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
 def testing(model, hist, xValid, yValid, xTest, yTest, name):
     print()
-    if xValid.shape > 2:
-        xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-        xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+    if len(xValid.shape) > 2:
+        xValid = xValid.reshape(xValid.shape[0],xValid.shape[2], xValid.shape[1], 1)
+        xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
     model.evaluate(xValid, yValid)
 
     yPredicted = model.predict(xTest)
@@ -225,22 +227,30 @@ def comparison(models, xTest, yTest):
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    yPredicted = np.zeros((len(models), len(yTest)))
-    for i in range(2, len(models)):
-        # if models[i][-2:] == 'h5':
-        modelLoaded = loadWeights(models[i])
-        # else:
-        # modelLoaded = loadModel(models[i])
-        yPredicted[i] = modelLoaded.predict(xTest).flatten()
-
-        diff = abs(yPredicted[i].flatten() - yTest.flatten())
+    # yPredicted = np.zeros((len(models), len(yTest)))
+    labels = np.array(['Huber', 'MSE', 'MAE'])
+    for i in range(0, len(models)):
+        if models[i][-2:] == 'h5':
+            modelLoaded = loadWeights(models[i])
+        else:
+            modelLoaded = loadModel(models[i])
+        yPredicted = modelLoaded.predict(xTest).flatten()
+        per = 90
+        tol = 0.15
+        diff = abs(yPredicted - yTest.flatten())
+        print(max(diff), min(diff))
+        print(np.std(diff), np.mean(diff))
         sortedDiff = np.sort(diff[diff<2])
         percent = (np.arange(0,len(sortedDiff),1)*100)/len(sortedDiff)
+        tolIndex = np.where(sortedDiff <= tol)
+        perIndex = np.where(percent <= per)
+        print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
+        print('Value of', per, 'th percentil:', sortedDiff[perIndex[0][-1]])
 
         percentile = np.zeros(len(sortedDiff)) + 90
         tolerance = np.zeros(len(sortedDiff)) + 0.1
 
-        plt.plot(sortedDiff, percent, label=models[i])
+        plt.plot(sortedDiff, percent, label=labels[i])
 
     plt.legend()
     plt.title("Percentage of values vs loss")
@@ -258,27 +268,27 @@ def loadModel(name):
 
 
 def loadWeights(name):
-    if len(xTrain.shape) > 2:
+    if len(xTest.shape) > 2:
         form = (xTrain.shape[1], 2, 1)
     else:
-        form = (xTrain.shape[1], 1)
+        form = (xTest.shape[1], 1)
     print(form)
-    model = cnn(form)
+    model = cnn(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.Huber())
     model.load_weights(name)
     model.summary()
     return model
 
 
-def testLoadedModel(model, xTest, yTest,name):
+def testLoadedModel(model, xTest, yTest, name):
     modelLoaded = loadModel(model)
-    hist = pd.read_csv('training.log', sep=',', engine='python')
+    hist = pd.read_csv('training_{}.log'.format(name), sep=',', engine='python')
 
     yPredicted = modelLoaded.predict(xTest)
 
     # plot of epochs against training and validation loss
     print()
-    loss = hist.history['loss']
-    val_loss = hist.history['val_loss']
+    loss = hist['loss']
+    val_loss = hist['val_loss']
     epochs = range(1, len(loss) + 1)
 
     plt.clf()
@@ -331,10 +341,10 @@ clock = int(time.time())
 # plt.plot()
 # plt.savefig("TTbarTrackDistribution.png")
 
-print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten()) #, track=trackBin)
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# print()
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
@@ -346,14 +356,14 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 # Loaded model test and comparison to other models
 
 print()
-#xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten())
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
 
-# model = "Bin_model_1720443577.h5"
 # testLoadedModel(model, xTest, yTest)
 
-#models = np.array(['Bin_model_conv_weights_1720686776.h5',\
-#        'Bin_model_conv_weights_1720614498.h5'])
+models = np.array(['Bin_model_2inputs_conv_weights_adam_huber_loss_1721056475.weights.h5',\
+                   'Bin_model_2inputs_conv_adam_mean_squared_error_1721058703.keras',\
+                   'Bin_model_2inputs_conv_adam_mean_absolute_error_1721143185.keras'])
 
 
 #training = np.array(['training_Bin_model_conv_adam_huber_loss_1720614426.log',\
@@ -369,8 +379,8 @@ print()
 #    val_loss = hist.history['val_loss']
 #    print(val_loss)
 
-
-# comparison(models, xTest, yTest)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
+comparison(models, xTest, yTest)
 
 
 
