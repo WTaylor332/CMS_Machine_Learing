@@ -10,7 +10,7 @@ import h5py
 print()
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
-from model_types import convModel as cnn, multiLayerPerceptron as mlp
+from model_types import convModel as cnn, multiLayerPerceptron as mlp, pureCNN as pcnn
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
@@ -58,14 +58,14 @@ def binModel(xTrain, yTrain, xValid, yValid):
         num = 1
 
     op = keras.optimizers.Adam()
-    lossFunc = keras.losses.MeanAbsoluteError()
-    model = cnn(form, op, lossFunc)
+    lossFunc = keras.losses.Huber()
+    model = pcnn(form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
-    weights = "Bin_model_{n}inputs_conv_weights_{o}_{l}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, t=clock)
+    weights = "Bin_model_{n}inputs_pconv_weights_{o}_{l}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, t=clock)
     modelDirectory = "models"
-    modelName = "Bin_model_{n}inputs_conv_{o}_{l}_{t}".format(n=num, o='adam', l=lossFunc.name, t=clock)
+    modelName = "Bin_model_{n}inputs_pconv_{o}_{l}_{t}".format(n=num, o='adam', l=lossFunc.name, t=clock)
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
@@ -355,9 +355,9 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 # print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
@@ -369,21 +369,21 @@ clock = int(time.time())
 # Loaded model test and comparison to other models
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
 
 # testLoadedModel(model, xTest, yTest)
 
-models = np.array(['Bin_model_2inputs_conv_weights_adam_huber_loss_1721056475.weights.h5',\
-                   'Bin_model_conv_weights_1720614426.h5',\
-                   'Bin_model_2inputs_conv_adam_huber_loss_1721144270.keras',\
-                   'Bin_model_2inputs_conv_adam_huber_loss_1721145153.keras'])
+# models = np.array(['Bin_model_2inputs_conv_weights_adam_huber_loss_1721056475.weights.h5',\
+#                    'Bin_model_conv_weights_1720614426.h5',\
+#                    'Bin_model_2inputs_conv_adam_huber_loss_1721144270.keras',\
+#                    'Bin_model_2inputs_conv_adam_huber_loss_1721145153.keras'])
 
 
-training = np.array(['training_Bin_model_2inputs_conv_adam_huber_loss_1721056475.log',\
-                    'training_Bin_model_conv_adam_huber_loss_1720614426.log'
-                    'training_Bin_model_2inputs_conv_adam_huber_loss_1721144270.log',\
-                    'training_Bin_model_2inputs_conv_adam_huber_loss_1721145153.log'])
+# training = np.array(['training_Bin_model_2inputs_conv_adam_huber_loss_1721056475.log',\
+#                     'training_Bin_model_conv_adam_huber_loss_1720614426.log'
+#                     'training_Bin_model_2inputs_conv_adam_huber_loss_1721144270.log',\
+#                     'training_Bin_model_2inputs_conv_adam_huber_loss_1721145153.log'])
 
 
 #for i in range(len(models)):
@@ -394,14 +394,14 @@ training = np.array(['training_Bin_model_2inputs_conv_adam_huber_loss_1721056475
 #    val_loss = hist.history['val_loss']
 #    print(val_loss)
 
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
 # comparison(models, training, xTest, yTest)
 
-# finding architecture of model from weights file
-f = h5py.File(models[1], 'r')
-print(f)
-print(f.attrs.get('keras_version'))
-f.attrs.values()
+# finding architecture of model from weights file - didn't wokr
+# f = h5py.File(models[1], 'r')
+# print(f)
+# print(f.attrs.get('keras_version'))
+# f.attrs.values()
 
 
 

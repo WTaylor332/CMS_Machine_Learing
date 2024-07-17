@@ -168,8 +168,6 @@ def pureCNN(form, op, lossFunc):
             keras.layers.MaxPool1D(pool_size=2),
 
             keras.layers.Flatten()
-
-            
         ])
     else:
         # 2D model
@@ -189,6 +187,15 @@ def pureCNN(form, op, lossFunc):
 
             keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
             keras.layers.MaxPool2D(pool_size=(2,1)),
+
+            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(2,1)),
+
+            # keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
+            # keras.layers.MaxPool2D(pool_size=(2,1)),
+
+            # keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
+            # keras.layers.MaxPool2D(pool_size=(2,1)),
 
             keras.layers.Flatten()
         ])
