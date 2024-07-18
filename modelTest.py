@@ -46,7 +46,7 @@ def binModelSplit(pt, pv, track=np.array([])):
 def binModel(xTrain, yTrain, xValid, yValid):
 
     if len(xTrain.shape) > 2:
-        form = (xTrain.shape[1], xTrain.shape[2]) #, 1)
+        form = (xTrain.shape[1], xTrain.shape[2], 1)
         num = 2
     else:
         form = (xTrain.shape[1], 1)
@@ -344,10 +344,27 @@ def testLoadedModel(model, xTest, yTest, name):
 
 # loading numpy arrays of data
 rawD = np.load('TTbarRaw5.npz')
-binD = np.load('TTbarBin4.npz')
+# binD = np.load('TTbarBin4.npz')
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
-ptBin, trackBin = binD['ptB'], binD['tB']
+# ptBin, trackBin = binD['ptB'], binD['tB']
 # trackLength, maxTrack = rawD['tl'], rawD['maxValue']
+
+# getting jagged raw data
+zJagged = [0]*zRaw.shape[0]
+print(len(zJagged))
+print(zRaw.shape)
+for i in tqdm(range(len(zRaw))):
+    index = np.argwhere(np.isnan(zRaw[i]))
+    if len(index) > 0:
+        index = index[0][0]
+    else:
+        index = zRaw.shape[1]
+    zJagged[i] = zRaw[:index]
+
+print(zJagged[0][0])
+print(len(zJagged))
+print(len(zJagged[0]), len(zJagged[1]), len(zJagged[2]))
+    
 
 clock = int(time.time())
 
@@ -356,12 +373,12 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
