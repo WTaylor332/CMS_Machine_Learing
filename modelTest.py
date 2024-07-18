@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import time
 import os
-import tqdm
+from tqdm import tqdm
 print()
 import tensorflow as tf 
 from tensorflow import keras
@@ -97,12 +97,12 @@ def rawModelSplit(z, pt, eta, pv):
 
     print(z.shape, pt.shape, eta.shape)
 
-    # z = np.nan_to_num(z, nan=-9999)
     z = z[:,:250]
     pt = pt[:,:250]
     eta = eta[:,:250]
-    # pt = np.nan_to_num(pt, nan=-9999)
-    # eta = np.nan_to_num(eta, nan=-9999)
+    z = np.nan_to_num(z, nan=-9999)
+    pt = np.nan_to_num(pt, nan=-9999)
+    eta = np.nan_to_num(eta, nan=-9999)
 
     binDataAll = np.stack((z,pt,eta), axis=1)
     print(binDataAll.shape)
@@ -363,16 +363,16 @@ clock = int(time.time())
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 # sum = 0
 # print(sum)
-# for i in range(xTrain.shape[0]):
-#     index = np.argwhere(np.isnan(xTrain[:,0]))
+# for i in tqdm(range(xTrain.shape[0])):
+#     index = np.where(xTrain[i,0] < -50)[0]
 #     if len(index) > 0:
-#         sum += index[0,0]
+#         sum += index[0]
 # print(xTrain.shape[0])
 # print(xTrain.shape)
 # print(sum)
 # print((xTrain.shape[0]*xTrain.shape[2]-sum)/(xTrain.shape[0]*xTrain.shape[2]))
 # print(np.mean(xTrain))
-print(xTrain.shape, xTest.shape, xValid.shape)
+# print(xTrain.shape, xTest.shape, xValid.shape)
 model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 testing(model, history, xValid, yValid, xTest, yTest, name)
 
