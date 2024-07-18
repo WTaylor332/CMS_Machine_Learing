@@ -144,12 +144,10 @@ def convModel(shape, op, lossFunc):
     model.compile(optimizer=op, loss=lossFunc)
     return model
 
+
 def pureCNN(form, op, lossFunc):
     if len(form) < 3:
-        #1D model
-        ps = 4
-        featNo = 12
-        ks = 8
+        #1D model - FIX IT
         model = keras.models.Sequential([
             # convolutional layers
             keras.layers.Conv1D(12, kernel_size=8, activation='relu', input_shape=(form)),
@@ -157,12 +155,6 @@ def pureCNN(form, op, lossFunc):
 
             keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
             keras.layers.MaxPool1D(pool_size=4),
-
-            keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
-            keras.layers.MaxPool1D(pool_size=2),
-
-            keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
-            keras.layers.MaxPool1D(pool_size=2),
 
             keras.layers.Conv1D(12, kernel_size=8, activation='relu'),
             keras.layers.MaxPool1D(pool_size=2),
@@ -189,27 +181,27 @@ def pureCNN(form, op, lossFunc):
         # ])
 
         # A2
-        model = keras.models.Sequential([
-            # convolutional layers
-            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(form)),
-            keras.layers.MaxPool2D(pool_size=(2,1)),
+        # model = keras.models.Sequential([
+        #     # convolutional layers
+        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(form)),
+        #     keras.layers.MaxPool2D(pool_size=(2,1)),
 
-            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(2,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(2,1)),
 
-            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(2,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(2,1)),
 
-            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(2,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(2,1)),
 
-            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(2,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(2,1)),
 
-            keras.layers.Conv2D(1, kernel_size=(2,2), activation='relu'),
+        #     keras.layers.Conv2D(1, kernel_size=(2,2), activation='relu'),
 
-            keras.layers.Flatten()
-        ])
+        #     keras.layers.Flatten()
+        # ])
 
         # A3
         # model = keras.models.Sequential([
@@ -228,13 +220,39 @@ def pureCNN(form, op, lossFunc):
         #     keras.layers.Flatten()
         # ])
 
+        # A4
+        model = keras.models.Sequential([
+            # convolutional layers
+            keras.layers.Conv2D(12, kernel_size=(6,2), activation='relu', input_shape=(form)),
+            keras.layers.MaxPool2D(pool_size=(4,1)),
+
+            keras.layers.Conv2D(12, kernel_size=(6,1), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(4,1)),
+
+            keras.layers.Conv2D(12, kernel_size=(6,1), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(4,1)),
+
+            keras.layers.Conv2D(1, kernel_size=(3,1), activation='relu'),
+
+            keras.layers.Flatten()
+        ])
+
     model.compile(optimizer=op, loss=lossFunc)
     return model
 
-def rnn(form):
-    print()
-    
 
+def rnn(form, op, lossFunc):
+    print(form)
+    model = keras.models.Sequential([
+        keras.Input(shape=form),
+        keras.layers.GRU(50, return_sequences=True, activation='relu'),
+        keras.layers.GRU(20, activation='relu'),
+        keras.layers.Dense(1)
+    ])
+
+    model.compile(optimizer=op, loss=lossFunc)
+    return model
+    
 
 def wavenet(form):
     if form[1] < 2:
