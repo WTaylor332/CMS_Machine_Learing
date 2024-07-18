@@ -97,9 +97,9 @@ def rawModelSplit(z, pt, eta, pv):
 
     print(z.shape, pt.shape, eta.shape)
 
-    z = z[:,:250]
-    pt = pt[:,:250]
-    eta = eta[:,:250]
+    z = z[:,:200]
+    pt = pt[:,:200]
+    eta = eta[:,:200]
     z = np.nan_to_num(z, nan=-9999)
     pt = np.nan_to_num(pt, nan=-9999)
     eta = np.nan_to_num(eta, nan=-9999)
