@@ -364,6 +364,18 @@ clock = int(time.time())
 
 # print()
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+sum = 0
+print(sum)
+for i in tqdm(range(xTrain.shape[0])):
+    index = np.where(xTrain[i,0] < -50)[0]
+    if len(index) > 0:
+        sum += index[0]
+print(xTrain.shape[0])
+print(xTrain.shape)
+print(sum)
+print((xTrain.shape[0]*xTrain.shape[2]-sum)/(xTrain.shape[0]*xTrain.shape[2]))
+print(np.mean(xTrain))
+print(xTrain.shape, xTest.shape, xValid.shape)
 model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 testing(model, history, xValid, yValid, xTest, yTest, name)
 
