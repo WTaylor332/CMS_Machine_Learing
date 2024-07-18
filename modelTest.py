@@ -106,9 +106,9 @@ def rawModelSplit(z, pt, eta, pv):
     # print(z[0], z[1])
     # print(z[:2])
 
-    # z = np.nan_to_num(z, nan=9999.)
-    # pt = np.nan_to_num(pt, nan=9999.)
-    # eta = np.nan_to_num(eta, nan=9999.)
+    z = np.nan_to_num(z, nan=-1000)
+    pt = np.nan_to_num(pt, nan=-1000)
+    eta = np.nan_to_num(eta, nan=-1000)
 
     binDataAll = np.stack((z,pt,eta), axis=1)
     print(binDataAll.shape)
