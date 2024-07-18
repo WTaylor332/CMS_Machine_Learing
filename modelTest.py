@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import time
 import os
-import tqdm
+from tqdm import tqdm
 print()
 import tensorflow as tf 
 from tensorflow import keras
@@ -100,10 +100,11 @@ def rawModelSplit(z, pt, eta, pv):
     z = columnZ.reshape(pt.shape[0], pt.shape[1])
 
     z = np.nan_to_num(z, nan=-9999)
-    # z = z[:,:250]
+    z = z[:,:200]
     pt = np.nan_to_num(pt, nan=-9999)
-    # pt = pt[:,:250]
+    pt = pt[:,:200]
     eta = np.nan_to_num(eta, nan=-9999)
+    eta = eta[:,:200]
 
     print(z.shape, pt.shape, eta.shape)
 
@@ -124,8 +125,6 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     else:
         num = 2
     form = (xTrain.shape[1], xTrain.shape[2])
-    # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1], 1)
-    # xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1], 1)
 
     # creating model
     op = keras.optimizers.Adam(learning_rate=0.01)
@@ -352,6 +351,7 @@ zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 trackLength, maxTrack = rawD['tl'], rawD['maxValue']
 print(trackLength)
 print(np.mean(trackLength))
+print(np.std(trackLength))
 
 clock = int(time.time())
 
@@ -365,18 +365,20 @@ clock = int(time.time())
 # testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-# sum = 0
-# print(sum)
-# for i in tqdm(range(xTrain.shape[0])):
-#     index = np.where(xTrain[i,0] < -50)[0]
-#     if len(index) > 0:
-#         sum += index[0]
-# print(xTrain.shape[0])
-# print(xTrain.shape)
-# print(sum)
-# print((xTrain.shape[0]*xTrain.shape[2]-sum)/(xTrain.shape[0]*xTrain.shape[2]))
-# print(np.mean(xTrain))
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+sum = 0
+print(sum)
+for i in tqdm(range(xTrain.shape[0])):
+    index = np.where(xTrain[i,0] < -9000)[0]
+    if len(index) > 0:
+        sum += index[0]
+    else:
+        sum += len(xTrain[i,0])
+print(xTrain.shape[0])
+print(xTrain.shape)
+print(sum)
+print((xTrain.shape[0]*xTrain.shape[2]-sum)/(xTrain.shape[0]*xTrain.shape[2])*100)
+print(np.mean(xTrain))
 # print(xTrain.shape, xTest.shape, xValid.shape)
 # model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 # testing(model, history, xValid, yValid, xTest, yTest, name)
