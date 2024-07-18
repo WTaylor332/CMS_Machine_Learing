@@ -150,7 +150,7 @@ print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
 # print(q['ptB'].shape)
 # print(q['tB'].shape)
 
-# merge and scramble all decays
+# merge and sort all decays
 rawQ = np.load('QCD_Pt-15To3000.npz')
 rawW = np.load('WJetsToLNu.npz')
 rawT = np.load('TTbarRaw5.npz')
