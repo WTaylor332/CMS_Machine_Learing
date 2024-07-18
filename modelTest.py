@@ -6,11 +6,10 @@ import tqdm
 print()
 import tensorflow as tf 
 from tensorflow import keras
-import h5py
 print()
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
-from model_types import convModel as cnn, multiLayerPerceptron as mlp, pureCNN as pcnn
+from model_types import convModel as cnn, pureCNN as pcnn, rnn
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
@@ -47,7 +46,7 @@ def binModelSplit(pt, pv, track=np.array([])):
 def binModel(xTrain, yTrain, xValid, yValid):
 
     if len(xTrain.shape) > 2:
-        form = (xTrain.shape[2], 2, 1)
+        form = (xTrain.shape[2], xTrain.shape[1], 1)
         xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1], 1)
         xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1], 1)
         num = 2
@@ -76,7 +75,9 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     epochNo = 500
     print(modelName)
-    history = model.fit(xTrain, yTrain, epochs=epochNo, validation_data=(xValid, yValid), callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
+    history = model.fit(xTrain, yTrain, epochs=epochNo,\
+                        validation_data=(xValid, yValid),\
+                        callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
 
     checkpointFilename = os.path.join(modelDirectory, weights)
     check = os.path.isdir(modelDirectory)
@@ -91,7 +92,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
     return model, history, modelName
 
 
-def rawModelSplit(z, pt, pv):
+def rawModelSplit(z, pt, eta, pv):
     # scaling z
     columnZ = z.reshape(z.shape[0]*z.shape[1], 1)
     scaler = StandardScaler().fit(columnZ)
@@ -99,10 +100,14 @@ def rawModelSplit(z, pt, pv):
     z = columnZ.reshape(pt.shape[0], pt.shape[1])
 
     z = np.nan_to_num(z, nan=-9999)
-    z = z[:,:250]
+    # z = z[:,:250]
     pt = np.nan_to_num(pt, nan=-9999)
-    pt = pt[:,:250]
-    binDataAll = np.stack((z,pt), axis=1)
+    # pt = pt[:,:250]
+    eta = np.nan_to_num(eta, nan=-9999)
+
+    print(z.shape, pt.shape, eta.shape)
+
+    binDataAll = np.stack((z,pt,eta), axis=1)
 
     # splitting data into test, validation and training data
     t = len(binDataAll)//10
@@ -114,26 +119,37 @@ def rawModelSplit(z, pt, pv):
 
 
 def rawModel(xTrain, yTrain, xValid, yValid):
-    form = (2, xTrain.shape[1])
+    if xTrain.shape[1] > 2:
+        num = 3
+    else:
+        num = 2
+    form = (xTrain.shape[1], xTrain.shape[2])
+    # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1], 1)
+    # xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1], 1)
 
     # creating model
-    model = keras.models.Sequential([
-        # convolutional layer
-        # keras.layers.Conv1D(14, kernel_size = (1,8), input_shape=(2,z.shape[1]), stride=1),
-        # keras.layers.MaxPool2D(pool_size=(,2)),
+    op = keras.optimizers.Adam(learning_rate=0.01)
+    lossFunc = keras.losses.Huber()
 
-        # multi layer perceptron
-        keras.layers.Flatten(input_shape=(2,xTrain.shape[1])),
-        keras.layers.Dense(50, activation="relu"),
-        keras.layers.Dense(25, activation="relu"),
-        keras.layers.Dense(1)
-    ])
+    model = rnn(form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
-    weights = "Raw_model_weights_{t}.h5".format(t=int(time.time()))
+    weights = "Raw_model_{n}inputs_rnn_weights_{o}_{l}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, t=clock)
     modelDirectory = "models"
-    modelName = "Raw_model_{o}_{l}_{t}".format(o='adam', l='huber', t=clock)
+    modelName = "Raw_model_{n}inputs_rnn_{o}_{l}_{t}".format(n=num, o='adam', l=lossFunc.name, t=clock)
+
+    checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
+    csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
+    stopTraining = haltCallback()
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)
+
+    epochNum = 500
+    print(modelName)
+    history = model.fit(xTrain, yTrain, epochs=epochNum,\
+                        validation_data=(xValid, yValid),\
+                        callbacks=[checkpointCallback, lr, csvLogger, stopTraining, earlyStop])
 
     checkpointFilename = os.path.join(modelDirectory, weights)
     check = os.path.isdir(modelDirectory)
@@ -141,22 +157,9 @@ def rawModel(xTrain, yTrain, xValid, yValid):
         os.makedirs(modelDirectory)
         print("Created directory:" , modelDirectory)
 
-    op = keras.optimizers.Adam(learning_rate=0.01)
-    lossFunc = keras.losses.Huber()
-
-    model.compile(optimizer=op,
-    loss = lossFunc)
-
-    checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=2, cooldown = 1, min_lr=0.000001, verbose=1)
-    csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
-
-    history = model.fit(xTrain, yTrain, epochs=10, validation_data=(xValid, yValid), callbacks=[checkpointCallback, lr, csvLogger])
-
     # saves full model
-    modelName = "Raw_model_{o}_{l}_{t}".format(o=model.optimizer.name, l=model.loss.name, t=clock)
     modelFilename = os.path.join(modelDirectory, modelName)
-    model.save(modelName)
+    model.save(modelName+'.keras')
 
     return model, history, modelName
 
@@ -342,9 +345,9 @@ def testLoadedModel(model, xTest, yTest, name):
 # ----------------------------------------------------- main --------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-rawD = np.load('TTbarRaw3.npz')
+rawD = np.load('TTbarRaw5.npz')
 binD = np.load('TTbarBin4.npz')
-zRaw, ptRaw, pvRaw = rawD['z'], rawD['pt'], rawD['pv']
+zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
 trackLength, maxTrack = rawD['tl'], rawD['maxValue']
 
@@ -355,14 +358,14 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 # print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 
