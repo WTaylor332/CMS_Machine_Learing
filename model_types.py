@@ -272,7 +272,7 @@ def rnn(form, op, lossFunc):
         keras.Input(shape=form),
         # keras.layers.Masking(mask_value=-9999),
         # keras.layers.GRU(100, return_sequences=True, activation='relu'),
-        keras.layers.Masking(mask_value=-1000),
+        keras.layers.Masking(mask_value=0.),
         keras.layers.LSTM(50, activation='relu'),
         keras.layers.Dense(1)
     ])
