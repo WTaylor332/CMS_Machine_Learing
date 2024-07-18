@@ -83,14 +83,14 @@ def convModel(shape, op, lossFunc):
         # A1
         # model = keras.models.Sequential([
         #     # convolutional layers
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(shape)),
-        #     keras.layers.MaxPool2D(pool_size=(4,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(shape)),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(4,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(2,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,2)),
 
         #     # multi later perceptron
         #     keras.layers.Flatten(),
@@ -101,14 +101,14 @@ def convModel(shape, op, lossFunc):
         # A2
         model = keras.models.Sequential([
             # convolutional layers
-            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(shape)),
-            keras.layers.MaxPool2D(pool_size=(4,1)),
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(shape)),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
 
-            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(4,1)),
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
 
-            keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(2,1)),
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,2)),
 
             # multi later perceptron
             keras.layers.Flatten(),
@@ -121,14 +121,14 @@ def convModel(shape, op, lossFunc):
         # A3
         # model = keras.models.Sequential([
         #     # convolutional layers
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(shape)),
-        #     keras.layers.MaxPool2D(pool_size=(4,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(shape)),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(4,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(2,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,2)),
 
         #     # multi later perceptron
         #     keras.layers.Flatten(),
@@ -166,14 +166,14 @@ def pureCNN(form, op, lossFunc):
         # A1
         # model = keras.models.Sequential([
         #     # convolutional layers
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(form)),
-        #     keras.layers.MaxPool2D(pool_size=(4,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form)),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(4,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(4,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
         #     keras.layers.Conv2D(1, kernel_size=(2,2), activation='relu'),
 
@@ -183,20 +183,20 @@ def pureCNN(form, op, lossFunc):
         # A2
         # model = keras.models.Sequential([
         #     # convolutional layers
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(form)),
-        #     keras.layers.MaxPool2D(pool_size=(2,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form)),
+        #     keras.layers.MaxPool2D(pool_size=(1,2)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(2,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,2)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(2,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,2)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(2,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,2)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(2,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,2)),
 
         #     keras.layers.Conv2D(1, kernel_size=(2,2), activation='relu'),
 
@@ -206,16 +206,16 @@ def pureCNN(form, op, lossFunc):
         # A3
         # model = keras.models.Sequential([
         #     # convolutional layers
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu', input_shape=(form)),
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(4,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(4,1)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(8,1), activation='relu'),
-        #     keras.layers.Conv2D(1, kernel_size=(7,2), activation='relu'),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.Conv2D(1, kernel_size=(2,7), activation='relu'),
 
         #     keras.layers.Flatten()
         # ])
@@ -223,16 +223,16 @@ def pureCNN(form, op, lossFunc):
         # A4
         model = keras.models.Sequential([
             # convolutional layers
-            keras.layers.Conv2D(12, kernel_size=(6,2), activation='relu', input_shape=(form)),
-            keras.layers.MaxPool2D(pool_size=(4,1)),
+            keras.layers.Conv2D(12, kernel_size=(2,6), activation='relu', input_shape=(form)),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
 
-            keras.layers.Conv2D(12, kernel_size=(6,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(4,1)),
+            keras.layers.Conv2D(12, kernel_size=(1,6), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
 
-            keras.layers.Conv2D(12, kernel_size=(6,1), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(4,1)),
+            keras.layers.Conv2D(12, kernel_size=(1,6), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
 
-            keras.layers.Conv2D(1, kernel_size=(3,1), activation='relu'),
+            keras.layers.Conv2D(1, kernel_size=(1,3), activation='relu'),
 
             keras.layers.Flatten()
         ])
@@ -245,8 +245,8 @@ def rnn(form, op, lossFunc):
     print(form)
     model = keras.models.Sequential([
         keras.Input(shape=form),
-        keras.layers.GRU(50, return_sequences=True, activation='relu'),
-        keras.layers.GRU(20, activation='relu'),
+        keras.layers.GRU(100, return_sequences=True, activation='relu'),
+        keras.layers.GRU(50, activation='relu'),
         keras.layers.Dense(1)
     ])
 
