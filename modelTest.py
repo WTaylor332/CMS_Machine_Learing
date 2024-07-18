@@ -346,10 +346,12 @@ def testLoadedModel(model, xTest, yTest, name):
 
 # loading numpy arrays of data
 rawD = np.load('TTbarRaw5.npz')
-binD = np.load('TTbarBin4.npz')
+# binD = np.load('TTbarBin4.npz')
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
-ptBin, trackBin = binD['ptB'], binD['tB']
+# ptBin, trackBin = binD['ptB'], binD['tB']
 trackLength, maxTrack = rawD['tl'], rawD['maxValue']
+print(trackLength)
+print(np.mean(trackLength))
 
 clock = int(time.time())
 
@@ -363,21 +365,21 @@ clock = int(time.time())
 # testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-sum = 0
-print(sum)
-for i in tqdm(range(xTrain.shape[0])):
-    index = np.where(xTrain[i,0] < -50)[0]
-    if len(index) > 0:
-        sum += index[0]
-print(xTrain.shape[0])
-print(xTrain.shape)
-print(sum)
-print((xTrain.shape[0]*xTrain.shape[2]-sum)/(xTrain.shape[0]*xTrain.shape[2]))
-print(np.mean(xTrain))
-print(xTrain.shape, xTest.shape, xValid.shape)
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+# sum = 0
+# print(sum)
+# for i in tqdm(range(xTrain.shape[0])):
+#     index = np.where(xTrain[i,0] < -50)[0]
+#     if len(index) > 0:
+#         sum += index[0]
+# print(xTrain.shape[0])
+# print(xTrain.shape)
+# print(sum)
+# print((xTrain.shape[0]*xTrain.shape[2]-sum)/(xTrain.shape[0]*xTrain.shape[2]))
+# print(np.mean(xTrain))
+# print(xTrain.shape, xTest.shape, xValid.shape)
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 
