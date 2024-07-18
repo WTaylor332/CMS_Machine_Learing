@@ -38,10 +38,13 @@ def rawPaddedData(eventZ, eventPT, eventEta):
     maxTLength = 0
     for i in tqdm(range(len(eventZ))):
 
+        trackLength[i] = len(eventZ[i])
+
         zSort = np.zeros(padSize)
         padding = np.array([np.nan for x in range((padSize-len(eventZ[i])))])
         zSort[:len(eventZ[i])] = eventZ[i]
         zSort[len(eventZ[i]):] = padding
+
 
         ptSort = np.zeros(padSize)
         ptSort[:len(eventPT[i])] = eventPT[i]
@@ -60,7 +63,7 @@ def rawPaddedData(eventZ, eventPT, eventEta):
 
         if np.argwhere(np.isnan(zSort))[0][0] > maxTLength:
             maxTLength = np.argwhere(np.isnan(zSort))[0][0]
-            trackLength[i] = np.argwhere(np.isnan(zSort))[0][0]
+
 
         eventZData[i] = zSort
         eventPTData[i] = ptSort
@@ -120,7 +123,7 @@ def histogramData(z, pt):
 # -----------------------------------------------------------------MAIN----------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------------------------
 
-name = "TTbar.root"
+name = "WJetsToLNu.root"
 eventZ,  eventPT, eventPV, eventEta = loadData(name)
 
 zRaw, ptRaw, etaRaw, trackLength, mv = rawPaddedData(eventZ, eventPT, eventEta)
@@ -130,9 +133,9 @@ print(zRaw[0])
 print(ptRaw[0])
 print(etaRaw[0])
 
-np.savez('TTbarRaw5', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
+np.savez('WJetsToLNu', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
 
-rawD = np.load('TTbarRaw5.npz')
+rawD = np.load('WJetsToLNu.npz')
 zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
 t = rawD['tl']
 m = rawD['maxValue']
