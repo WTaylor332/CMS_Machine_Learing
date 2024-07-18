@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
+import numpy as np
 
 def multiLayerPerceptron(form, op, lossFunc):
     model = keras.models.Sequential([
@@ -243,12 +244,12 @@ def pureCNN(form, op, lossFunc):
 
 def rnn(form, op, lossFunc):
     print(form)
-    model = keras.models.Sequential([
-        keras.Input(shape=form),
-        keras.layers.GRU(100, return_sequences=True, activation='relu'),
-        keras.layers.GRU(50, activation='relu'),
-        keras.layers.Dense(1)
-    ])
+    # model = keras.models.Sequential([
+    #     keras.Input(shape=form),
+    #     keras.layers.GRU(100, return_sequences=True, activation='relu'),
+    #     keras.layers.GRU(50, activation='relu'),
+    #     keras.layers.Dense(1)
+    # ])
 
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
@@ -257,13 +258,14 @@ def rnn(form, op, lossFunc):
     #     keras.layers.Dense(1)
     # ])
     # masking model
-    # model = keras.models.Sequential([
-    #     keras.Input(shape=form),
-    #     keras.layers.Masking(mask_value=-9999),
-    #     keras.layers.GRU(100, return_sequences=True, activation='relu'),
-    #     keras.layers.GRU(50, activation='relu'),
-    #     keras.layers.Dense(1)
-    # ])
+    model = keras.models.Sequential([
+        keras.Input(shape=form),
+        # keras.layers.Masking(mask_value=-9999),
+        # keras.layers.GRU(100, return_sequences=True, activation='relu'),
+        keras.layers.Masking(mask_value=np.nan),
+        keras.layers.GRU(50, activation='relu'),
+        keras.layers.Dense(1)
+    ])
 
     model.compile(optimizer=op, loss=lossFunc)
     return model

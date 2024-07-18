@@ -101,14 +101,14 @@ def rawModelSplit(z, pt, eta, pv):
     # pt = pt[:,:150]
     # eta = eta[:,:150]
 
-    z = np.delete(z, np.argwhere(np.isnan(z)))
-    print(len(z))
-    print(z[0], z[1])
-    print(z[:2])
+    # z = np.delete(z, np.argwhere(np.isnan(z)))
+    # print(len(z))
+    # print(z[0], z[1])
+    # print(z[:2])
 
-    z = np.nan_to_num(z, nan=-9999)
-    pt = np.nan_to_num(pt, nan=-9999)
-    eta = np.nan_to_num(eta, nan=-9999)
+    # z = np.nan_to_num(z, nan=9999.)
+    # pt = np.nan_to_num(pt, nan=9999.)
+    # eta = np.nan_to_num(eta, nan=9999.)
 
     binDataAll = np.stack((z,pt,eta), axis=1)
     print(binDataAll.shape)
@@ -358,17 +358,17 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 # print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2]) #, 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2]) #, 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2]) #, 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2]) #, 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
