@@ -123,7 +123,7 @@ def histogramData(z, pt):
 # -----------------------------------------------------------------MAIN----------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------------------------
 
-name = "WJetsToLNu.root"
+name = "QCD_Pt-15To3000.root"
 eventZ,  eventPT, eventPV, eventEta = loadData(name)
 
 zRaw, ptRaw, etaRaw, trackLength, mv = rawPaddedData(eventZ, eventPT, eventEta)
@@ -133,13 +133,13 @@ print(zRaw[0])
 print(ptRaw[0])
 print(etaRaw[0])
 
-np.savez('WJetsToLNu', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
+np.savez('QCD_Pt-15To3000', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
 
-rawD = np.load('WJetsToLNu.npz')
+rawD = np.load('QCD_Pt-15To3000.npz')
 zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
 t = rawD['tl']
 m = rawD['maxValue']
-print(zRaw[0], ptRaw[0], etaRaw[0], t[0], m)
+print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
 
 
 # ptBin, trackBin = histogramData(zRaw, ptRaw)
@@ -150,4 +150,19 @@ print(zRaw[0], ptRaw[0], etaRaw[0], t[0], m)
 # print(q['ptB'].shape)
 # print(q['tB'].shape)
 
+# merge and scramble all decays
+rawQ = np.load('QCD_Pt-15To3000.npz')
+rawW = np.load('WJetsToLNu.npz')
+rawT = np.load('TTbarRaw5.npz')
 
+z = np.concatenate(rawQ['z'], rawW['z'], rawT['z'])
+pt = np.concatenate(rawQ['z'], rawW['z'], rawT['z'])
+eta = np.concatenate(rawQ['z'], rawW['z'], rawT['z'])
+
+index = np.argsort(z[:])
+zRawMerged = np.sort(z[:])
+ptRawMerged = pt[index]
+etaRawMerged = eta[index]
+
+# bin merged decays
+ptBin, trackBin = histogramData(zRawMerged, ptRawMerged)
