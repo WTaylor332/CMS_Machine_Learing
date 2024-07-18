@@ -317,10 +317,10 @@ def wavenet(form, op, lossFunc):
             keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form), dilation_rate=(1,2)),
             keras.layers.MaxPool2D(pool_size=(1,4)),
 
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', dilation_rate=(1,2)),
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'), # dilation_rate=(1,2)),
             keras.layers.MaxPool2D(pool_size=(1,4)),
 
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', dilation_rate=(1,2)),
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'), # dilation_rate=(1,2)),
             keras.layers.MaxPool2D(pool_size=(1,2)),
 
             # multi later perceptron

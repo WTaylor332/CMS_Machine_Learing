@@ -9,7 +9,7 @@ from tensorflow import keras
 print()
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
-from model_types import convModel as cnn, pureCNN as pcnn, rnn
+from model_types import convModel as cnn, pureCNN as pcnn, rnn, wavenet
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
@@ -54,7 +54,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     op = keras.optimizers.Adam()
     lossFunc = keras.losses.Huber()
-    model = rnn(form, op, lossFunc)
+    model = wavenet(form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
@@ -349,26 +349,24 @@ zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
 # trackLength, maxTrack = rawD['tl'], rawD['maxValue']
 
-
-
 clock = int(time.time())
 
 # plt.hist(trackLength, bins=100, color='red')
 # plt.plot()
 # plt.savefig("TTbarTrackDistribution.png")
 
-# print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2]) #, 1)
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2]) #, 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+print()
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
