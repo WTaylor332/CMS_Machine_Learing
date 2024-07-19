@@ -102,28 +102,38 @@ def rawModelSplit(z, pt, eta, pv):
     # eta = eta[:,:150]
 
     # getting jagged data
-    zJagged = [0]*z.shape[0]
-    ptJagged = [0]*pt.shape[0]
-    etaJagged = [0]*eta.shape[0]
-    for i in tqdm(range(len(z))):
-        zJagged[i] = z[i][:int(trackLength[i])]
-        ptJagged[i] = pt[i][:int(trackLength[i])]
-        etaJagged[i] = eta[i][:int(trackLength[i])]
-    print(zJagged[0])
-    print(ptJagged[0])
-    print(etaJagged[0])
-    zJagged = tf.ragged.constant(zJagged)
-    ptJagged = tf.ragged.constant(ptJagged)
-    etaJagged = tf.ragged.constant(etaJagged)
+    # zJagged = [0]*z.shape[0]
+    # ptJagged = [0]*pt.shape[0]
+    # etaJagged = [0]*eta.shape[0]
+
+    allJag = [0]*z.shape[0]
+    print(len(allJag))
+    for i in tqdm(range(z.shape[0])):
+        track = [0]*int(trackLength[i])
+        for j in range(0, int(trackLength[i])):
+            track[j] = [z[i,j], pt[i,j], eta[i,j]]
+        allJag[i] = track
+    
+    # collects jagged data in different format
+        # zJagged[i] = z[i][:int(trackLength[i])]
+        # ptJagged[i] = pt[i][:int(trackLength[i])]
+        # etaJagged[i] = eta[i][:int(trackLength[i])]
+
+    # method using tf.stack 
+    # zJagged = tf.ragged.constant(zJagged)
+    # ptJagged = tf.ragged.constant(ptJagged)
+    # etaJagged = tf.ragged.constant(etaJagged)
+    # allJag = tf.ragged.stack([zJagged, ptJagged, etaJagged], axis=1)
+
+    # method using for loop - quicker than stack
     # allJag = [0]*z.shape[0]
-    allJag = tf.ragged.stack([zJagged, ptJagged, etaJagged], axis=1)
     # for i in tqdm(range(len(z))):
     #     allJag[i] = tf.concat([[zJagged[i]], [ptJagged[i]], [etaJagged[i]]], axis=0)
-    print()
-    print(allJag[0])
+    # print()
+    # print(allJag[0])
 
-    import sys
-    sys.exit()
+    # import sys
+    # sys.exit()
 
     z = np.nan_to_num(z, nan=0.)
     pt = np.nan_to_num(pt, nan=0.)
@@ -135,8 +145,12 @@ def rawModelSplit(z, pt, eta, pv):
     # splitting data into test, validation and training data
     t = len(rawDataAll)//10
     v = len(rawDataAll)//5
-    xTest, xValid, xTrain = rawDataAll[:t], rawDataAll[t:v], rawDataAll[v:]
+    # xTest, xValid, xTrain = rawDataAll[:t], rawDataAll[t:v], rawDataAll[v:]
     yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
+
+    # jagged data split
+    xTest, xValid, xTrain = allJag[:t], allJag[t:v], allJag[v:]
+
 
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
