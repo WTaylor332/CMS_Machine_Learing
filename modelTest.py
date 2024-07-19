@@ -102,25 +102,40 @@ def rawModelSplit(z, pt, eta, pv):
     # eta = eta[:,:150]
 
     # getting jagged data
-    # zJagged = [0]*z.shape[0]
-    # ptJagged = [0]*pt.shape[0]
-    # etaJagged = [0]*eta.shape[0]
-    # for i in tqdm(range(len(zRaw))):
-    #     zJagged[i] = z[i][:int(trackLength[i])]
-    #     ptJagged[i] = pt[i][:int(trackLength[i])]
-    #     etaJagged[i] = eta[i][:int(trackLength[i])]
+    zJagged = [0]*z.shape[0]
+    ptJagged = [0]*pt.shape[0]
+    etaJagged = [0]*eta.shape[0]
+    for i in tqdm(range(len(z))):
+        zJagged[i] = z[i][:int(trackLength[i])]
+        ptJagged[i] = pt[i][:int(trackLength[i])]
+        etaJagged[i] = eta[i][:int(trackLength[i])]
+    print(zJagged[0])
+    print(ptJagged[0])
+    print(etaJagged[0])
+    zJagged = tf.ragged.constant(zJagged)
+    ptJagged = tf.ragged.constant(ptJagged)
+    etaJagged = tf.ragged.constant(etaJagged)
+    # allJag = [0]*z.shape[0]
+    allJag = tf.ragged.stack([zJagged, ptJagged, etaJagged], axis=1)
+    # for i in tqdm(range(len(z))):
+    #     allJag[i] = tf.concat([[zJagged[i]], [ptJagged[i]], [etaJagged[i]]], axis=0)
+    print()
+    print(allJag[0])
+
+    import sys
+    sys.exit()
 
     z = np.nan_to_num(z, nan=0.)
     pt = np.nan_to_num(pt, nan=0.)
     eta = np.nan_to_num(eta, nan=0.)
 
-    binDataAll = np.stack((z,pt,eta), axis=1)
-    print(binDataAll.shape)
+    rawDataAll = np.stack((z,pt,eta), axis=1)
+    print(rawDataAll.shape)
 
     # splitting data into test, validation and training data
-    t = len(binDataAll)//10
-    v = len(binDataAll)//5
-    xTest, xValid, xTrain = binDataAll[:t], binDataAll[t:v], binDataAll[v:]
+    t = len(rawDataAll)//10
+    v = len(rawDataAll)//5
+    xTest, xValid, xTrain = rawDataAll[:t], rawDataAll[t:v], rawDataAll[v:]
     yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
 
     return xTrain, yTrain, xValid, yValid, xTest, yTest
@@ -382,8 +397,11 @@ print()
 
 # print()
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
+xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1])
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
