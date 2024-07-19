@@ -131,19 +131,19 @@ def histogramData(z, pt):
 # -------------------------------------------------------------------------------------------------------------------------------------------
 
 name = "TTbar.root"
-eventZ,  eventPT, eventPV, eventEta = loadData(name)
+# eventZ,  eventPT, eventPV, eventEta = loadData(name)
 
-zRaw, ptRaw, etaRaw, trackLength, mv = rawPaddedData(eventZ, eventPT, eventEta)
+# zRaw, ptRaw, etaRaw, trackLength, mv = rawPaddedData(eventZ, eventPT, eventEta)
 
-print()
+# print()
 
-np.savez('TTbarRaw5', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
+# np.savez('TTbarRaw5', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
 
-rawD = np.load('TTbarRaw5.npz')
-zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
-t = rawD['tl']
-m = rawD['maxValue']
-print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
+# rawD = np.load('TTbarRaw5.npz')
+# zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
+# t = rawD['tl']
+# m = rawD['maxValue']
+# print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
 
 
 # ptBin, trackBin = histogramData(zRaw, ptRaw)
@@ -155,24 +155,21 @@ print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
 # print(q['tB'].shape)
 
 # getting raw jagged data
-# rawD = np.load('TTbarRaw5.npz')
-# zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
-# t = rawD['tl']
+rawD = np.load('TTbarRaw5.npz')
+zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
+t = rawD['tl']
 
-# zJagged = [0]*zRaw.shape[0]
-# print(len(zJagged))
-# # zJagged = np.array(zJagged)
-# # print(zJagged.shape)
-# print(zRaw.shape)
-# print(t.shape)
-# print(t[0])
-# for i in tqdm(range(len(zRaw))):
-#     index = np.argwhere(np.isnan(zRaw[i]))
-#     if len(index) > 0:
-#         index = index[0][0]
-#     else:
-#         index = len(zRaw[i])
-#     zJagged[i] = zRaw[i][:index]
+zJagged = [0]*zRaw.shape[0]
+print(len(zJagged))
+# zJagged = np.array(zJagged)
+# print(zJagged.shape)
+print(zRaw.shape)
+print(t.shape)
+print(t[0])
+for i in tqdm(range(len(zRaw))):
+    zJagged[i] = zRaw[i][:int(t[i])]
+
+print(len(zJagged[0]), len(zJagged[1]))
 
 
 # merge and sort all decays
