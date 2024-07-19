@@ -130,20 +130,20 @@ def histogramData(z, pt):
 # -----------------------------------------------------------------MAIN----------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------------------------
 
-# name = "QCD_Pt-15To3000.root"
-# eventZ,  eventPT, eventPV, eventEta = loadData(name)
+name = "TTbar.root"
+eventZ,  eventPT, eventPV, eventEta = loadData(name)
 
-# zRaw, ptRaw, etaRaw, trackLength, mv = rawPaddedData(eventZ, eventPT, eventEta)
+zRaw, ptRaw, etaRaw, trackLength, mv = rawPaddedData(eventZ, eventPT, eventEta)
 
 print()
 
-# np.savez('QCD_Pt-15To3000', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
+np.savez('TTbarRaw5', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
 
-# rawD = np.load('QCD_Pt-15To3000.npz')
-# zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
-# t = rawD['tl']
-# m = rawD['maxValue']
-# print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
+rawD = np.load('TTbarRaw5.npz')
+zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
+t = rawD['tl']
+m = rawD['maxValue']
+print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
 
 
 # ptBin, trackBin = histogramData(zRaw, ptRaw)
