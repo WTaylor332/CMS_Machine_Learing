@@ -295,9 +295,9 @@ def rnn(form, op, lossFunc, size=0):
 
     # Ragged RNN model
     model = keras.models.Sequential([
-        keras.Input(shape=[None], dytpe=tf.float64, ragged=True),
+        keras.layers.InputLayer(shape=[None], dytpe=tf.float64, ragged=True),
         keras.layers.Embedding(size, 16),
-        keras.layers.GRU(20, use_bias=False, return_sequence=True, activation='relu'),
+        keras.layers.GRU(20, use_bias=False, return_sequences=True, activation='relu'),
         keras.layers.GRU(20, use_bias=False, activation='relu'),
         keras.layers.Dense(1)
     ])
