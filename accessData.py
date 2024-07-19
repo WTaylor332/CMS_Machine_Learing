@@ -173,14 +173,6 @@ print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
 #     else:
 #         index = len(zRaw[i])
 #     zJagged[i] = zRaw[i][:index]
-#     # zJagged[i] = zRaw[i][:int(t[i])]
-
-# print(zJagged[0])
-# print(zJagged[1])
-# print(zJagged[2])
-
-# print(len(zJagged[0]))
-# print(len(zJagged[0]), len(zJagged[1]), len(zJagged[2]))
 
 
 # merge and sort all decays
