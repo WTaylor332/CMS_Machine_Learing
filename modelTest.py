@@ -134,15 +134,12 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     form = (xTrain.shape[1], xTrain.shape[2])
     print(len(xTrain))
     print(form)
-    
-    # import sys
-    # sys.exit()
 
     # creating model
     op = keras.optimizers.Adam(learning_rate=0.01)
     lossFunc = keras.losses.Huber()
 
-    model = rnn(len(xTrain), form, op, lossFunc)
+    model = rnn(form, op, lossFunc, len(xTrain))
     model.summary()
     
     # saving the model and best weights
