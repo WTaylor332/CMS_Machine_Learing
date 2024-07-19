@@ -101,10 +101,14 @@ def rawModelSplit(z, pt, eta, pv):
     # pt = pt[:,:150]
     # eta = eta[:,:150]
 
-    # z = np.delete(z, np.argwhere(np.isnan(z)))
-    # print(len(z))
-    # print(z[0], z[1])
-    # print(z[:2])
+    # getting jagged data
+    # zJagged = [0]*z.shape[0]
+    # ptJagged = [0]*pt.shape[0]
+    # etaJagged = [0]*eta.shape[0]
+    # for i in tqdm(range(len(zRaw))):
+    #     zJagged[i] = z[i][:int(trackLength[i])]
+    #     ptJagged[i] = pt[i][:int(trackLength[i])]
+    #     etaJagged[i] = eta[i][:int(trackLength[i])]
 
     z = np.nan_to_num(z, nan=0.)
     pt = np.nan_to_num(pt, nan=0.)
@@ -128,11 +132,17 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     else:
         num = 2
     form = (xTrain.shape[1], xTrain.shape[2])
+    print(len(xTrain))
+    print(form)
+    
+    # import sys
+    # sys.exit()
+
     # creating model
     op = keras.optimizers.Adam(learning_rate=0.01)
     lossFunc = keras.losses.Huber()
 
-    model = rnn(form, op, lossFunc)
+    model = rnn(len(xTrain), form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
@@ -181,7 +191,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     epochs = range(1, len(loss) + 1)
 
     plt.clf()
-    plt.plot(epochs, loss, 'bo', label='Training Loss')
+    plt.plot(epochs, loss, 'b', color='blue', label='Training Loss')
     plt.plot(epochs, val_loss, 'b', color='red', label='Validation Loss')
     plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
     plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
@@ -232,7 +242,7 @@ def comparison(models, train, xTest, yTest):
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     # yPredicted = np.zeros((len(models), len(yTest)))
-    labels = np.array(['A2', 'A2', 'A3', 'A1'])
+    # labels = np.array(['A2', 'A2', 'A3', 'A1'])
     for i in range(0, len(models)):
         print(i)
         if i == 1:
@@ -264,7 +274,7 @@ def comparison(models, train, xTest, yTest):
         percentile = np.zeros(len(sortedDiff)) + 90
         tolerance = np.zeros(len(sortedDiff)) + 0.1
 
-        plt.plot(sortedDiff, percent, label=labels[i])
+        plt.plot(sortedDiff, percent, label=models[i])
         print()
     plt.legend()
     plt.title("Percentage of values vs loss")
@@ -344,11 +354,20 @@ def testLoadedModel(model, xTest, yTest, name):
 
 # loading numpy arrays of data
 rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+binD = np.load('TTbarBin4.npz')
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
-# ptBin, trackBin = binD['ptB'], binD['tB']
-# trackLength, maxTrack = rawD['tl'], rawD['maxValue']
+ptBin, trackBin = binD['ptB'], binD['tB']
+trackLength, maxTrack = rawD['tl'], rawD['maxValue']
     
+# getting jagged data
+# zJagged = [0]*zRaw.shape[0]
+# ptJagged = [0]*ptRaw.shape[0]
+# etaJagged = [0]*etaRaw.shape[0]
+# for i in tqdm(range(len(zRaw))):
+#     zJagged[i] = zRaw[i][:int(trackLength[i])]
+#     ptJagged[i] = ptRaw[i][:int(trackLength[i])]
+#     etaJagged[i] = etaRaw[i][:int(trackLength[i])]
+
 
 clock = int(time.time())
 
@@ -365,16 +384,16 @@ print()
 # testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
-
 # testLoadedModel(model, xTest, yTest)
+
 
 # models = np.array(['Bin_model_2inputs_conv_weights_adam_huber_loss_1721056475.weights.h5',\
 #                    'Bin_model_conv_weights_1720614426.h5',\
