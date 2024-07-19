@@ -60,14 +60,21 @@ def rawPaddedData(eventZ, eventPT, eventEta):
         zSort = np.sort(z)
         ptSort = pt[indexSort]
         etaSort = eta[indexSort]
-
-        if np.argwhere(np.isnan(zSort))[0][0] > maxTLength:
-            maxTLength = np.argwhere(np.isnan(zSort))[0][0]
+        nanIndex = np.argwhere(np.isnan(zSort))
+        if len(nanIndex) > 0:
+            trackLength[i] = nanIndex[0][0]
+            if nanIndex[0][0] > maxTLength:
+                maxTLength = np.argwhere(np.isnan(zSort))[0][0]
+        else:
+            trackLength[i] = len(zSort)
 
 
         eventZData[i] = zSort
         eventPTData[i] = ptSort
         eventEtaData[i] = etaSort
+
+
+
 
     # to scale pt data
     zFlat = eventZData.flatten()
@@ -123,23 +130,20 @@ def histogramData(z, pt):
 # -----------------------------------------------------------------MAIN----------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------------------------
 
-name = "QCD_Pt-15To3000.root"
-eventZ,  eventPT, eventPV, eventEta = loadData(name)
+# name = "QCD_Pt-15To3000.root"
+# eventZ,  eventPT, eventPV, eventEta = loadData(name)
 
-zRaw, ptRaw, etaRaw, trackLength, mv = rawPaddedData(eventZ, eventPT, eventEta)
+# zRaw, ptRaw, etaRaw, trackLength, mv = rawPaddedData(eventZ, eventPT, eventEta)
 
 print()
-print(zRaw[0])
-print(ptRaw[0])
-print(etaRaw[0])
 
-np.savez('QCD_Pt-15To3000', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
+# np.savez('QCD_Pt-15To3000', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
 
-rawD = np.load('QCD_Pt-15To3000.npz')
-zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
-t = rawD['tl']
-m = rawD['maxValue']
-print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
+# rawD = np.load('QCD_Pt-15To3000.npz')
+# zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
+# t = rawD['tl']
+# m = rawD['maxValue']
+# print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
 
 
 # ptBin, trackBin = histogramData(zRaw, ptRaw)
@@ -150,19 +154,48 @@ print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
 # print(q['ptB'].shape)
 # print(q['tB'].shape)
 
+# getting raw jagged data
+# rawD = np.load('TTbarRaw5.npz')
+# zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
+# t = rawD['tl']
+
+# zJagged = [0]*zRaw.shape[0]
+# print(len(zJagged))
+# # zJagged = np.array(zJagged)
+# # print(zJagged.shape)
+# print(zRaw.shape)
+# print(t.shape)
+# print(t[0])
+# for i in tqdm(range(len(zRaw))):
+#     index = np.argwhere(np.isnan(zRaw[i]))
+#     if len(index) > 0:
+#         index = index[0][0]
+#     else:
+#         index = len(zRaw[i])
+#     zJagged[i] = zRaw[i][:index]
+#     # zJagged[i] = zRaw[i][:int(t[i])]
+
+# print(zJagged[0])
+# print(zJagged[1])
+# print(zJagged[2])
+
+# print(len(zJagged[0]))
+# print(len(zJagged[0]), len(zJagged[1]), len(zJagged[2]))
+
+
 # merge and sort all decays
-rawQ = np.load('QCD_Pt-15To3000.npz')
-rawW = np.load('WJetsToLNu.npz')
-rawT = np.load('TTbarRaw5.npz')
+# rawQ = np.load('QCD_Pt-15To3000.npz')
+# rawW = np.load('WJetsToLNu.npz')
+# rawT = np.load('TTbarRaw5.npz')
 
-z = np.concatenate(rawQ['z'], rawW['z'], rawT['z'])
-pt = np.concatenate(rawQ['z'], rawW['z'], rawT['z'])
-eta = np.concatenate(rawQ['z'], rawW['z'], rawT['z'])
+# z = np.concatenate(rawQ['z'], rawW['z'], rawT['z'])
+# pt = np.concatenate(rawQ['z'], rawW['z'], rawT['z'])
+# eta = np.concatenate(rawQ['z'], rawW['z'], rawT['z'])
 
-index = np.argsort(z[:])
-zRawMerged = np.sort(z[:])
-ptRawMerged = pt[index]
-etaRawMerged = eta[index]
+# index = np.argsort(z[:])
+# zRawMerged = np.sort(z[:])
+# ptRawMerged = pt[index]
+# etaRawMerged = eta[index]
 
-# bin merged decays
-ptBin, trackBin = histogramData(zRawMerged, ptRawMerged)
+# # bin merged decays
+# ptBin, trackBin = histogramData(zRawMerged, ptRawMerged)

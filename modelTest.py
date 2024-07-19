@@ -58,9 +58,9 @@ def binModel(xTrain, yTrain, xValid, yValid):
     model.summary()
     
     # saving the model and best weights
-    weights = "Bin_model_{n}inputs_rnn_weights_{o}_{l}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, t=clock)
+    weights = "Bin_model_{n}inputs_wavenet_weights_{o}_{l}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, t=clock)
     modelDirectory = "models"
-    modelName = "Bin_model_{n}inputs_rnn_{o}_{l}_{t}".format(n=num, o='adam', l=lossFunc.name, t=clock)
+    modelName = "Bin_model_{n}inputs_wavenet_{o}_{l}_{t}".format(n=num, o='adam', l=lossFunc.name, t=clock)
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
@@ -348,22 +348,6 @@ rawD = np.load('TTbarRaw5.npz')
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 # ptBin, trackBin = binD['ptB'], binD['tB']
 # trackLength, maxTrack = rawD['tl'], rawD['maxValue']
-
-# getting jagged raw data
-zJagged = [0]*zRaw.shape[0]
-print(len(zJagged))
-print(zRaw.shape)
-for i in tqdm(range(len(zRaw))):
-    index = np.argwhere(np.isnan(zRaw[i]))
-    if len(index) > 0:
-        index = index[0][0]
-    else:
-        index = zRaw.shape[1]
-    zJagged[i] = zRaw[:index]
-
-print(zJagged[0][0])
-print(len(zJagged))
-print(len(zJagged[0]), len(zJagged[1]), len(zJagged[2]))
     
 
 clock = int(time.time())
