@@ -156,11 +156,12 @@ def rawModelSplit(z, pt, eta, pv):
 
 
 def rawModel(xTrain, yTrain, xValid, yValid):
-    if xTrain.shape[1] > 2:
-        num = 3
-    else:
-        num = 2
-    form = (xTrain.shape[1], xTrain.shape[2])
+    # if xTrain.shape[1] > 2:
+        
+    num = 3
+    # else:
+        # num = 2
+    form = (len(xTrain[0]), len(xTrain[0][0]))
     print(len(xTrain))
     print(form)
 
@@ -411,10 +412,10 @@ print()
 
 # print()
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1])
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1])
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 # testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
