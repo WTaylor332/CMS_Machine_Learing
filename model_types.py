@@ -278,7 +278,7 @@ def rnn(form, op, lossFunc, size=0):
     # # LSTM Masking
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
-    #     # keras.layers.Masking(mask_value=-9999),
+    #     # keras.layers.Masking(mask_value=0.),
     #     # keras.layers.LSTM(100, return_sequences=True, activation='relu'),
     #     keras.layers.Masking(mask_value=0.),
     #     keras.layers.LSTM(50, activation='relu'),
@@ -296,7 +296,6 @@ def rnn(form, op, lossFunc, size=0):
     # Ragged RNN model
     model = keras.models.Sequential([
         keras.layers.InputLayer(shape=[None], dytpe=tf.float64, ragged=True),
-        keras.layers.Embedding(size, 2),
         keras.layers.GRU(20, use_bias=False, return_sequences=True, activation='relu'),
         keras.layers.GRU(20, use_bias=False, activation='relu'),
         keras.layers.Dense(1)
