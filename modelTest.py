@@ -13,8 +13,8 @@ from model_types import convModel as cnn, pureCNN as pcnn, rnn, wavenet
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
-        if (logs.get('val_loss') < 0.05):
-            print('\n\nValuation loss reach 0.1 so training stopped.\n\n')
+        if (logs.get('val_loss') < 0.01):
+            print('\n\nValuation loss reach 0.01 so training stopped.\n\n')
             self.model.stop_training = True
 
 
@@ -49,13 +49,13 @@ def binModel(xTrain, yTrain, xValid, yValid):
     num = 2
     op = keras.optimizers.Adam()
     lossFunc = keras.losses.Huber()
-    model = wavenet(form, op, lossFunc)
+    model = cnn(form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
-    weights = "Bin_model_{n}inputs_wavenet_weights_{o}_{l}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, t=clock)
+    weights = "Bin_model_{n}inputs_conv_weights_{o}_{l}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, t=clock)
     modelDirectory = "models"
-    modelName = "Bin_model_{n}inputs_wavenet_{o}_{l}_{t}".format(n=num, o='adam', l=lossFunc.name, t=clock)
+    modelName = "Bin_model_{n}inputs_conv_{o}_{l}_{t}".format(n=num, o='adam', l=lossFunc.name, t=clock)
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
@@ -118,31 +118,32 @@ def rawModelSplit(z, pt, eta, pv):
         trackLength[i] = int(trackLength[i])
 
     print()
-    # allJag = tf.ragged.constant(allJag, dtype=tf.float64)
     allJag = tf.RaggedTensor.from_tensor(allJag, lengths=trackLength)
     print(allJag.shape)
 
-    rawDataAll = np.stack((z,pt,eta), axis=1)
-    print(rawDataAll.shape)
+    # rawDataAll = np.stack((z,pt,eta), axis=1)
+    # print(rawDataAll.shape)
 
     # splitting data into test, validation and training data
-    t = len(rawDataAll)//10
-    v = len(rawDataAll)//5
+    t = len(pv)//10
+    v = len(pv)//5
 
+    # padded data split
     # xTest, xValid, xTrain = rawDataAll[:t], rawDataAll[t:v], rawDataAll[v:]
-    yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
-
     # jagged data split
     xTest, xValid, xTrain = allJag[:t], allJag[t:v], allJag[v:]
-
+    # desired values
+    yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
 
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
 
 def rawModel(xTrain, yTrain, xValid, yValid): 
     num = 3
-    form = (len(xTrain[0]), len(xTrain[0][0]))
-
+    form = (xTrain.shape[1], xTrain.shape[2])
+    print(xTrain.shape)
+    # import sys
+    # sys.exit()
     # creating model
     op = keras.optimizers.Adam(learning_rate=0.01)
     lossFunc = keras.losses.Huber()
@@ -162,7 +163,9 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)
 
     epochNum = 500
+    print()
     print(modelName)
+    print(xTrain.shape)
     history = model.fit(xTrain, yTrain, epochs=epochNum,\
                         validation_data=(xValid, yValid),\
                         callbacks=[checkpointCallback, lr, csvLogger, stopTraining, earlyStop])
@@ -381,20 +384,20 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1])
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models

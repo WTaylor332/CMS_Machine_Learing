@@ -100,25 +100,25 @@ def convModel(shape, op, lossFunc):
         #     keras.layers.Dense(1)
         # ])
         # A2
-        model = keras.models.Sequential([
-            # convolutional layers
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(shape)),
-            keras.layers.MaxPool2D(pool_size=(1,4)),
+        # model = keras.models.Sequential([
+        #     # convolutional layers
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(shape)),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(1,4)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(1,2)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,2)),
 
-            # multi later perceptron
-            keras.layers.Flatten(),
-            keras.layers.Dense(15, activation="relu"),
-            # keras.layers.Dropout(rate=0.3),
-            keras.layers.Dense(5, activation="relu"),
-            # keras.layers.Dropout(rate=0.3),
-            keras.layers.Dense(1)
-        ])
+        #     # multi later perceptron
+        #     keras.layers.Flatten(),
+        #     keras.layers.Dense(15, activation="relu"),
+        #     # keras.layers.Dropout(rate=0.3),
+        #     keras.layers.Dense(5, activation="relu"),
+        #     # keras.layers.Dropout(rate=0.3),
+        #     keras.layers.Dense(1)
+        # ])
         # A3
         # model = keras.models.Sequential([
         #     # convolutional layers
@@ -141,6 +141,39 @@ def convModel(shape, op, lossFunc):
         #     # keras.layers.Dropout(rate=0.3),
         #     keras.layers.Dense(1)
         # ])
+        # model = keras.models.Sequential([
+        #     # convolutional layers
+        #     keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu', input_shape=(shape)),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
+
+        #     keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
+
+        #     keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,2)),
+
+        #     # multi later perceptron
+        #     keras.layers.Flatten(),
+        #     keras.layers.Dense(30, activation="relu"),
+        #     keras.layers.Dense(1)
+        # ])
+
+        model = keras.models.Sequential([
+            # convolutional layers
+            keras.layers.Conv2D(14, kernel_size=(1,8), activation='relu', input_shape=(shape)),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
+
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
+
+            keras.layers.Conv2D(14, kernel_size=(1,8), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,2)),
+
+            # multi later perceptron
+            keras.layers.Flatten(),
+            keras.layers.Dense(30, activation="relu"),
+            keras.layers.Dense(1)
+        ])
 
     model.compile(optimizer=op, loss=lossFunc)
     return model
@@ -293,7 +326,7 @@ def rnn(form, op, lossFunc, size=0):
     #     keras.layers.Dense(1)
     # ])
 
-    # Ragged RNN model
+    # Ragged RNN model - not working
     model = keras.models.Sequential([
         keras.layers.InputLayer(shape=(None, 3), dytpe=tf.float64, ragged=True),
         keras.layers.GRU(20, use_bias=False, return_sequences=True, activation='relu'),
@@ -433,5 +466,9 @@ def wavenet(form, op, lossFunc):
     return model
 
 
-def transformer(form):
-    print()
+def transformer(form, op, lossFunc):
+    model = keras.Sequential([
+            
+    ])
+    model.compile(optimizer=op, loss=lossFunc)
+    return
