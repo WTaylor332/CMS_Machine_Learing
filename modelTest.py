@@ -45,13 +45,8 @@ def binModelSplit(pt, pv, track=np.array([])):
 
 def binModel(xTrain, yTrain, xValid, yValid):
 
-    if len(xTrain.shape) > 2:
-        form = (xTrain.shape[1], xTrain.shape[2], 1)
-        num = 2
-    else:
-        form = (xTrain.shape[1], 1)
-        num = 1
-
+    form = (xTrain.shape[1], xTrain.shape[2], 1)
+    num = 2
     op = keras.optimizers.Adam()
     lossFunc = keras.losses.Huber()
     model = wavenet(form, op, lossFunc)
@@ -95,6 +90,11 @@ def rawModelSplit(z, pt, eta, pv):
     columnZ = scaler.transform(columnZ)
     z = columnZ.reshape(pt.shape[0], pt.shape[1])
 
+
+    z = np.nan_to_num(z, nan=0)
+    pt = np.nan_to_num(pt, nan=0)
+    eta = np.nan_to_num(eta, nan=0)
+
     # z = z[:,:150]
     # pt = pt[:,:150]
     # eta = eta[:,:150]
@@ -104,14 +104,26 @@ def rawModelSplit(z, pt, eta, pv):
     # ptJagged = [0]*pt.shape[0]
     # etaJagged = [0]*eta.shape[0]
 
-    allJag = [0]*z.shape[0]
+    # allJag = np.array([[]])
+    print(int(sum(trackLength)))
+    # allJag = np.zeros(len(z)*int(sum(trackLength)))
+    allJag = np.zeros((z.shape[0], z.shape[1], 3))
+    print(len(allJag))
+    dimension1 = False
     for i in tqdm(range(z.shape[0])):
-        track = [0]*int(trackLength[i])
-        for j in range(0, int(trackLength[i])):
+        track = np.zeros((z.shape[1],3))
+        for j in range(0, z.shape[1]):
             track[j] = [z[i,j], pt[i,j], eta[i,j]]
         allJag[i] = track
-    
-    allJag = tf.ragged.constant(allJag)
+        trackLength[i] = int(trackLength[i])
+
+    print()
+    start = time.time()
+    # allJag = tf.ragged.constant(allJag, dtype=tf.float64)
+    allJag = tf.RaggedTensor.from_tensor(allJag, lengths=trackLength)
+    print(time.time() - start)
+    print(allJag[0][0])
+    print()
     print(allJag.shape)
     print(allJag.bounding_shape())
 
@@ -417,8 +429,8 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1])
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
