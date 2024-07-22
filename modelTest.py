@@ -95,8 +95,6 @@ def rawModelSplit(z, pt, eta, pv):
     columnZ = scaler.transform(columnZ)
     z = columnZ.reshape(pt.shape[0], pt.shape[1])
 
-    print(z.shape, pt.shape, eta.shape)
-
     # z = z[:,:150]
     # pt = pt[:,:150]
     # eta = eta[:,:150]
@@ -107,18 +105,22 @@ def rawModelSplit(z, pt, eta, pv):
     # etaJagged = [0]*eta.shape[0]
 
     allJag = [0]*z.shape[0]
-    print(len(allJag))
     for i in tqdm(range(z.shape[0])):
         track = [0]*int(trackLength[i])
         for j in range(0, int(trackLength[i])):
             track[j] = [z[i,j], pt[i,j], eta[i,j]]
         allJag[i] = track
     
+    allJag = tf.ragged.constant(allJag)
+    print(allJag.shape)
+    print(allJag.bounding_shape())
+
+
     # collects jagged data in different format
         # zJagged[i] = z[i][:int(trackLength[i])]
         # ptJagged[i] = pt[i][:int(trackLength[i])]
         # etaJagged[i] = eta[i][:int(trackLength[i])]
-
+    
     # method using tf.stack 
     # zJagged = tf.ragged.constant(zJagged)
     # ptJagged = tf.ragged.constant(ptJagged)
@@ -132,8 +134,8 @@ def rawModelSplit(z, pt, eta, pv):
     # print()
     # print(allJag[0])
 
-    # import sys
-    # sys.exit()
+    import sys
+    sys.exit()
 
     z = np.nan_to_num(z, nan=0.)
     pt = np.nan_to_num(pt, nan=0.)
@@ -416,7 +418,7 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1])
 model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
