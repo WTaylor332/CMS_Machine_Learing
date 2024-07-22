@@ -269,7 +269,7 @@ def rnn(form, op, lossFunc, size=0):
 
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
-    #     keras.layers.Masking(mask_value=0.),
+    #     keras.layers.Masking(mask_value=0),
     #     keras.layers.GRU(20, return_sequences=True, activation='relu'),
     #     keras.layers.GRU(20, activation='relu'),
     #     keras.layers.Dense(1)
@@ -278,9 +278,9 @@ def rnn(form, op, lossFunc, size=0):
     # # LSTM Masking
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
-    #     # keras.layers.Masking(mask_value=0.),
+    #     # keras.layers.Masking(mask_value=0),
     #     # keras.layers.LSTM(100, return_sequences=True, activation='relu'),
-    #     keras.layers.Masking(mask_value=0.),
+    #     keras.layers.Masking(mask_value=0),
     #     keras.layers.LSTM(50, activation='relu'),
     #     keras.layers.Dense(1)
     # ])
@@ -368,6 +368,7 @@ def wavenet(form, op, lossFunc):
             # convolutional layers
             keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form), dilation_rate=(1,3)),
             keras.layers.MaxPool2D(pool_size=(1,4)),
+            keras.layers.Dropout(rate=0.3),
 
             keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'), # dilation_rate=(1,2)),
             keras.layers.MaxPool2D(pool_size=(1,4)),
@@ -378,7 +379,7 @@ def wavenet(form, op, lossFunc):
             # multi later perceptron
             keras.layers.Flatten(),
             keras.layers.Dense(15, activation="relu"),
-            # keras.layers.Dropout(rate=0.3),
+            keras.layers.Dropout(rate=0.3),
             keras.layers.Dense(5, activation="relu"),
             # keras.layers.Dropout(rate=0.3),
             keras.layers.Dense(1)
