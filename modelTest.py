@@ -118,40 +118,9 @@ def rawModelSplit(z, pt, eta, pv):
         trackLength[i] = int(trackLength[i])
 
     print()
-    start = time.time()
     # allJag = tf.ragged.constant(allJag, dtype=tf.float64)
     allJag = tf.RaggedTensor.from_tensor(allJag, lengths=trackLength)
-    print(time.time() - start)
-    print(allJag[0][0])
-    print()
     print(allJag.shape)
-    print(allJag.bounding_shape())
-
-
-    # collects jagged data in different format
-        # zJagged[i] = z[i][:int(trackLength[i])]
-        # ptJagged[i] = pt[i][:int(trackLength[i])]
-        # etaJagged[i] = eta[i][:int(trackLength[i])]
-    
-    # method using tf.stack 
-    # zJagged = tf.ragged.constant(zJagged)
-    # ptJagged = tf.ragged.constant(ptJagged)
-    # etaJagged = tf.ragged.constant(etaJagged)
-    # allJag = tf.ragged.stack([zJagged, ptJagged, etaJagged], axis=1)
-
-    # method using for loop - quicker than stack
-    # allJag = [0]*z.shape[0]
-    # for i in tqdm(range(len(z))):
-    #     allJag[i] = tf.concat([[zJagged[i]], [ptJagged[i]], [etaJagged[i]]], axis=0)
-    # print()
-    # print(allJag[0])
-
-    import sys
-    sys.exit()
-
-    z = np.nan_to_num(z, nan=0.)
-    pt = np.nan_to_num(pt, nan=0.)
-    eta = np.nan_to_num(eta, nan=0.)
 
     rawDataAll = np.stack((z,pt,eta), axis=1)
     print(rawDataAll.shape)
@@ -159,6 +128,7 @@ def rawModelSplit(z, pt, eta, pv):
     # splitting data into test, validation and training data
     t = len(rawDataAll)//10
     v = len(rawDataAll)//5
+
     # xTest, xValid, xTrain = rawDataAll[:t], rawDataAll[t:v], rawDataAll[v:]
     yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
 
@@ -169,21 +139,15 @@ def rawModelSplit(z, pt, eta, pv):
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
 
-def rawModel(xTrain, yTrain, xValid, yValid):
-    # if xTrain.shape[1] > 2:
-        
+def rawModel(xTrain, yTrain, xValid, yValid): 
     num = 3
-    # else:
-        # num = 2
     form = (len(xTrain[0]), len(xTrain[0][0]))
-    print(len(xTrain))
-    print(form)
 
     # creating model
     op = keras.optimizers.Adam(learning_rate=0.01)
     lossFunc = keras.losses.Huber()
 
-    model = rnn(form, op, lossFunc, len(xTrain))
+    model = rnn(form, op, lossFunc, xTrain.shape[0])
     model.summary()
     
     # saving the model and best weights
@@ -429,8 +393,8 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1])
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
