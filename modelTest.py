@@ -48,14 +48,14 @@ def binModel(xTrain, yTrain, xValid, yValid):
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     op = keras.optimizers.Adam()
-    lossFunc = keras.losses.MeanAbsoluteError()
-    model = cnn(form, op, lossFunc)
+    lossFunc = keras.losses.Huber()
+    model = pcnn(form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
-    weights = "Bin_model_{n}inputs_conv_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    weights = "Bin_model_{n}inputs_pconv_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     modelDirectory = "models"
-    modelName = "Bin_model_{n}inputs_conv_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    modelName = "Bin_model_{n}inputs_pconv_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
@@ -209,6 +209,10 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name))
+    print('min val loss:', min(val_loss))
+    print('At epoch number:',np.argmin(val_loss)+1)
+    print('min loss:', min(loss))
+    print('At epoch number:',np.argmin(loss)+1)
 
 
     # histogram of difference on test sample
@@ -365,7 +369,9 @@ def testLoadedModel(model, train, xTest, yTest):
     print(epochs)
     print(len(loss))
     print('min val loss:', min(val_loss))
+    print('At epoch number:',np.argmin(val_loss)+1)
     print('min loss:', min(loss))
+    print('At epoch number:',np.argmin(loss)+1)
 
     plt.clf()
     plt.plot(epochs, loss, color='blue', label='Training Loss')
@@ -416,13 +422,13 @@ def testLoadedModel(model, train, xTest, yTest):
 # ----------------------------------------------------- main --------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+nameData = 'TTbar'
+rawD = np.load('TTbarRaw5.npz')
+binD = np.load('TTbarBin4.npz')
 
-nameData = 'WJets'
-rawD = np.load('WJetsToLNu.npz')
-binD = np.load('WJetsToLNu_Bin.npz')
+# nameData = 'WJets'
+# rawD = np.load('WJetsToLNu.npz')
+# binD = np.load('WJetsToLNu_Bin.npz')
 
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
@@ -444,6 +450,7 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.
 xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
 xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+
 model, history, name = binModel(xTrain, yTrain, xValid, yValid)
 testing(model, history, xValid, yValid, xTest, yTest, name)
 
