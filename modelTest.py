@@ -293,8 +293,7 @@ def comparison(models, train, xTest, yTest):
 
 
 def loadModel(name):
-    mod = name # + '/saved_model'
-    loadedModel = tf.keras.models.load_model(mod)
+    loadedModel = tf.keras.models.load_model(name)
     loadedModel.summary()
     return loadedModel
 
@@ -311,11 +310,42 @@ def loadWeights(name, x):
     return model
 
 
-def testLoadedModel(model, xTest, yTest, name):
+def trainLoadedModel(model, train, xTrain, yTrain, xValid, yValid):
     modelLoaded = loadModel(model)
-    hist = pd.read_csv('training_{}.log'.format(name), sep=',', engine='python')
+    hist = pd.read_csv(train, sep=',', engine='python')
+    epochs = len(hist['loss'])
 
-    yPredicted = modelLoaded.predict(xTest)
+    print(epochs)
+
+
+    # weights = model + '.weights.h5'
+    # checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
+    # lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
+    # csvLogger = keras.callbacks.CSVLogger(train, separator=',', append=False)
+    # stopTraining = haltCallback()
+    # earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
+
+    # epochNo = 500 - epochs
+
+    # history = modelLoaded.fit(xTrain, yTrain, epochs=epochNo,\
+    #                     validation_data=(xValid, yValid),\
+    #                     callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
+    
+    # modelDirectory = "models"
+    # checkpointFilename = os.path.join(modelDirectory, weights)
+    # check = os.path.isdir(modelDirectory)
+    # if not check:
+    #     os.makedirs(modelDirectory)
+    #     print("Created directory:" , modelDirectory)
+
+    # # saves full model
+    # modelFilename = os.path.join(modelDirectory, model)
+    # modelLoaded.save(model)
+
+
+def testLoadedModel(model, train, xTest, yTest):
+    modelLoaded = loadModel(model)
+    hist = pd.read_csv(train, sep=',', engine='python')
 
     # plot of epochs against training and validation loss
     print()
@@ -323,12 +353,19 @@ def testLoadedModel(model, xTest, yTest, name):
     val_loss = hist['val_loss']
     epochs = range(1, len(loss) + 1)
 
+    print(epochs)
+
+    import sys
+    sys.exit()
+
     plt.clf()
     plt.plot(epochs, loss, 'bo', label='Training Loss')
     plt.plot(epochs, val_loss, 'b', color='red', label='Validation Loss')
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name))
+
+    yPredicted = modelLoaded.predict(xTest)
 
     # histogram of loss on test sample
     print()
@@ -394,12 +431,12 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
@@ -411,27 +448,33 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
-# testLoadedModel(model, xTest, yTest)
+
+models = np.array(['Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.keras',\
+                    'Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras',\
+                    'Bin_model_2inputs_pconv_adam_huber_loss_1721217364.keras',\
+                    'Bin_model_2inputs_pconv_adam_huber_loss_1721220031.keras',\
+                    'Bin_model_2inputs_pconv_adam_huber_loss_1721227042.keras',\
+                    'Bin_model_2inputs_pconv_adam_huber_loss_1721228818.keras'])
 
 
-# models = np.array(['Bin_model_2inputs_conv_weights_adam_huber_loss_1721056475.weights.h5',\
-#                    'Bin_model_conv_weights_1720614426.h5',\
-#                    'Bin_model_2inputs_conv_adam_huber_loss_1721144270.keras',\
-#                    'Bin_model_2inputs_conv_adam_huber_loss_1721145153.keras'])
+training = np.array(['training_Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.log',\
+                    'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.log',\
+                    'training_Bin_model_2inputs_pconv_adam_huber_loss_1721217364.log',\
+                    'training_Bin_model_2inputs_pconv_adam_huber_loss_1721220031.log',\
+                    'training_Bin_model_2inputs_pconv_adam_huber_loss_1721227042.log',\
+                    'training_Bin_model_2inputs_pconv_adam_huber_loss_1721228818.log'])
 
+for i in range(len(models)):
+    print()
+    print(models[i])
+    trainLoadedModel(models[i], training[i], xTrain, yTrain, xValid, yValid)
+    # testLoadedModel(models[i], training[i], xTest, yTest)
 
-# training = np.array(['training_Bin_model_2inputs_conv_adam_huber_loss_1721056475.log',\
-#                     'training_Bin_model_conv_adam_huber_loss_1720614426.log'
-#                     'training_Bin_model_2inputs_conv_adam_huber_loss_1721144270.log',\
-#                     'training_Bin_model_2inputs_conv_adam_huber_loss_1721145153.log'])
 
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
 # comparison(models, training, xTest, yTest)
 
-# finding architecture of model from weights file - didn't work
-# f = h5py.File(models[1], 'r')
-# print(f)
-# print(f.attrs.get('keras_version'))
-# f.attrs.values()
+
