@@ -348,14 +348,11 @@ def trainLoadedModel(model, train, xTrain, yTrain, xValid, yValid):
     print(model)
     modelLoaded.save(model)
 
-    print(len(history['loss']))
-
-    return modelLoaded, history
-
-
 def testLoadedModel(model, train, xTest, yTest):
     modelLoaded = loadModel(model)
     hist = pd.read_csv(train, sep=',', engine='python')
+    print()
+    print(model)
 
     name = model[:-6]
     # plot of epochs against training and validation loss
@@ -365,6 +362,9 @@ def testLoadedModel(model, train, xTest, yTest):
     epochs = range(1, len(loss) + 1)
 
     print(epochs)
+    print(len(loss))
+    print('min val loss:', min(val_loss))
+    print('min loss:', min(loss))
 
     plt.clf()
     plt.plot(epochs, loss, color='blue', label='Training Loss')
@@ -395,6 +395,12 @@ def testLoadedModel(model, train, xTest, yTest):
     percentile = np.zeros(len(diff)) + 90
     tolerance = np.zeros(len(diff)) + 0.1
     sortedDiff = np.sort(diff)
+    per = 90
+    tol = 0.15
+    tolIndex = np.where(sortedDiff <= tol)
+    perIndex = np.where(percent <= per)
+    print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
+    print('Value of', per, 'th percentil:', sortedDiff[perIndex[0][-1]])
     fig, ax = plt.subplots()
     plt.plot(sortedDiff, percent, color="green")
     plt.plot(sortedDiff, percentile, color='blue')
@@ -463,29 +469,39 @@ print()
 xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
 
-models = np.array(['Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.keras',\
-                    'Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras',\
-                    'Bin_model_2inputs_pconv_adam_huber_loss_1721217364.keras',\
-                    'Bin_model_2inputs_pconv_adam_huber_loss_1721220031.keras',\
-                    'Bin_model_2inputs_pconv_adam_huber_loss_1721227042.keras',\
-                    'Bin_model_2inputs_pconv_adam_huber_loss_1721228818.keras'])
+models = np.array(['Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.keras',\
+                    'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.keras',\
+                    'Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.keras'
+                    #'Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras',\
+                    #'Bin_model_2inputs_pconv_adam_huber_loss_1721227042.keras',\
+                    #'Bin_model_2inputs_pconv_adam_huber_loss_1721228818.keras'
+                    ])
 
 
-training = np.array(['training_Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.log',\
-                    'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.log',\
-                    'training_Bin_model_2inputs_pconv_adam_huber_loss_1721217364.log',\
-                    'training_Bin_model_2inputs_pconv_adam_huber_loss_1721220031.log',\
-                    'training_Bin_model_2inputs_pconv_adam_huber_loss_1721227042.log',\
-                    'training_Bin_model_2inputs_pconv_adam_huber_loss_1721228818.log'])
+training = np.array(['training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.log',\
+                     'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.log',\
+                    'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.log'
+                    #'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.log',\
+                    #'training_Bin_model_2inputs_pconv_adam_huber_loss_1721227042.log',\
+                    #'training_Bin_model_2inputs_pconv_adam_huber_loss_1721228818.log'
+                    ])
 
 
 print(models[0][:-6])
 
+xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+
 # trainLoadedModel(models[0], training[0], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[0], training[0], xTest, yTest)
 
-# trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
-# testLoadedModel(models[1], training[1], xTest, yTest)
+trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
+testLoadedModel(models[1], training[1], xTest, yTest)
+
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1])
 
 # trainLoadedModel(models[2], training[2], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[2], training[2], xTest, yTest)
@@ -493,11 +509,6 @@ print(models[0][:-6])
 # trainLoadedModel(models[3], training[3], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[3], training[3], xTest, yTest)
 
-# trainLoadedModel(models[4], training[4], xTrain, yTrain, xValid, yValid)
-# testLoadedModel(models[4], training[4], xTest, yTest)
-
-# trainLoadedModel(models[5], training[5], xTrain, yTrain, xValid, yValid)
-# testLoadedModel(models[5], training[5], xTest, yTest)
 
 
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
