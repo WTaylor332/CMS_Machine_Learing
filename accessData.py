@@ -124,6 +124,77 @@ def histogramData(z, pt):
         trackBinnedMatrix[i] = tracksBin
     return ptBinnedMatrix, trackBinnedMatrix
 
+
+def merge():
+    rawQ = np.load('QCD_Pt-15To3000.npz')
+    rawW = np.load('WJetsToLNu.npz')
+    rawT = np.load('TTbarRaw5.npz')
+
+    print(rawQ['z'].shape, rawW['z'].shape, rawT['z'].shape)
+
+    maxTrackLength = int(max([rawQ['maxValue'], rawT['maxValue'], rawW['maxValue']]))
+    mergedEventsNo = int(rawQ['z'].shape[0] + rawW['z'].shape[0] + rawT['z'].shape[0])
+    print(rawQ['z'].shape[1])
+    print(maxTrackLength)
+    padNoQ = int(maxTrackLength - rawQ['z'].shape[1])
+    padNoW = int(maxTrackLength - rawW['z'].shape[1])
+    padNoT = int(maxTrackLength - rawT['z'].shape[1])
+
+    padQ = np.zeros((rawQ['z'].shape[0], padNoQ))
+    padQ[padQ==0] = np.nan
+    zQPadded = np.hstack((rawQ['z'], padQ))
+    ptQPadded = np.hstack((rawQ['pt'], padQ))
+    etaQPadded = np.hstack((rawQ['pt'], padQ))
+
+    padW = np.zeros((rawW['z'].shape[0], padNoW))
+    padW[padW==0] = np.nan
+    zWPadded = np.hstack((rawW['z'], padW))
+    ptWPadded = np.hstack((rawW['pt'], padW))
+    etaWPadded = np.hstack((rawW['pt'], padW))
+
+    padT = np.zeros((rawT['z'].shape[0], padNoT))
+    padT[padT==0] = np.nan
+    zTPadded = np.hstack((rawT['z'], padT))
+    ptTPadded = np.hstack((rawT['pt'], padT))
+    etaTPadded = np.hstack((rawT['pt'], padT))
+    print(zTPadded[-1])
+    print(rawT['z'][-1])
+    print()
+
+    zMerge = np.zeros((mergedEventsNo, maxTrackLength))
+    ptMerge = np.zeros((mergedEventsNo, maxTrackLength))
+    etaMerge = np.zeros((mergedEventsNo, maxTrackLength))
+
+    zMerge[:rawQ['z'].shape[0]] = zQPadded = np.hstack((rawQ['z'], padQ))
+    zMerge[rawQ['z'].shape[0]:rawQ['z'].shape[0]+rawW['z'].shape[0]] = zWPadded = np.hstack((rawW['z'], padW))
+    zMerge[rawQ['z'].shape[0]+rawW['z'].shape[0]:] = zTPadded = np.hstack((rawT['z'], padT))
+    print(zMerge[-1])
+    print()
+    ptMerge[:rawQ['z'].shape[0]] = ptQPadded = np.hstack((rawQ['pt'], padQ))
+    ptMerge[rawQ['z'].shape[0]:rawQ['z'].shape[0]+rawW['z'].shape[0]] = ptWPadded = np.hstack((rawW['pt'], padW))
+    ptMerge[rawQ['z'].shape[0]+rawW['z'].shape[0]:] = ptTPadded = np.hstack((rawT['pt'], padT))
+    print(ptMerge[-1])
+    print()
+    etaMerge[:rawQ['z'].shape[0]] = etaQPadded = np.hstack((rawQ['pt'], padQ))
+    etaMerge[rawQ['z'].shape[0]:rawQ['z'].shape[0]+rawW['z'].shape[0]] = etaWPadded = np.hstack((rawW['pt'], padW))
+    etaMerge[rawQ['z'].shape[0]+rawW['z'].shape[0]:] = etaTPadded = np.hstack((rawT['pt'], padT))
+    print(etaMerge[-1])
+    print()
+
+    print(zMerge.shape, ptMerge.shape, etaMerge.shape)
+    print(zMerge[0])
+
+    np.random.shuffle(zMerge)
+    np.random.shuffle(ptMerge)
+    np.random.shuffle(etaMerge)
+
+    print()
+    print(zMerge.shape, ptMerge.shape, etaMerge.shape)
+    print(zMerge[0])
+
+    np.savez('Merged_deacys_Raw', z=zMerge, pt=ptMerge, eta=etaMerge)
+
+
 # -------------------------------------------------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------MAIN----------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------------------------
@@ -154,83 +225,19 @@ def histogramData(z, pt):
 
 
 # merge and sort all decays
-rawQ = np.load('QCD_Pt-15To3000.npz')
-rawW = np.load('WJetsToLNu.npz')
-rawT = np.load('TTbarRaw5.npz')
 
-print(rawQ['z'].shape, rawW['z'].shape, rawT['z'].shape)
+merge()
 
-maxTrackLength = max([rawQ['m'], rawT['m'], rawW['m']])
-mergedEventsNo = rawQ['z'].shape[0] + rawW['z'].shape[0] + rawT['z'].shape[0]
+# mergeData = np.laod('Merged_decays_Raw.npz')
+# z, pt, eta = mergeData['z'], mergeData['pt'], mergeData['eta']
+# print()
+# print(z.shape, pt.shape, eta.shape)
 
-zQPadded = np.zeros((rawQ['z'].shape[0], maxTrackLength))
-ptQPadded = np.zeros((rawQ['z'].shape[0], maxTrackLength))
-etaQPadded = np.zeros((rawQ['z'].shape[0], maxTrackLength))
+# # bin merged decays
+# ptBin, trackBin = histogramData(z, pt)
+# np.savez('Merged_decays_Bin', ptB=ptBin, tB=trackBin)
 
-zWPadded = np.zeros((rawW['z'].shape[0], maxTrackLength))
-ptWPadded = np.zeros((rawW['z'].shape[0], maxTrackLength))
-etaWPadded = np.zeros((rawW['z'].shape[0], maxTrackLength))
-
-zTPadded = np.zeros((rawT['z'].shape[0], maxTrackLength))
-ptTPadded = np.zeros((rawT['z'].shape[0], maxTrackLength))
-etaTPadded = np.zeros((rawT['z'].shape[0], maxTrackLength))
-
-for i in tqdm(range(rawQ['z'].shape[0])):
-    zQPadded[i,:rawQ['t'][i]] = rawQ['z'][i]
-    ptQPadded[i,:rawQ['t'][i]] = rawQ['z'][i]
-    etaQPadded[i,:rawQ['t'][i]] = rawQ['z'][i]
-
-for i in tqdm(range(rawQ['z'].shape[0])):
-    zQPadded[i,:rawQ['t'][i]] = rawQ['z'][i]
-    ptQPadded[i,:rawQ['t'][i]] = rawQ['z'][i]
-    etaQPadded[i,:rawQ['t'][i]] = rawQ['z'][i]
-
-for i in tqdm(range(rawQ['z'].shape[0])):
-    zQPadded[i,:rawQ['t'][i]] = rawQ['z'][i]
-    ptQPadded[i,:rawQ['t'][i]] = rawQ['z'][i]
-    etaQPadded[i,:rawQ['t'][i]] = rawQ['z'][i]
-
-z = np.zeros((mergedEventsNo, maxTrackLength))
-pt = np.zeros((mergedEventsNo, maxTrackLength))
-eta = np.zeros((mergedEventsNo, maxTrackLength))
-
-# z[:rawQ['z'].shape[0]] = 
-# z[rawQ['z'].shape[0]:rawQ['z'].shape[0]+rawW['z'].shape[0]] = 
-# z[rawQ['z'].shape[0]+rawW['z'].shape[0]:] = 
-
-# pt[:rawQ['z'].shape[0]] = 
-# pt[rawQ['z'].shape[0]:rawQ['z'].shape[0]+rawW['z'].shape[0]] = 
-# pt[rawQ['z'].shape[0]+rawW['z'].shape[0]:] = 
-
-# eta[:rawQ['z'].shape[0]] = 
-# eta[rawQ['z'].shape[0]:rawQ['z'].shape[0]+rawW['z'].shape[0]] = 
-# eta[rawQ['z'].shape[0]+rawW['z'].shape[0]:] = 
-
-
-print()
-print(z[0])
-print(z.shape, pt.shape, eta.shape)
-
-zMerge = np.random.shuffle(z)
-ptMerge = np.random.shuffle(pt)
-etaMerge = np.random.shuffle(eta)
-
-print()
-print(z[0])
-print(z.shape, pt.shape, eta.shape)
-
-np.savez('Merged_deacys_Raw', z=zMerge, pt=ptMerge, eta=etaMerge)
-
-mergeData = np.laod('Merged_decays_Raw.npz')
-z, pt, eta = mergeData['z'], mergeData['pt'], mergeData['eta']
-print()
-print(z.shape, pt.shape, eta.shape)
-
-# bin merged decays
-ptBin, trackBin = histogramData(z, pt)
-np.savez('Merged_decays_Bin', ptB=ptBin, tB=trackBin)
-
-q = np.load('Merged_decays_Bin.npz')
-print()
-print(q['ptB'].shape)
-print(q['tB'].shape)
+# q = np.load('Merged_decays_Bin.npz')
+# print()
+# print(q['ptB'].shape)
+# print(q['tB'].shape)
