@@ -53,16 +53,16 @@ def binModel(xTrain, yTrain, xValid, yValid):
     model.summary()
     
     # saving the model and best weights
-    weights = "Bin_model_{n}inputs_conv_weights_{o}_{l}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, t=clock)
+    weights = "Bin_model_{n}inputs_conv_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     modelDirectory = "models"
-    modelName = "Bin_model_{n}inputs_conv_{o}_{l}_{t}".format(n=num, o='adam', l=lossFunc.name, t=clock)
+    modelName = "Bin_model_{n}inputs_conv_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
     lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
     stopTraining = haltCallback()
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
     epochNo = 500
     print(modelName)
@@ -152,9 +152,9 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     model.summary()
     
     # saving the model and best weights
-    weights = "Raw_model_{n}inputs_rnn_weights_{o}_{l}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, t=clock)
+    weights = "Raw_model_{n}inputs_rnn_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     modelDirectory = "models"
-    modelName = "Raw_model_{n}inputs_rnn_{o}_{l}_{t}".format(n=num, o='adam', l=lossFunc.name, t=clock)
+    modelName = "Raw_model_{n}inputs_rnn_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
 
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
     lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
@@ -361,8 +361,18 @@ def testLoadedModel(model, xTest, yTest, name):
 # ----------------------------------------------------- main --------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-rawD = np.load('TTbarRaw5.npz')
-binD = np.load('TTbarBin4.npz')
+# nameData = 'TTbar'
+# rawD = np.load('TTbarRaw5.npz')
+# binD = np.load('TTbarBin4.npz')
+
+nameData = 'WJets'
+rawD = np.load('WJetsToLNu.npz')
+binD = np.load('WJetsToLNu_Bin.npz')
+
+# nameData = 'QCD'
+# rawD = np.load('QCD_Pt-15To3000.npz')
+# binD = np.load('QCD_Pt-15To3000_Bin.npz')
+
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
 trackLength, maxTrack = rawD['tl'], rawD['maxValue']
