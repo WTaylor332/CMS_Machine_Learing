@@ -94,7 +94,6 @@ def rawPaddedData(eventZ, eventPT, eventEta):
 
 
 # binning
-
 def histogramData(z, pt):
     ptBinnedMatrix = np.zeros((z.shape[0], 300))
     trackBinnedMatrix = np.zeros((z.shape[0], 300))
@@ -226,18 +225,18 @@ def merge():
 
 # merge and sort all decays
 
-merge()
+# merge()
 
-# mergeData = np.laod('Merged_decays_Raw.npz')
-# z, pt, eta = mergeData['z'], mergeData['pt'], mergeData['eta']
-# print()
-# print(z.shape, pt.shape, eta.shape)
+mergeData = np.load('Merged_deacys_Raw.npz')
+z, pt, eta = mergeData['z'], mergeData['pt'], mergeData['eta']
+print()
+print(z.shape, pt.shape, eta.shape)
 
-# # bin merged decays
-# ptBin, trackBin = histogramData(z, pt)
-# np.savez('Merged_decays_Bin', ptB=ptBin, tB=trackBin)
+# bin merged decays
+ptBin, trackBin = histogramData(z, pt)
+np.savez('Merged_decays_Bin', ptB=ptBin, tB=trackBin)
 
-# q = np.load('Merged_decays_Bin.npz')
-# print()
-# print(q['ptB'].shape)
-# print(q['tB'].shape)
+q = np.load('Merged_decays_Bin.npz')
+print()
+print(q['ptB'].shape)
+print(q['tB'].shape)
