@@ -348,6 +348,7 @@ def trainLoadedModel(model, train, xTrain, yTrain, xValid, yValid):
     print(model)
     modelLoaded.save(model)
 
+
 def testLoadedModel(model, train, xTest, yTest):
     modelLoaded = loadModel(model)
     hist = pd.read_csv(train, sep=',', engine='python')
@@ -430,15 +431,6 @@ binD = np.load('TTbarBin4.npz')
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
 trackLength, maxTrack = rawD['tl'], rawD['maxValue']
-    
-# getting jagged data
-# zJagged = [0]*zRaw.shape[0]
-# ptJagged = [0]*ptRaw.shape[0]
-# etaJagged = [0]*etaRaw.shape[0]
-# for i in tqdm(range(len(zRaw))):
-#     zJagged[i] = zRaw[i][:int(trackLength[i])]
-#     ptJagged[i] = ptRaw[i][:int(trackLength[i])]
-#     etaJagged[i] = etaRaw[i][:int(trackLength[i])]
 
 
 clock = int(time.time())
@@ -466,38 +458,36 @@ print()
 
 # Loaded model test and comparison to other models
 
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
 
-models = np.array(['Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.keras',\
-                    'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.keras',\
-                    'Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.keras'
-                    #'Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras',\
-                    #'Bin_model_2inputs_pconv_adam_huber_loss_1721227042.keras',\
-                    #'Bin_model_2inputs_pconv_adam_huber_loss_1721228818.keras'
-                    ])
+# models = np.array(['Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.keras',\
+#                     'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.keras',\
+#                     'Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.keras',\
+#                     # 'Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras',\
+#                     'Bin_model_2inputs_pconv_adam_huber_loss_1721227042.keras'
+#                     #'Bin_model_2inputs_pconv_adam_huber_loss_1721228818.keras'
+#                     ])
 
 
-training = np.array(['training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.log',\
-                     'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.log',\
-                    'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.log'
-                    #'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.log',\
-                    #'training_Bin_model_2inputs_pconv_adam_huber_loss_1721227042.log',\
-                    #'training_Bin_model_2inputs_pconv_adam_huber_loss_1721228818.log'
-                    ])
+# training = np.array(['training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.log',\
+#                      'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.log',\
+#                     'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.log',\
+#                     # 'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.log',\
+#                     'training_Bin_model_2inputs_pconv_adam_huber_loss_1721227042.log',\
+#                     #'training_Bin_model_2inputs_pconv_adam_huber_loss_1721228818.log'
+#                     ])
 
 
-print(models[0][:-6])
-
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
 # trainLoadedModel(models[0], training[0], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[0], training[0], xTest, yTest)
 
-trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
-testLoadedModel(models[1], training[1], xTest, yTest)
+# trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
+# testLoadedModel(models[1], training[1], xTest, yTest)
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
