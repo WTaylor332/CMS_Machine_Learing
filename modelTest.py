@@ -203,6 +203,9 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.plot(epochs, val_loss, 'b', color='red', label='Validation Loss')
     plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
     plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+    minX = np.argmin(val_loss) + 1
+    minY = np.min(val_loss)
+    plt.scatter(minX, minY, color='green', label='minimum')
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name))
@@ -317,36 +320,44 @@ def trainLoadedModel(model, train, xTrain, yTrain, xValid, yValid):
 
     print(epochs)
 
+    weights = model[:-6] + '.weights.h5'
+    print(weights)
+    time.sleep(5)
+    checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
+    csvLogger = keras.callbacks.CSVLogger(train, separator=',', append=False)
+    stopTraining = haltCallback()
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
-    # weights = model + '.weights.h5'
-    # checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    # lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
-    # csvLogger = keras.callbacks.CSVLogger(train, separator=',', append=False)
-    # stopTraining = haltCallback()
-    # earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
+    epochNo = 500 - epochs
+    print('\n'+str(epochNo)+'\n')
 
-    # epochNo = 500 - epochs
-
-    # history = modelLoaded.fit(xTrain, yTrain, epochs=epochNo,\
-    #                     validation_data=(xValid, yValid),\
-    #                     callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
+    history = modelLoaded.fit(xTrain, yTrain, epochs=epochNo,\
+                        validation_data=(xValid, yValid),\
+                        callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
     
-    # modelDirectory = "models"
-    # checkpointFilename = os.path.join(modelDirectory, weights)
-    # check = os.path.isdir(modelDirectory)
-    # if not check:
-    #     os.makedirs(modelDirectory)
-    #     print("Created directory:" , modelDirectory)
+    modelDirectory = "models"
+    checkpointFilename = os.path.join(modelDirectory, weights)
+    check = os.path.isdir(modelDirectory)
+    if not check:
+        os.makedirs(modelDirectory)
+        print("Created directory:" , modelDirectory)
 
-    # # saves full model
-    # modelFilename = os.path.join(modelDirectory, model)
-    # modelLoaded.save(model)
+    # saves full model
+    modelFilename = os.path.join(modelDirectory, model)
+    print(model)
+    modelLoaded.save(model)
+
+    print(len(history['loss']))
+
+    return modelLoaded, history
 
 
 def testLoadedModel(model, train, xTest, yTest):
     modelLoaded = loadModel(model)
     hist = pd.read_csv(train, sep=',', engine='python')
 
+    name = model[:-6]
     # plot of epochs against training and validation loss
     print()
     loss = hist['loss']
@@ -355,12 +366,12 @@ def testLoadedModel(model, train, xTest, yTest):
 
     print(epochs)
 
-    import sys
-    sys.exit()
-
     plt.clf()
-    plt.plot(epochs, loss, 'bo', label='Training Loss')
-    plt.plot(epochs, val_loss, 'b', color='red', label='Validation Loss')
+    plt.plot(epochs, loss, color='blue', label='Training Loss')
+    plt.plot(epochs, val_loss, color='red', label='Validation Loss')
+    minX = np.argmin(val_loss) + 1
+    minY = np.min(val_loss)
+    plt.scatter(minX, minY, color='green', label='minimum')
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name))
@@ -398,13 +409,13 @@ def testLoadedModel(model, train, xTest, yTest):
 # ----------------------------------------------------- main --------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+nameData = 'TTbar'
+rawD = np.load('TTbarRaw5.npz')
+binD = np.load('TTbarBin4.npz')
 
-nameData = 'WJets'
-rawD = np.load('WJetsToLNu.npz')
-binD = np.load('WJetsToLNu_Bin.npz')
+# nameData = 'WJets'
+# rawD = np.load('WJetsToLNu.npz')
+# binD = np.load('WJetsToLNu_Bin.npz')
 
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
@@ -467,11 +478,26 @@ training = np.array(['training_Bin_model_2inputs_wavenet_adam_huber_loss_1721391
                     'training_Bin_model_2inputs_pconv_adam_huber_loss_1721227042.log',\
                     'training_Bin_model_2inputs_pconv_adam_huber_loss_1721228818.log'])
 
-for i in range(len(models)):
-    print()
-    print(models[i])
-    trainLoadedModel(models[i], training[i], xTrain, yTrain, xValid, yValid)
-    # testLoadedModel(models[i], training[i], xTest, yTest)
+
+print(models[0][:-6])
+
+# trainLoadedModel(models[0], training[0], xTrain, yTrain, xValid, yValid)
+# testLoadedModel(models[0], training[0], xTest, yTest)
+
+# trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
+# testLoadedModel(models[1], training[1], xTest, yTest)
+
+# trainLoadedModel(models[2], training[2], xTrain, yTrain, xValid, yValid)
+# testLoadedModel(models[2], training[2], xTest, yTest)
+
+# trainLoadedModel(models[3], training[3], xTrain, yTrain, xValid, yValid)
+# testLoadedModel(models[3], training[3], xTest, yTest)
+
+# trainLoadedModel(models[4], training[4], xTrain, yTrain, xValid, yValid)
+# testLoadedModel(models[4], training[4], xTest, yTest)
+
+# trainLoadedModel(models[5], training[5], xTrain, yTrain, xValid, yValid)
+# testLoadedModel(models[5], training[5], xTest, yTest)
 
 
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
