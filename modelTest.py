@@ -256,9 +256,10 @@ def comparison(models, train, xTest, yTest):
             modelLoaded = loadWeights(models[i], xTest)
         else:
             modelLoaded = loadModel(models[i])
-        
+        print(models[i])
         hist = pd.read_csv(train[i], sep=',', engine='python')
         val_loss = hist['val_loss']
+        loss = hist['loss']
 
         print(np.sort(val_loss)[:5])
         yPredicted = modelLoaded.predict(xTest).flatten()
@@ -277,6 +278,10 @@ def comparison(models, train, xTest, yTest):
         
         print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
         print('Value of', per, 'th percentil:', sortedDiff[perIndex[0][-1]])
+        print('min val loss:', min(val_loss))
+        print('At epoch number:',np.argmin(val_loss)+1)
+        print('min loss:', min(loss))
+        print('At epoch number:',np.argmin(loss)+1)
 
         percentile = np.zeros(len(sortedDiff)) + per
         tolerance = np.zeros(len(sortedDiff)) + tol
@@ -287,7 +292,8 @@ def comparison(models, train, xTest, yTest):
     plt.plot(tolerance, percent, color='red', label=str(tol)+" tolerance")
     plt.legend()
     plt.title("Percentage of values vs loss")
-    name = "{start}_comparison_of_losses_{d}_{t}".format(start=models[0][:], d=nameData, t=clock)
+    name = "{start}_comparison_of_losses_{d}_{t}".format(start=models[0][:27], d=nameData, t=clock)
+    print(name)
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
 
 
@@ -507,5 +513,5 @@ trainingCompare = ['training_Bin_model_2inputs_conv_adam_mean_absolute_error_172
                    'training_Bin_model_2inputs_conv_adam_mean_squared_error_1721663286.log',\
                    'training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log']
 
-print(modelsCompare[0][:10])
-# comparison(modelsCompare, trainingCompare, xTest, yTest)
+print(modelsCompare[0][:27])
+comparison(modelsCompare, trainingCompare, xTest, yTest)
