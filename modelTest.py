@@ -231,8 +231,8 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
     print('Value of', per, 'th percentil:', sortedDiff[perIndex[0][-1]])
     fig, ax = plt.subplots()
-    plt.plot(sortedDiff, percent, color="green", label=name)
-    plt.plot(sortedDiff, percentile, color='blue', label=str(per)+"th percentile")
+    plt.plot(sortedDiff, percent, color="green", linestyle=':', label=name)
+    plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
     plt.plot(tolerance, percent, color='red', label=str(tol)+" tolerance")
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
@@ -290,8 +290,8 @@ def comparison(models, train, xTest, yTest):
         plt.plot(sortedDiff, percent, label=labels[i])
         print()
     
-    plt.plot(sortedDiff, percentile, color='blue', label=str(per)+"th percentile")
-    plt.plot(tolerance, percent, color='red', label=str(tol)+" tolerance")
+    plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
+    plt.plot(tolerance, percent, color='red', linestyle=':', label=str(tol)+" tolerance")
     plt.legend()
     plt.title("Percentage of values vs loss")
     name = "{start}_comparison_of_losses_{d}_{t}".format(start=models[0][:27], d=nameData, t=clock)
@@ -409,8 +409,8 @@ def testLoadedModel(model, train, xTest, yTest):
     print('Value of', per, 'th percentil:', sortedDiff[perIndex[0][-1]])
     fig, ax = plt.subplots()
     plt.plot(sortedDiff, percent, color="green")
-    plt.plot(sortedDiff, percentile, color='blue')
-    plt.plot(tolerance, percent, color='red')
+    plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
+    plt.plot(tolerance, percent, color='red', linestyle=':', label=str(tol)+" tolerance")
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
@@ -421,13 +421,13 @@ def testLoadedModel(model, train, xTest, yTest):
 # ----------------------------------------------------- main --------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+nameData = 'TTbar'
+rawD = np.load('TTbarRaw5.npz')
+binD = np.load('TTbarBin4.npz')
 
-nameData = 'WJets'
-rawD = np.load('WJetsToLNu.npz')
-binD = np.load('WJetsToLNu_Bin.npz')
+# nameData = 'WJets'
+# rawD = np.load('WJetsToLNu.npz')
+# binD = np.load('WJetsToLNu_Bin.npz')
 
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
@@ -446,12 +446,12 @@ clock = int(time.time())
 
 print()
 xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
@@ -515,5 +515,5 @@ trainingCompare = ['training_Bin_model_2inputs_conv_adam_mean_absolute_error_172
                    'training_Bin_model_2inputs_conv_adam_mean_squared_error_1721663286.log',\
                    'training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log']
 
-# print(modelsCompare[0][:27])
-# comparison(modelsCompare, trainingCompare, xTest, yTest)
+print(modelsCompare[0][:27])
+comparison(modelsCompare, trainingCompare, xTest, yTest)
