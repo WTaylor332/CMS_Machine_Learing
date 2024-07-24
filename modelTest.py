@@ -49,13 +49,13 @@ def binModel(xTrain, yTrain, xValid, yValid):
     num = 2
     op = keras.optimizers.Adam()
     lossFunc = keras.losses.Huber()
-    model = pcnn(form, op, lossFunc)
+    model = wavenet(form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
-    weights = "Bin_model_{n}inputs_pconv_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    weights = "Bin_model_{n}inputs_wavenet_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     modelDirectory = "models"
-    modelName = "Bin_model_{n}inputs_pconv_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    modelName = "Bin_model_{n}inputs_wavenet_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
@@ -90,7 +90,6 @@ def rawModelSplit(z, pt, eta, pv):
     columnZ = scaler.transform(columnZ)
     z = columnZ.reshape(pt.shape[0], pt.shape[1])
 
-
     z = np.nan_to_num(z, nan=0)
     pt = np.nan_to_num(pt, nan=0)
     eta = np.nan_to_num(eta, nan=0)
@@ -100,38 +99,32 @@ def rawModelSplit(z, pt, eta, pv):
     # eta = eta[:,:150]
 
     # getting jagged data
-    # zJagged = [0]*z.shape[0]
-    # ptJagged = [0]*pt.shape[0]
-    # etaJagged = [0]*eta.shape[0]
+    # print(int(sum(trackLength)))
+    # allJag = np.zeros((z.shape[0], z.shape[1], 3))
+    # print(len(allJag))
+    # for i in tqdm(range(z.shape[0])):
+    #     track = np.zeros((z.shape[1],3))
+    #     for j in range(0, z.shape[1]):
+    #         track[j] = [z[i,j], pt[i,j], eta[i,j]]
+    #     allJag[i] = track
+    #     trackLength[i] = int(trackLength[i])
 
-    # allJag = np.array([[]])
-    print(int(sum(trackLength)))
-    # allJag = np.zeros(len(z)*int(sum(trackLength)))
-    allJag = np.zeros((z.shape[0], z.shape[1], 3))
-    print(len(allJag))
-    dimension1 = False
-    for i in tqdm(range(z.shape[0])):
-        track = np.zeros((z.shape[1],3))
-        for j in range(0, z.shape[1]):
-            track[j] = [z[i,j], pt[i,j], eta[i,j]]
-        allJag[i] = track
-        trackLength[i] = int(trackLength[i])
+    # print()
+    # allJag = tf.RaggedTensor.from_tensor(allJag, lengths=trackLength)
+    # print(allJag.shape)
 
-    print()
-    allJag = tf.RaggedTensor.from_tensor(allJag, lengths=trackLength)
-    print(allJag.shape)
-
-    # rawDataAll = np.stack((z,pt,eta), axis=1)
-    # print(rawDataAll.shape)
+    rawDataAll = np.stack((z,pt,eta), axis=1)
+    print(rawDataAll.shape)
 
     # splitting data into test, validation and training data
     t = len(pv)//10
     v = len(pv)//5
 
     # padded data split
-    # xTest, xValid, xTrain = rawDataAll[:t], rawDataAll[t:v], rawDataAll[v:]
+    xTest, xValid, xTrain = rawDataAll[:t], rawDataAll[t:v], rawDataAll[v:]
     # jagged data split
-    xTest, xValid, xTrain = allJag[:t], allJag[t:v], allJag[v:]
+    # xTest, xValid, xTrain = allJag[:t], allJag[t:v], allJag[v:]
+
     # desired values
     yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
 
@@ -185,10 +178,12 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
 def testing(model, hist, xValid, yValid, xTest, yTest, name):
     print()
+    print(name)
     model.evaluate(xValid, yValid)
-
+    print()
     yPredicted = model.predict(xTest)
     diff = abs(yPredicted.flatten() - yTest.flatten())
+    print()
     print(max(diff), min(diff))
     print(np.std(diff), np.mean(diff))
 
@@ -218,12 +213,11 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     # histogram of difference on test sample
     print()
     plt.clf()
-    plt.hist(diff, bins=200)
+    plt.hist(diff, bins=300)
     plt.title('Loss of predicted vs test Histogram')
     plt.savefig("Hist_loss_{}.png".format(name))
 
     # plotting % of predictions vs difference
-    print()
     plt.clf()
     per = 90
     tol = 0.15
@@ -256,46 +250,44 @@ def comparison(models, train, xTest, yTest):
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # yPredicted = np.zeros((len(models), len(yTest)))
-    # labels = np.array(['A2', 'A2', 'A3', 'A1'])
-    for i in range(0, len(models)):
-        print(i)
-        if i == 1:
-            print(xTest.shape)
-            xTest = xTest[:,:,0,:]
-            print(xTest.shape)
-        
+    labels = np.array(['MAE', 'MSE', 'Huber'])
+    for i in range(0, len(models)):        
         if models[i][-2:] == 'h5':
             modelLoaded = loadWeights(models[i], xTest)
         else:
-            modelLoaded = loadModel(models[i], xTest)
+            modelLoaded = loadModel(models[i])
         
         hist = pd.read_csv(train[i], sep=',', engine='python')
         val_loss = hist['val_loss']
+
         print(np.sort(val_loss)[:5])
         yPredicted = modelLoaded.predict(xTest).flatten()
-        per = 90
-        tol = 0.15
+
         diff = abs(yPredicted - yTest.flatten())
-        print(max(diff), min(diff), np.mean(diff))
+        print(max(diff), min(diff))
         print(np.std(diff), np.mean(diff))
+
         sortedDiff = np.sort(diff[diff<2])
         percent = (np.arange(0,len(sortedDiff),1)*100)/len(sortedDiff)
+
+        per = 90
+        tol = 0.15
         tolIndex = np.where(sortedDiff <= tol)
         perIndex = np.where(percent <= per)
+        
         print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
         print('Value of', per, 'th percentil:', sortedDiff[perIndex[0][-1]])
 
-        percentile = np.zeros(len(sortedDiff)) + 90
-        tolerance = np.zeros(len(sortedDiff)) + 0.1
-
-        plt.plot(sortedDiff, percent, label=models[i])
+        percentile = np.zeros(len(sortedDiff)) + per
+        tolerance = np.zeros(len(sortedDiff)) + tol
+        plt.plot(sortedDiff, percent, label=labels)
         print()
+    
+    plt.plot(sortedDiff, percentile, color='blue', label=str(per)+"th percentile")
+    plt.plot(tolerance, percent, color='red', label=str(tol)+" tolerance")
     plt.legend()
     plt.title("Percentage of values vs loss")
-    # plt.plot(sortedDiff, percentile, color='blue')
-    # plt.plot(tolerance, percent, color='red')
-    name = "Bin_model_comparison_of_architectures_{t}".format(t=clock)
+    name = "{start}_comparison_of_losses_{d}_{t}".format(start=models[0][:], d=nameData, t=clock)
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
 
 
@@ -361,11 +353,10 @@ def testLoadedModel(model, train, xTest, yTest):
 
     name = model[:-6]
     # plot of epochs against training and validation loss
-    print()
     loss = hist['loss']
     val_loss = hist['val_loss']
     epochs = range(1, len(loss) + 1)
-
+    print()
     print(epochs)
     print(len(loss))
     print('min val loss:', min(val_loss))
@@ -447,12 +438,12 @@ clock = int(time.time())
 
 print()
 xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
 xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
@@ -466,9 +457,12 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 # Loaded model test and comparison to other models
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, pvRaw.flatten())
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 
-# models = np.array(['Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.keras',\
+# models = np.array(['Raw_model_3inputs_rnn_adam_huber_loss_1721296121.keras',\
+#                    'Raw_model_3inputs_rnn_adam_huber_loss_1721315255.keras',\
+#                    'Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras',\
+#                     'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.keras',\
 #                     'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.keras',\
 #                     'Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.keras',\
 #                     # 'Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras',\
@@ -476,8 +470,10 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 #                     #'Bin_model_2inputs_pconv_adam_huber_loss_1721228818.keras'
 #                     ])
 
-
-# training = np.array(['training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.log',\
+# training = np.array(['training_Raw_model_3inputs_rnn_adam_huber_loss_1721296121.log',\
+#                      'training_Raw_model_3inputs_rnn_adam_huber_loss_1721315255.log',\
+#                      'training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log',\
+#                      'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.log',\
 #                      'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.log',\
 #                     'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.log',\
 #                     # 'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.log',\
@@ -489,7 +485,9 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-
+# print(xTrain[0,0])
+# print(xTrain.shape)
+# time.sleep(4)
 # trainLoadedModel(models[0], training[0], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[0], training[0], xTest, yTest)
 
@@ -500,15 +498,14 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1])
 
-# trainLoadedModel(models[2], training[2], xTrain, yTrain, xValid, yValid)
-# testLoadedModel(models[2], training[2], xTest, yTest)
 
-# trainLoadedModel(models[3], training[3], xTrain, yTrain, xValid, yValid)
-# testLoadedModel(models[3], training[3], xTest, yTest)
+# Comparing various models
+modelsCompare = ['Bin_model_2inputs_conv_adam_mean_absolute_error_1721663273.keras',\
+                 'Bin_model_2inputs_conv_adam_mean_squared_error_1721663286.keras',\
+                 'Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras']
+trainingCompare = ['training_Bin_model_2inputs_conv_adam_mean_absolute_error_1721663273.log',\
+                   'training_Bin_model_2inputs_conv_adam_mean_squared_error_1721663286.log',\
+                   'training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log']
 
-
-
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
-# comparison(models, training, xTest, yTest)
-
-
+print(modelsCompare[0][:10])
+# comparison(modelsCompare, trainingCompare, xTest, yTest)
