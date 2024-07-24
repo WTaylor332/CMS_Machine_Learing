@@ -237,7 +237,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    plt.title("Percentage of values vs loss")
+    plt.title("Percentage of values vs Difference")
     plt.legend()
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
 
@@ -293,7 +293,7 @@ def comparison(models, train, xTest, yTest):
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
     plt.plot(tolerance, percent, color='red', linestyle=':', label=str(tol)+" tolerance")
     plt.legend()
-    plt.title("Percentage of values vs loss")
+    plt.title("Percentage of values vs Difference")
     name = "{start}_comparison_of_losses_{d}_{t}".format(start=models[0][:27], d=nameData, t=clock)
     print(name)
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
@@ -414,7 +414,7 @@ def testLoadedModel(model, train, xTest, yTest):
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    plt.title("Percentage of values vs loss")
+    plt.title("Percentage of values vs Difference")
     plt.savefig("Percentage_vs_loss_{}.png".format(name))
 
 
