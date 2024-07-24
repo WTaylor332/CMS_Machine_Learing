@@ -416,34 +416,12 @@ def wavenet(form, op, lossFunc):
         #     keras.layers.Dense(1)
         # ])
     
-        model = keras.models.Sequential([
-            # convolutional layers
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form), dilation_rate=(1,2)),
-            keras.layers.MaxPool2D(pool_size=(1,4)),
-
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'), # dilation_rate=(1,2)),
-            keras.layers.MaxPool2D(pool_size=(1,4)),
-
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'), # dilation_rate=(1,2)),
-            keras.layers.MaxPool2D(pool_size=(1,2)),
-
-            # multi later perceptron
-            keras.layers.Flatten(),
-            keras.layers.Dense(15, activation="relu"),
-            # keras.layers.Dropout(rate=0.3),
-            keras.layers.Dense(10, activation="relu"),
-            # keras.layers.Dropout(rate=0.3),
-            keras.layers.Dense(5, activation="relu"),
-            # keras.layers.Dropout(rate=0.3),
-            keras.layers.Dense(1)
-        ])
-
         # model = keras.models.Sequential([
         #     # convolutional layers
         #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form), dilation_rate=(1,2)),
         #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', dilation_rate=(1,2)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'), # dilation_rate=(1,2)),
         #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
         #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'), # dilation_rate=(1,2)),
@@ -459,6 +437,28 @@ def wavenet(form, op, lossFunc):
         #     # keras.layers.Dropout(rate=0.3),
         #     keras.layers.Dense(1)
         # ])
+
+        model = keras.models.Sequential([
+            # convolutional layers
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form), dilation_rate=(1,2)),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
+
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', dilation_rate=(1,2)),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
+
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'), # dilation_rate=(1,2)),
+            keras.layers.MaxPool2D(pool_size=(1,2)),
+
+            # multi later perceptron
+            keras.layers.Flatten(),
+            keras.layers.Dense(15, activation="relu"),
+            # keras.layers.Dropout(rate=0.3),
+            keras.layers.Dense(10, activation="relu"),
+            # keras.layers.Dropout(rate=0.3),
+            keras.layers.Dense(5, activation="relu"),
+            # keras.layers.Dropout(rate=0.3),
+            keras.layers.Dense(1)
+        ])
 
     model.compile(optimizer=op, loss=lossFunc)
     return model
