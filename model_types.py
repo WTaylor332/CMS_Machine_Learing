@@ -198,44 +198,44 @@ def pureCNN(form, op, lossFunc):
     else:
         # 2D model
         # A1
-        model = keras.models.Sequential([
-            # convolutional layers
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form)),
-            keras.layers.MaxPool2D(pool_size=(1,4)),
-
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(1,4)),
-
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(1,4)),
-
-            keras.layers.Conv2D(1, kernel_size=(2,2), activation='relu'),
-
-            keras.layers.Flatten()
-        ])
-
-        # A2
         # model = keras.models.Sequential([
         #     # convolutional layers
         #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form)),
-        #     keras.layers.MaxPool2D(pool_size=(1,2)),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
         #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(1,2)),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
         #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(1,2)),
-
-        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(1,2)),
-
-        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(1,2)),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
         #     keras.layers.Conv2D(1, kernel_size=(2,2), activation='relu'),
 
         #     keras.layers.Flatten()
         # ])
+
+        # A2
+        model = keras.models.Sequential([
+            # convolutional layers
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form)),
+            keras.layers.MaxPool2D(pool_size=(1,2)),
+
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,2)),
+
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,2)),
+
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,2)),
+
+            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,2)),
+
+            keras.layers.Conv2D(1, kernel_size=(2,2), activation='relu'),
+
+            keras.layers.Flatten()
+        ])
 
         # A3
         # model = keras.models.Sequential([
@@ -276,12 +276,12 @@ def pureCNN(form, op, lossFunc):
 
 
 def rnn(form, op, lossFunc, size=0):
-    # model = keras.models.Sequential([
-    #     keras.Input(shape=form),
-    #     keras.layers.GRU(100, return_sequences=True, activation='relu'),
-    #     keras.layers.GRU(50, activation='relu'),
-    #     keras.layers.Dense(1)
-    # ])
+    model = keras.models.Sequential([
+        keras.Input(shape=form),
+        keras.layers.GRU(100, return_sequences=True, activation='relu'),
+        keras.layers.GRU(50, activation='relu'),
+        keras.layers.Dense(1)
+    ])
 
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
@@ -300,15 +300,15 @@ def rnn(form, op, lossFunc, size=0):
     #     keras.layers.Dense(1)
     # ])
 
-    model = keras.models.Sequential([
-        keras.Input(shape=form),
-        # keras.layers.Masking(mask_value=0),
-        keras.layers.GRU(20, return_sequences=True, activation='relu'),
-        keras.layers.GRU(20, activation='relu'),
-        keras.layers.Dense(1)
-    ])
+    # model = keras.models.Sequential([
+    #     keras.Input(shape=form),
+    #     # keras.layers.Masking(mask_value=0),
+    #     keras.layers.GRU(20, return_sequences=True, activation='relu'),
+    #     keras.layers.GRU(20, activation='relu'),
+    #     keras.layers.Dense(1)
+    # ])
 
-    # # LSTM Masking
+    # LSTM Masking
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
     #     keras.layers.Masking(mask_value=0),

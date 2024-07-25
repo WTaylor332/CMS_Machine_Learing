@@ -45,17 +45,17 @@ def binModelSplit(pt, pv, track=np.array([])):
 
 def binModel(xTrain, yTrain, xValid, yValid):
 
-    form = (xTrain.shape[1], xTrain.shape[2])#, 1)
+    form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     op = keras.optimizers.Adam()
     lossFunc = keras.losses.Huber()
-    model = rnn(form, op, lossFunc)
+    model = pcnn(form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
-    weights = "Bin_model_{n}inputs_rnn_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    weights = "Bin_model_{n}inputs_pconv_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     modelDirectory = "models"
-    modelName = "Bin_model_{n}inputs_rnn_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    modelName = "Bin_model_{n}inputs_pconv_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
@@ -94,9 +94,9 @@ def rawModelSplit(z, pt, eta, pv):
     pt = np.nan_to_num(pt, nan=0)
     eta = np.nan_to_num(eta, nan=0)
 
-    # z = z[:,:150]
-    # pt = pt[:,:150]
-    # eta = eta[:,:150]
+    z = z[:,:150]
+    pt = pt[:,:150]
+    eta = eta[:,:150]
 
     # getting jagged data
     # print(int(sum(trackLength)))
@@ -135,8 +135,6 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     num = 3
     form = (xTrain.shape[1], xTrain.shape[2])
     print(xTrain.shape)
-    # import sys
-    # sys.exit()
     # creating model
     op = keras.optimizers.Adam(learning_rate=0.01)
     lossFunc = keras.losses.Huber()
@@ -322,11 +320,13 @@ def loadWeights(name, x):
 
 
 def trainLoadedModel(model, train, xTrain, yTrain, xValid, yValid):
-    modelLoaded = loadModel(model)
+    modelLoaded = model
     hist = pd.read_csv(train, sep=',', engine='python')
     epochs = len(hist['loss'])
 
     print(epochs)
+    import sys
+    sys.exit()
 
     weights = model[:-6] + '.weights.h5'
     print(weights)
@@ -358,7 +358,7 @@ def trainLoadedModel(model, train, xTrain, yTrain, xValid, yValid):
 
 
 def testLoadedModel(model, train, xTest, yTest):
-    modelLoaded = loadModel(model)
+    modelLoaded = model
     hist = pd.read_csv(train, sep=',', engine='python')
     print()
     print(model)
@@ -425,13 +425,13 @@ def testLoadedModel(model, train, xTest, yTest):
 # ----------------------------------------------------- main --------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+nameData = 'TTbar'
+rawD = np.load('TTbarRaw5.npz')
+binD = np.load('TTbarBin4.npz')
 
-nameData = 'WJets'
-rawD = np.load('WJetsToLNu.npz')
-binD = np.load('WJetsToLNu_Bin.npz')
+# nameData = 'WJets'
+# rawD = np.load('WJetsToLNu.npz')
+# binD = np.load('WJetsToLNu_Bin.npz')
 
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
@@ -449,13 +449,13 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
@@ -468,30 +468,40 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # Loaded model test and comparison to other models
 
+models = np.array(['Raw_model_3inputs_rnn_adam_huber_loss_1721296121.keras',\
+                   'Raw_model_3inputs_rnn_adam_huber_loss_1721396555.keras',\
+                   'Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721832523.keras',\
+                   'Raw_model_3inputs_rnn_adam_huber_loss_1721296121.keras',\
+                   'Raw_model_3inputs_rnn_adam_huber_loss_1721315255.keras',\
+                   'Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras',\
+                    'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.keras',\
+                    'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.keras',\
+                    'Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.keras',\
+                    # 'Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras',\
+                    'Bin_model_2inputs_pconv_adam_huber_loss_1721227042.keras'
+                    #'Bin_model_2inputs_pconv_adam_huber_loss_1721228818.keras'
+                    ])
+
+training = np.array(['training_Raw_model_3inputs_rnn_adam_huber_loss_1721296121.log',\
+                     'training_Raw_model_3inputs_rnn_adam_huber_loss_1721396555.log',\
+                     'training_Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721832523.log',\
+                     'training_Raw_model_3inputs_rnn_adam_huber_loss_1721296121.log',\
+                     'training_Raw_model_3inputs_rnn_adam_huber_loss_1721315255.log',\
+                     'training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log',\
+                     'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.log',\
+                     'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.log',\
+                    'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.log',\
+                    # 'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.log',\
+                    'training_Bin_model_2inputs_pconv_adam_huber_loss_1721227042.log',\
+                    #'training_Bin_model_2inputs_pconv_adam_huber_loss_1721228818.log'
+                    ])
+
+mod = loadModel(models[0])
+config = mod.get_config()
+print(config["layers"][0]["config"])
+
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-
-# models = np.array(['Raw_model_3inputs_rnn_adam_huber_loss_1721296121.keras',\
-#                    'Raw_model_3inputs_rnn_adam_huber_loss_1721315255.keras',\
-#                    'Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras',\
-#                     'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.keras',\
-#                     'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.keras',\
-#                     'Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.keras',\
-#                     # 'Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras',\
-#                     'Bin_model_2inputs_pconv_adam_huber_loss_1721227042.keras'
-#                     #'Bin_model_2inputs_pconv_adam_huber_loss_1721228818.keras'
-#                     ])
-
-# training = np.array(['training_Raw_model_3inputs_rnn_adam_huber_loss_1721296121.log',\
-#                      'training_Raw_model_3inputs_rnn_adam_huber_loss_1721315255.log',\
-#                      'training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log',\
-#                      'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.log',\
-#                      'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.log',\
-#                     'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.log',\
-#                     # 'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.log',\
-#                     'training_Bin_model_2inputs_pconv_adam_huber_loss_1721227042.log',\
-#                     #'training_Bin_model_2inputs_pconv_adam_huber_loss_1721228818.log'
-#                     ])
 
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
@@ -502,8 +512,8 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # time.sleep(4)
 
-# trainLoadedModel(models[0], training[0], xTrain, yTrain, xValid, yValid)
-# testLoadedModel(models[0], training[0], xTest, yTest)
+# trainLoadedModel(mod, training[0], xTrain, yTrain, xValid, yValid)
+# testLoadedModel(mod, training[0], xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
