@@ -45,17 +45,17 @@ def binModelSplit(pt, pv, track=np.array([])):
 
 def binModel(xTrain, yTrain, xValid, yValid):
 
-    form = (xTrain.shape[1], xTrain.shape[2])#, 1)
+    form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     op = keras.optimizers.Adam()
     lossFunc = keras.losses.Huber()
-    model = rnn(form, op, lossFunc)
+    model = cnn(form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
-    weights = "Bin_model_{n}inputs_rnn_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    weights = "Bin_model_{n}inputs_conv_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     modelDirectory = "models"
-    modelName = "Bin_model_{n}inputs_rnn_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    modelName = "Bin_model_{n}inputs_conv_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
@@ -226,9 +226,9 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
     sortedDiff = np.sort(shortenedDiff)
     tolIndex = np.where(sortedDiff <= tol)
-    perIndex = np.where(percent <= per)
+    perIndex = np.where(tolPercent <= per)
     print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    print('Value of', per, 'th percentil:', sortedDiff[perIndex[0][-1]])
+    print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
     fig, ax = plt.subplots()
     plt.plot(sortedDiff, percent, color="green", linestyle=':', label=name)
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
@@ -249,18 +249,18 @@ def comparison(models, train, xTest, yTest):
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # labels = np.array(['CCPCCPCC ks=8 ps=4', 'CPCPCPC ks=6 ps=4', 'CPCPCPC ks=8 ps=4', 'CPCPCPCPCPC ks=8 ps=2'])
+    labels = np.array(['CCPCCPCC ks=8 ps=4', 'CPCPCPC ks=6 ps=4', 'CPCPCPC ks=8 ps=4', 'CPCPCPCPCPC ks=8 ps=2'])
     # labels = ['MAE', 'MSE', 'Huber']
-    labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
+    # labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
     for i in range(0, len(models)):    
         print()
         if models[i][-2:] == 'h5':
             modelLoaded = loadWeights(models[i], xTest)
         else:
             modelLoaded = loadModel(models[i])
-        # if i == 2:
-        #     print('\n\n\n\n')
-        #     xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
+        if i == 2:
+            print('\n\n')
+            xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
         print()
         print(models[i])
 
@@ -281,10 +281,10 @@ def comparison(models, train, xTest, yTest):
         per = 90
         tol = 0.15
         tolIndex = np.where(sortedDiff <= tol)
-        perIndex = np.where(percent <= per)
+        perIndex = np.where(tolPercent <= per)
         
         print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-        print('Value of', per, 'th percentil:', sortedDiff[perIndex[0][-1]])
+        print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
         print('min val loss:', min(val_loss))
         print('At epoch number:',np.argmin(val_loss)+1)
         print('min loss:', min(loss))
@@ -299,7 +299,7 @@ def comparison(models, train, xTest, yTest):
     plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
     plt.legend()
     plt.title("Percentage of values vs Difference")
-    name = "{start}_comparison_of_conv_architecture_{d}_{t}".format(start=models[0][:27], d=nameData, t=clock)
+    name = "{start}_comparison_of_pconv_architecture_{d}_{t}".format(start=models[0][:28], d=nameData, t=clock)
     print(name)
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
 
@@ -410,9 +410,9 @@ def testLoadedModel(model, train, xTest, yTest):
     per = 90
     tol = 0.15
     tolIndex = np.where(sortedDiff <= tol)
-    perIndex = np.where(percent <= per)
+    perIndex = np.where(tolPercent <= per)
     print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    print('Value of', per, 'th percentil:', sortedDiff[perIndex[0][-1]])
+    print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
     fig, ax = plt.subplots()
     plt.plot(sortedDiff, percent, color="green")
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
@@ -427,17 +427,17 @@ def testLoadedModel(model, train, xTest, yTest):
 # ----------------------------------------------------- main --------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+nameData = 'TTbar'
+rawD = np.load('TTbarRaw5.npz')
+binD = np.load('TTbarBin4.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
 # binD = np.load('WJetsToLNu_Bin.npz')
 
-nameData = 'QCD'
-rawD = np.load('QCD_Pt-15To3000.npz')
-binD = np.load('QCD_Pt-15To3000_Bin.npz')
+# nameData = 'QCD'
+# rawD = np.load('QCD_Pt-15To3000.npz')
+# binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
@@ -522,16 +522,18 @@ xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
 
 
 # Comparing various models
-modelsCompare = ['Bin_model_2inputs_conv_adam_huber_loss_WJets_1721745541.keras',\
-                 'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.keras',\
-                 'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.keras']
-trainingCompare = ['training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721745541.log',\
-                   'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.log',\
-                   'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.log']
+modelsCompare = ['Bin_model_2inputs_pconv_adam_huber_loss_1721227042.keras',\
+                 'Bin_model_2inputs_pconv_adam_huber_loss_1721228818.keras',\
+                 'Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721750592.keras',\
+                 'Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.keras']
+trainingCompare = ['training_Bin_model_2inputs_pconv_adam_huber_loss_1721227042.log',\
+                   'training_Bin_model_2inputs_pconv_adam_huber_loss_1721228818.log',\
+                   'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721750592.log',\
+                   'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log']
 
 # print(modelsCompare[0][:27])
 # mod = loadModel(modelsCompare[0])
@@ -543,6 +545,10 @@ trainingCompare = ['training_Bin_model_2inputs_conv_adam_huber_loss_WJets_172174
 # mod = loadModel(modelsCompare[2])
 # config = mod.get_config()
 # print(config["layers"][0]["config"])
+# mod = loadModel(modelsCompare[3])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
 
-print(xTest.shape)
+
+# print(xTest.shape)
 comparison(modelsCompare, trainingCompare, xTest, yTest)
