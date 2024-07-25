@@ -201,7 +201,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.scatter(minX, minY, color='green', label='minimum')
     plt.title('Training and Validation Loss')
     plt.legend()
-    plt.savefig("Train_valid_loss_{}.png".format(name))
+    plt.savefig("Train_valid_loss_{}.png".format(name), dpi=1200)
     print('min val loss:', min(val_loss))
     print('At epoch number:',np.argmin(val_loss)+1)
     print('min loss:', min(loss))
@@ -213,7 +213,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.clf()
     plt.hist(diff, bins=300)
     plt.title('Loss of predicted vs test Histogram')
-    plt.savefig("Hist_loss_{}.png".format(name))
+    plt.savefig("Hist_loss_{}.png".format(name), dpi=1200)
 
     # plotting % of predictions vs difference
     plt.clf()
@@ -317,7 +317,7 @@ def comparison(models, train, xTest, yTest):
         plt.scatter(minX, minY, edgecolors='black', linewidths=1, label='minimum'+str(round(minY, 5)))
     plt.title('Training and Validation Loss')
     plt.legend()
-    plt.savefig("Train_valid_loss_{}.png".format(name))
+    plt.savefig("Train_valid_loss_{}.png".format(name), dpi=1200)
 
 
 def loadModel(name):
@@ -401,7 +401,7 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.scatter(minX, minY, color='green', label='minimum')
     plt.title('Training and Validation Loss')
     plt.legend()
-    plt.savefig("Train_valid_loss_{}.png".format(name))
+    plt.savefig("Train_valid_loss_{}.png".format(name),dpi=1200)
 
     yPredicted = modelLoaded.predict(xTest)
 
@@ -413,7 +413,7 @@ def testLoadedModel(model, train, xTest, yTest):
     print(np.std(diff), np.mean(diff))
     plt.hist(diff, bins=200)
     plt.title('Loss of predicted vs test Histogram')
-    plt.savefig("Hist_loss_{}.png".format(name))
+    plt.savefig("Hist_loss_{}.png".format(name), dpi=1200)
 
     # plotting % of predictions vs loss
     print()
@@ -437,7 +437,7 @@ def testLoadedModel(model, train, xTest, yTest):
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     plt.title("Percentage of values vs Difference")
-    plt.savefig("Percentage_vs_loss_{}.png".format(name))
+    plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
 
 
 # ----------------------------------------------------- main --------------------------------------------------------------------------------
