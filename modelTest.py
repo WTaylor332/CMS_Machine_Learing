@@ -304,10 +304,12 @@ def comparison(models, train, xTest, yTest):
 
     plt.clf()
     for i in range(len(models)):
+        print(i)
         hist = pd.read_csv(train[i], sep=',', engine='python')
         loss = hist['loss']
         val_loss = hist['val_loss']
         epochs = range(1, len(loss) + 1)
+        print(epochs)
         plt.plot(epochs, val_loss, label='Validation Loss '+labels[i])
         plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
         plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
