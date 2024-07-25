@@ -300,22 +300,22 @@ def rnn(form, op, lossFunc, size=0):
     #     keras.layers.Dense(1)
     # ])
 
-    # model = keras.models.Sequential([
-    #     keras.Input(shape=form),
-    #     # keras.layers.Masking(mask_value=0),
-    #     keras.layers.GRU(20, return_sequences=True, activation='relu'),
-    #     keras.layers.GRU(20, activation='relu'),
-    #     keras.layers.Dense(1)
-    # ])
-
-    # # LSTM Masking
     model = keras.models.Sequential([
         keras.Input(shape=form),
-        keras.layers.Masking(mask_value=0),
-        keras.layers.LSTM(20, return_sequences=True, activation='relu'),
-        keras.layers.LSTM(20, activation='relu'),
+        # keras.layers.Masking(mask_value=0),
+        keras.layers.GRU(20, return_sequences=True, activation='relu'),
+        keras.layers.GRU(20, activation='relu'),
         keras.layers.Dense(1)
     ])
+
+    # # LSTM Masking
+    # model = keras.models.Sequential([
+    #     keras.Input(shape=form),
+    #     keras.layers.Masking(mask_value=0),
+    #     keras.layers.LSTM(20, return_sequences=True, activation='relu'),
+    #     keras.layers.LSTM(20, activation='relu'),
+    #     keras.layers.Dense(1)
+    # ])
 
     # doesn't work
     # model = keras.models.Sequential([
