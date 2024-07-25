@@ -222,7 +222,8 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     shortenedDiff = diff[diff<2]
     percent = (np.arange(0,len(shortenedDiff),1)*100)/len(diff)
     percentile = np.zeros(len(shortenedDiff)) + per
-    tolerance = np.zeros(len(shortenedDiff)) + tol
+    tolerance = np.zeros(len(diff)) + tol
+    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
     sortedDiff = np.sort(shortenedDiff)
     tolIndex = np.where(sortedDiff <= tol)
     perIndex = np.where(percent <= per)
@@ -231,7 +232,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     fig, ax = plt.subplots()
     plt.plot(sortedDiff, percent, color="green", linestyle=':', label=name)
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
-    plt.plot(tolerance, percent, color='red', label=str(tol)+" tolerance")
+    plt.plot(tolerance, tolPercent, color='red', label=str(tol)+" tolerance")
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
@@ -276,7 +277,7 @@ def comparison(models, train, xTest, yTest):
 
         sortedDiff = np.sort(diff[diff<2])
         percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-
+        tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
         per = 90
         tol = 0.15
         tolIndex = np.where(sortedDiff <= tol)
@@ -290,15 +291,15 @@ def comparison(models, train, xTest, yTest):
         print('At epoch number:',np.argmin(loss)+1)
 
         percentile = np.zeros(len(sortedDiff)) + per
-        tolerance = np.zeros(len(sortedDiff)) + tol
+        tolerance = np.zeros(len(diff)) + tol
         plt.plot(sortedDiff, percent, label=labels[i])
         print()
     
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
-    plt.plot(tolerance, percent, color='red', linestyle=':', label=str(tol)+" tolerance")
+    plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
     plt.legend()
     plt.title("Percentage of values vs Difference")
-    name = "{start}_comparison_of_losses_{d}_{t}".format(start=models[0][:27], d=nameData, t=clock)
+    name = "{start}_comparison_of_conv_architecture_{d}_{t}".format(start=models[0][:27], d=nameData, t=clock)
     print(name)
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
 
@@ -404,7 +405,8 @@ def testLoadedModel(model, train, xTest, yTest):
     sortedDiff = np.sort(diff[diff<2])
     percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
     percentile = np.zeros(len(sortedDiff)) + 90
-    tolerance = np.zeros(len(sortedDiff)) + 0.1
+    tolerance = np.zeros(len(diff)) + 0.1
+    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
     per = 90
     tol = 0.15
     tolIndex = np.where(sortedDiff <= tol)
@@ -414,7 +416,7 @@ def testLoadedModel(model, train, xTest, yTest):
     fig, ax = plt.subplots()
     plt.plot(sortedDiff, percent, color="green")
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
-    plt.plot(tolerance, percent, color='red', linestyle=':', label=str(tol)+" tolerance")
+    plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
@@ -429,13 +431,13 @@ def testLoadedModel(model, train, xTest, yTest):
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 
-nameData = 'WJets'
-rawD = np.load('WJetsToLNu.npz')
-binD = np.load('WJetsToLNu_Bin.npz')
+# nameData = 'WJets'
+# rawD = np.load('WJetsToLNu.npz')
+# binD = np.load('WJetsToLNu_Bin.npz')
 
-# nameData = 'QCD'
-# rawD = np.load('QCD_Pt-15To3000.npz')
-# binD = np.load('QCD_Pt-15To3000_Bin.npz')
+nameData = 'QCD'
+rawD = np.load('QCD_Pt-15To3000.npz')
+binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
@@ -531,16 +533,16 @@ trainingCompare = ['training_Bin_model_2inputs_conv_adam_huber_loss_WJets_172174
                    'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.log',\
                    'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.log']
 
-print(modelsCompare[0][:27])
-mod = loadModel(modelsCompare[0])
-config = mod.get_config()
-print(config["layers"][0]["config"])
-mod = loadModel(modelsCompare[1])
-config = mod.get_config()
-print(config["layers"][0]["config"])
-mod = loadModel(modelsCompare[2])
-config = mod.get_config()
-print(config["layers"][0]["config"])
+# print(modelsCompare[0][:27])
+# mod = loadModel(modelsCompare[0])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
+# mod = loadModel(modelsCompare[1])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
+# mod = loadModel(modelsCompare[2])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
 
 print(xTest.shape)
 comparison(modelsCompare, trainingCompare, xTest, yTest)
