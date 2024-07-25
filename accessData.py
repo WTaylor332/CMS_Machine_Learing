@@ -2,7 +2,9 @@ import numpy as np
 import uproot
 from tqdm import tqdm
 from sklearn.preprocessing import StandardScaler
+import random
 from tqdm import tqdm
+
 
 def loadData(dataFile):
     f = uproot.open(dataFile+':L1TrackNtuple/eventTree')
@@ -183,15 +185,25 @@ def merge():
     print(zMerge.shape, ptMerge.shape, etaMerge.shape)
     print(zMerge[0])
 
-    np.random.shuffle(zMerge)
-    np.random.shuffle(ptMerge)
-    np.random.shuffle(etaMerge)
+    pv = np.concatenate((rawQ['pv'], rawW['pv'], rawT['pv']))
+    trackLength = np.concatenate((rawQ['tl'], rawW['tl'], rawT['tl']))
+    print(pv.shape)
+    print(trackLength.shape)
+    order = list(enumerate(pv))
+    random.shuffle(order)
+    shuffleIndex, newOrder = zip(*order)
+    shuffleIndex =np.array(shuffleIndex)
+    zMerge = zMerge[shuffleIndex]
+    ptMerge = ptMerge[shuffleIndex]
+    etaMerge = etaMerge[shuffleIndex]
+    pvMerge = pv[shuffleIndex]
+    trackLength = trackLength[shuffleIndex]
 
     print()
     print(zMerge.shape, ptMerge.shape, etaMerge.shape)
     print(zMerge[0])
+    return zMerge, ptMerge, etaMerge, pvMerge, trackLength
 
-    np.savez('Merged_deacys_Raw', z=zMerge, pt=ptMerge, eta=etaMerge)
 
 
 # -------------------------------------------------------------------------------------------------------------------------------------------
@@ -225,8 +237,8 @@ def merge():
 
 # merge and sort all decays
 
-# merge()
-
+zMerge, ptMerge, etaMerge, pvMerge, trackLength = merge()
+np.savez('Merged_deacys_Raw', z=zMerge, pt=ptMerge, eta=etaMerge, pv=np.array(pvMerge), tl=trackLength)
 mergeData = np.load('Merged_deacys_Raw.npz')
 z, pt, eta = mergeData['z'], mergeData['pt'], mergeData['eta']
 print()
