@@ -252,49 +252,49 @@ def comparison(models, train, xTest, yTest):
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     # labels = np.array(['CCPCCPCC ks=8 ps=4', 'CPCPCPC ks=6 ps=4', 'CPCPCPC ks=8 ps=4', 'CPCPCPCPCPC ks=8 ps=2'])
     # labels = ['MAE', 'MSE', 'Huber']
-    # labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
-    # for i in range(0, len(models)):    
-    #     print()
-    #     if models[i][-2:] == 'h5':
-    #         modelLoaded = loadWeights(models[i], xTest)
-    #     else:
-    #         modelLoaded = loadModel(models[i])
-    #     # if i == 2:
-    #     #     print('\n\n\n\n')
-    #     #     xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
-    #     print()
-    #     print(models[i])
+    labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
+    for i in range(0, len(models)):    
+        print()
+        if models[i][-2:] == 'h5':
+            modelLoaded = loadWeights(models[i], xTest)
+        else:
+            modelLoaded = loadModel(models[i])
+        # if i == 2:
+        #     print('\n\n\n\n')
+        #     xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
+        print()
+        print(models[i])
 
-    #     hist = pd.read_csv(train[i], sep=',', engine='python')
-    #     val_loss = hist['val_loss']
-    #     loss = hist['loss']
+        hist = pd.read_csv(train[i], sep=',', engine='python')
+        val_loss = hist['val_loss']
+        loss = hist['loss']
 
-    #     print(np.sort(val_loss)[:5])
-    #     yPredicted = modelLoaded.predict(xTest).flatten()
+        print(np.sort(val_loss)[:5])
+        yPredicted = modelLoaded.predict(xTest).flatten()
 
-    #     diff = abs(yPredicted - yTest.flatten())
-    #     print(max(diff), min(diff))
-    #     print(np.std(diff), np.mean(diff))
+        diff = abs(yPredicted - yTest.flatten())
+        print(max(diff), min(diff))
+        print(np.std(diff), np.mean(diff))
 
-    #     sortedDiff = np.sort(diff[diff<2])
-    #     percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    #     tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
-    #     per = 90
-    #     tol = 0.15
-    #     tolIndex = np.where(sortedDiff <= tol)
-    #     perIndex = np.where(percent <= per)
+        sortedDiff = np.sort(diff[diff<2])
+        percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
+        tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
+        per = 90
+        tol = 0.15
+        tolIndex = np.where(sortedDiff <= tol)
+        perIndex = np.where(percent <= per)
         
-    #     print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    #     print('Value of', per, 'th percentil:', sortedDiff[perIndex[0][-1]])
-    #     print('min val loss:', min(val_loss))
-    #     print('At epoch number:',np.argmin(val_loss)+1)
-    #     print('min loss:', min(loss))
-    #     print('At epoch number:',np.argmin(loss)+1)
+        print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
+        print('Value of', per, 'th percentil:', sortedDiff[perIndex[0][-1]])
+        print('min val loss:', min(val_loss))
+        print('At epoch number:',np.argmin(val_loss)+1)
+        print('min loss:', min(loss))
+        print('At epoch number:',np.argmin(loss)+1)
 
-    #     percentile = np.zeros(len(sortedDiff)) + per
-    #     tolerance = np.zeros(len(diff)) + tol
-    #     plt.plot(sortedDiff, percent, label=labels[i])
-    #     print()
+        percentile = np.zeros(len(sortedDiff)) + per
+        tolerance = np.zeros(len(diff)) + tol
+        plt.plot(sortedDiff, percent, label=labels[i])
+        print()
      
     # plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
     # plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
@@ -313,7 +313,7 @@ def comparison(models, train, xTest, yTest):
         plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
         minX = np.argmin(val_loss) + 1
         minY = np.min(val_loss)
-        plt.scatter(minX, minY, edgecolors='black', linewidths=1, label='minimum'+str(round(minY, 5)))
+        plt.scatter(minX, minY, edgecolors='black', linewidths=1, label='minimum '+str(round(minY, 5)))
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name), dpi=1200)
@@ -446,17 +446,17 @@ def testLoadedModel(model, train, xTest, yTest):
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 
-# nameData = 'WJets'
-# rawD = np.load('WJetsToLNu.npz')
-# binD = np.load('WJetsToLNu_Bin.npz')
+nameData = 'WJets'
+rawD = np.load('WJetsToLNu.npz')
+binD = np.load('WJetsToLNu_Bin.npz')
 
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
-nameData = 'Merged'
-rawD = np.load('Merged_deacys_Raw.npz')
-binD = np.load('Merged_decays_Bin.npz')
+# nameData = 'Merged'
+# rawD = np.load('Merged_deacys_Raw.npz')
+# binD = np.load('Merged_decays_Bin.npz')
 
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
@@ -470,13 +470,13 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
@@ -517,17 +517,13 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 #                     #'training_Bin_model_2inputs_pconv_adam_huber_loss_1721228818.log'
 #                     ])
 
-# mod = loadModel(models[0])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
 
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
@@ -551,12 +547,12 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 #                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721750592.log',\
 #                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log']
 
-# modelsCompare = ['Bin_model_2inputs_conv_adam_huber_loss_WJets_1721745541.keras',\
-#                  'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.keras',\
-#                  'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.keras']
-# trainingCompare = ['training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721745541.log',\
-#                    'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.log',\
-#                    'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.log']
+modelsCompare = ['Bin_model_2inputs_conv_adam_huber_loss_WJets_1721745541.keras',\
+                 'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.keras',\
+                 'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.keras']
+trainingCompare = ['training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721745541.log',\
+                   'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.log',\
+                   'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.log']
 
 # print(modelsCompare[0][:27])
 # mod = loadModel(modelsCompare[0])
@@ -570,4 +566,4 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 # print(config["layers"][0]["config"])
 
 # print(xTest.shape)
-# comparison(modelsCompare, trainingCompare, xTest, yTest)
+comparison(modelsCompare, trainingCompare, xTest, yTest)
