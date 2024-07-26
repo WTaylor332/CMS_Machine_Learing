@@ -450,13 +450,13 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+nameData = 'TTbar'
+rawD = np.load('TTbarRaw5.npz')
+binD = np.load('TTbarBin4.npz')
 
-nameData = 'WJets'
-rawD = np.load('WJetsToLNu.npz')
-binD = np.load('WJetsToLNu_Bin.npz')
+# nameData = 'WJets'
+# rawD = np.load('WJetsToLNu.npz')
+# binD = np.load('WJetsToLNu_Bin.npz')
 
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
@@ -560,10 +560,10 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatte
 #                    'training_Bin_model_2inputs_conv_adam_mean_squared_error_QCD_1721983185.log',\
 #                    'training_Bin_model_2inputs_conv_adam_huber_loss_QCD_1721910220.log']
 
-modelsCompare = ['Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721901641.keras',\
-                 'Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721898114.keras']
-trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721901641.log',\
-                   'training_Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721898114.log']
+modelsCompare = ['Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras',\
+                 'Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.keras']
+trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log',\
+                   'training_Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.log']
 
 # print(modelsCompare[0][:27])
 # mod = loadModel(modelsCompare[0])
