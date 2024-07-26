@@ -49,13 +49,13 @@ def binModel(xTrain, yTrain, xValid, yValid):
     num = 2
     op = keras.optimizers.Adam()
     lossFunc = keras.losses.Huber()
-    model = pcnn(form, op, lossFunc)
+    model = wavenet(form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
-    weights = "Bin_model_{n}inputs_pconv_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    weights = "Bin_model_{n}inputs_wavenet_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     modelDirectory = "models"
-    modelName = "Bin_model_{n}inputs_pconv_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    modelName = "Bin_model_{n}inputs_wavenet_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
@@ -191,8 +191,8 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     epochs = range(1, len(loss) + 1)
 
     plt.clf()
-    plt.plot(epochs, loss, 'b', color='blue', label='Training Loss')
-    plt.plot(epochs, val_loss, 'b', color='red', label='Validation Loss')
+    plt.plot(epochs, loss, color='blue', label='Training Loss')
+    plt.plot(epochs, val_loss, color='red', label='Validation Loss')
     plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
     plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
     minX = np.argmin(val_loss) + 1
@@ -453,13 +453,13 @@ def testLoadedModel(model, train, xTest, yTest):
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 
-nameData = 'WJets'
-rawD = np.load('WJetsToLNu.npz')
-binD = np.load('WJetsToLNu_Bin.npz')
+# nameData = 'WJets'
+# rawD = np.load('WJetsToLNu.npz')
+# binD = np.load('WJetsToLNu_Bin.npz')
 
-# nameData = 'QCD'
-# rawD = np.load('QCD_Pt-15To3000.npz')
-# binD = np.load('QCD_Pt-15To3000_Bin.npz')
+nameData = 'QCD'
+rawD = np.load('QCD_Pt-15To3000.npz')
+binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
 # nameData = 'Merged'
 # rawD = np.load('Merged_deacys_Raw.npz')
@@ -477,13 +477,13 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
-# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
@@ -523,12 +523,12 @@ print()
 #                     ])
 
 
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
@@ -559,18 +559,18 @@ xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 #                    'training_Bin_model_2inputs_conv_adam_huber_loss_QCD_1721916707.log',\
 #                    'training_Bin_model_2inputs_conv_adam_huber_loss_QCD_1721910220.log']
 
-modelsCompare = ['Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721901641.keras',\
-                 'Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721898114.keras']
-trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721901641.log',\
-                   'training_Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721898114.log']
+# modelsCompare = ['Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721901641.keras',\
+#                  'Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721898114.keras']
+# trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721901641.log',\
+#                    'training_Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721898114.log']
 
-print(modelsCompare[0][:27])
-mod = loadModel(modelsCompare[0])
-config = mod.get_config()
-print(config["layers"][0]["config"])
-mod = loadModel(modelsCompare[1])
-config = mod.get_config()
-print(config["layers"][0]["config"])
+# print(modelsCompare[0][:27])
+# mod = loadModel(modelsCompare[0])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
+# mod = loadModel(modelsCompare[1])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
 # mod = loadModel(modelsCompare[2])
 # config = mod.get_config()
 # print(config["layers"][0]["config"])
@@ -578,13 +578,17 @@ print(config["layers"][0]["config"])
 # config = mod.get_config()
 # print(config["layers"][0]["config"])
 
-for i in range(len(trainingCompare)):
-        print(i)
-        hist = pd.read_csv(trainingCompare[i], sep=',', engine='python')
-        loss = hist['loss']
-        val_loss = hist['val_loss']
-        epochs = range(1, len(loss) + 1)
-        print(epochs)
+# mod = loadModel('Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras')
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
 
-print(xTest.shape)
+# for i in range(len(trainingCompare)):
+#         print(i)
+#         hist = pd.read_csv(trainingCompare[i], sep=',', engine='python')
+#         loss = hist['loss']
+#         val_loss = hist['val_loss']
+#         epochs = range(1, len(loss) + 1)
+#         print(epochs)
+
+# print(xTest.shape)
 # comparison(modelsCompare, trainingCompare, xTest, yTest)
