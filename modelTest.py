@@ -191,8 +191,8 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     epochs = range(1, len(loss) + 1)
 
     plt.clf()
-    plt.plot(epochs, loss, color='blue', label='Training Loss')
-    plt.plot(epochs, val_loss, color='red', label='Validation Loss')
+    plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
+    plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
     plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
     plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
     minX = np.argmin(val_loss) + 1
@@ -229,7 +229,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
     print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
     fig, ax = plt.subplots()
-    plt.plot(sortedDiff, percent, color="green", linestyle=':', label=name)
+    plt.plot(sortedDiff, percent, color="green", linestyle=':', label=name, linewidth=0.7)
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
     plt.plot(tolerance, tolPercent, color='red', label=str(tol)+" tolerance")
     ax.minorticks_on()
@@ -252,10 +252,10 @@ def comparison(models, train, xTest, yTest):
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     # labels = np.array(['CCPCCPCC ks=8 ps=4', 'CPCPCPC ks=6 ps=4', 'CPCPCPC ks=8 ps=4', 'CPCPCPCPCPC ks=8 ps=2'])
     # labels = ['MAE', 'MSE', 'Huber']
-    # labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
+    labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
     # labels = ['MLP','CNN + MLP', 'PURE CNN', 'WAVENET', 'RNN']
-    labels = ['GRU100 GRU50 D1', 'GRU20 GRU20 D1']
-    labels = ['dr(1,2) dr(1,2)', 'dr(1,2)']
+    # labels = ['GRU100 GRU50 D1', 'GRU20 GRU20 D1']
+    # labels = ['dr(1,2) dr(1,2)', 'dr(1,2)']
     for i in range(0, len(models)):    
         print()
         if models[i][-2:] == 'h5':
@@ -296,7 +296,7 @@ def comparison(models, train, xTest, yTest):
 
         percentile = np.zeros(len(sortedDiff)) + per
         tolerance = np.zeros(len(diff)) + tol
-        plt.plot(sortedDiff, percent, label=labels[i])
+        plt.plot(sortedDiff, percent, label=labels[i], linewidth=0.7)
         print()
      
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
@@ -312,7 +312,7 @@ def comparison(models, train, xTest, yTest):
         loss = hist['loss']
         val_loss = hist['val_loss']
         epochs = range(1, len(loss) + 1)
-        plt.plot(epochs, val_loss, label='Validation Loss '+labels[i])
+        plt.plot(epochs, val_loss, label='Validation Loss '+labels[i], linewidth=0.7)
         plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
         plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
         minX = np.argmin(val_loss) + 1
@@ -399,8 +399,8 @@ def testLoadedModel(model, train, xTest, yTest):
     print('At epoch number:',np.argmin(loss)+1)
 
     plt.clf()
-    plt.plot(epochs, loss, color='blue', label='Training Loss')
-    plt.plot(epochs, val_loss, color='red', label='Validation Loss')
+    plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
+    plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
     minX = np.argmin(val_loss) + 1
     minY = np.min(val_loss)
     plt.scatter(minX, minY, color='green', label='minimum')
@@ -435,7 +435,7 @@ def testLoadedModel(model, train, xTest, yTest):
     print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
     print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
     fig, ax = plt.subplots()
-    plt.plot(sortedDiff, percent, color="green")
+    plt.plot(sortedDiff, percent, color="green", linewidth=0.7)
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
     plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
     ax.minorticks_on()
@@ -449,17 +449,17 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+nameData = 'TTbar'
+rawD = np.load('TTbarRaw5.npz')
+binD = np.load('TTbarBin4.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
 # binD = np.load('WJetsToLNu_Bin.npz')
 
-nameData = 'QCD'
-rawD = np.load('QCD_Pt-15To3000.npz')
-binD = np.load('QCD_Pt-15To3000_Bin.npz')
+# nameData = 'QCD'
+# rawD = np.load('QCD_Pt-15To3000.npz')
+# binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
 # nameData = 'Merged'
 # rawD = np.load('Merged_deacys_Raw.npz')
@@ -477,13 +477,13 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
@@ -523,12 +523,12 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 #                     ])
 
 
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
@@ -552,12 +552,12 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 #                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721750592.log',\
 #                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log']
 
-# modelsCompare = ['Bin_model_2inputs_conv_adam_huber_loss_QCD_1721905699.keras',\
-#                  'Bin_model_2inputs_conv_adam_huber_loss_QCD_1721916707.keras',\
-#                  'Bin_model_2inputs_conv_adam_huber_loss_QCD_1721910220.keras']
-# trainingCompare = ['training_Bin_model_2inputs_conv_adam_huber_loss_QCD_1721905699.log',\
-#                    'training_Bin_model_2inputs_conv_adam_huber_loss_QCD_1721916707.log',\
-#                    'training_Bin_model_2inputs_conv_adam_huber_loss_QCD_1721910220.log']
+modelsCompare = ['Bin_model_2inputs_conv_adam_huber_loss_TTbar_1721984304.keras',\
+                 'Bin_model_2inputs_conv_adam_huber_loss_TTbar_1721750154.keras',\
+                 'Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras']
+trainingCompare = ['training_Bin_model_2inputs_conv_adam_huber_loss_TTbar_1721984304.log',\
+                   'training_Bin_model_2inputs_conv_adam_huber_loss_TTbar_1721750154.log',\
+                   'training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log']
 
 # modelsCompare = ['Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721901641.keras',\
 #                  'Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721898114.keras']
@@ -590,5 +590,5 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 #         epochs = range(1, len(loss) + 1)
 #         print(epochs)
 
-# print(xTest.shape)
-# comparison(modelsCompare, trainingCompare, xTest, yTest)
+print(xTest.shape)
+comparison(modelsCompare, trainingCompare, xTest, yTest)
