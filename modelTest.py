@@ -49,13 +49,13 @@ def binModel(xTrain, yTrain, xValid, yValid):
     num = 2
     op = keras.optimizers.Adam()
     lossFunc = keras.losses.Huber()
-    model = wavenet(form, op, lossFunc)
+    model = pcnn(form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
-    weights = "Bin_model_{n}inputs_wavenet_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    weights = "Bin_model_{n}inputs_pconv_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     modelDirectory = "models"
-    modelName = "Bin_model_{n}inputs_wavenet_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    modelName = "Bin_model_{n}inputs_pconv_{o}_{l}_{d}_{t}".format(n=num, o='adam', l=lossFunc.name, d=nameData, t=clock)
     
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
@@ -243,7 +243,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
 def comparison(models, train, xTest, yTest):
     print()
     endStart =[i for i, letter in enumerate(models[0]) if letter == '_']
-    name = "{start}_comparison_of_losses_{d}_{t}".format(start=models[0][:endStart[4]], d=nameData, t=clock)
+    name = "{start}_comparison_of_wavenet_architecture_{d}_{t}".format(start=models[0][:endStart[4]], d=nameData, t=clock)
     print(name)
     # Percentage vs difference plot comparsion
     plt.clf()
@@ -255,8 +255,8 @@ def comparison(models, train, xTest, yTest):
     # labels = ['MAE', 'MSE', 'Huber']
     # labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
     # labels = ['MLP','CNN + MLP', 'PURE CNN', 'WAVENET', 'RNN']
-    labels = ['GRU100 GRU50 D1', 'GRU20 GRU20 D1']
-    # labels = ['dr(1,2) dr(1,2)', 'dr(1,2)']
+    # labels = ['GRU100 GRU50 D1', 'GRU20 GRU20 D1']
+    labels = ['dr(1,2) dr(1,2)', 'dr(1,2)', 'dr(1,3)']
     for i in range(0, len(models)):    
         print()
         if models[i][-2:] == 'h5':
@@ -315,15 +315,15 @@ def comparison(models, train, xTest, yTest):
         epochs = range(1, len(loss) + 1)
         plt.plot(epochs, val_loss, label='Validation Loss '+labels[i], linewidth=0.7)
         plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
-        plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+        plt.grid(which='minor', color='#EEEEEE', linewidth=0.6)
         minX = np.argmin(val_loss) + 1
         minY = np.min(val_loss)
         plt.scatter(minX, minY, edgecolors='black', linewidths=0.4, label='minimum '+str(round(minY, 5)), s=6)
     
-    plt.title('Training and Validation Loss')
+    plt.title('Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name), dpi=1200)
-    print('training vs val loss plot made')
+    print('val loss plot made')
 
 
 def loadModel(name):
@@ -529,7 +529,7 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatte
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
@@ -553,28 +553,29 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatte
 #                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721750592.log',\
 #                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log']
 
-# modelsCompare = ['Bin_model_2inputs_conv_adam_mean_absolute_error_QCD_1721916879.keras',\
-#                  'Bin_model_2inputs_conv_adam_mean_squared_error_QCD_1721983185.keras',\
-#                  'Bin_model_2inputs_conv_adam_huber_loss_QCD_1721910220.keras']
-# trainingCompare = ['training_Bin_model_2inputs_conv_adam_mean_absolute_error_QCD_1721916879.log',\
-#                    'training_Bin_model_2inputs_conv_adam_mean_squared_error_QCD_1721983185.log',\
-#                    'training_Bin_model_2inputs_conv_adam_huber_loss_QCD_1721910220.log']
+modelsCompare = ['',\
+                 '',\
+                 '']
+trainingCompare = ['',\
+                   '',\
+                   '']
 
-modelsCompare = ['Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras',\
-                 'Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.keras']
-trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log',\
-                   'training_Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.log']
+# modelsCompare = ['Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras',\
+#                  'Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.keras']
+# trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log',\
+#                    'training_Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.log']
 
-# print(modelsCompare[0][:27])
-# mod = loadModel(modelsCompare[0])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadModel(modelsCompare[1])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadModel(modelsCompare[2])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
+endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
+print(modelsCompare[0][:endStart[4]])
+mod = loadModel(modelsCompare[0])
+config = mod.get_config()
+print(config["layers"][0]["config"])
+mod = loadModel(modelsCompare[1])
+config = mod.get_config()
+print(config["layers"][0]["config"])
+mod = loadModel(modelsCompare[2])
+config = mod.get_config()
+print(config["layers"][0]["config"])
 # mod = loadModel(modelsCompare[3])
 # config = mod.get_config()
 # print(config["layers"][0]["config"])
@@ -583,13 +584,13 @@ trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.lo
 # config = mod.get_config()
 # print(config["layers"][0]["config"])
 
-# for i in range(len(trainingCompare)):
-#         print(i)
-#         hist = pd.read_csv(trainingCompare[i], sep=',', engine='python')
-#         loss = hist['loss']
-#         val_loss = hist['val_loss']
-#         epochs = range(1, len(loss) + 1)
-#         print(epochs)
+for i in range(len(trainingCompare)):
+        print(i)
+        hist = pd.read_csv(trainingCompare[i], sep=',', engine='python')
+        loss = hist['loss']
+        val_loss = hist['val_loss']
+        epochs = range(1, len(loss) + 1)
+        print(epochs)
 
 print(xTest.shape)
-comparison(modelsCompare, trainingCompare, xTest, yTest)
+# comparison(modelsCompare, trainingCompare, xTest, yTest)

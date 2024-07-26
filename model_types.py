@@ -228,21 +228,21 @@ def pureCNN(form, op, lossFunc):
     else:
         # 2D model
         # A1
-        model = keras.models.Sequential([
-            # convolutional layers
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form)),
-            keras.layers.MaxPool2D(pool_size=(1,4)),
+        # model = keras.models.Sequential([
+        #     # convolutional layers
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form)),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(1,4)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-            keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(1,4)),
+        #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu'),
+        #     keras.layers.MaxPool2D(pool_size=(1,4)),
 
-            keras.layers.Conv2D(1, kernel_size=(2,2), activation='relu'),
+        #     keras.layers.Conv2D(1, kernel_size=(2,2), activation='relu'),
 
-            keras.layers.Flatten()
-        ])
+        #     keras.layers.Flatten()
+        # ])
 
         # A2
         # model = keras.models.Sequential([
@@ -267,7 +267,7 @@ def pureCNN(form, op, lossFunc):
         #     keras.layers.Flatten()
         # ])
 
-        # A3
+        # # A3
         # model = keras.models.Sequential([
         #     # convolutional layers
         #     keras.layers.Conv2D(12, kernel_size=(1,8), activation='relu', input_shape=(form)),
@@ -285,21 +285,21 @@ def pureCNN(form, op, lossFunc):
         # ])
 
         # A4
-        # model = keras.models.Sequential([
-        #     # convolutional layers
-        #     keras.layers.Conv2D(12, kernel_size=(2,6), activation='relu', input_shape=(form)),
-        #     keras.layers.MaxPool2D(pool_size=(1,4)),
+        model = keras.models.Sequential([
+            # convolutional layers
+            keras.layers.Conv2D(12, kernel_size=(2,6), activation='relu', input_shape=(form)),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(1,6), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(1,4)),
+            keras.layers.Conv2D(12, kernel_size=(1,6), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
 
-        #     keras.layers.Conv2D(12, kernel_size=(1,6), activation='relu'),
-        #     keras.layers.MaxPool2D(pool_size=(1,4)),
+            keras.layers.Conv2D(12, kernel_size=(1,6), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
 
-        #     keras.layers.Conv2D(1, kernel_size=(1,3), activation='relu'),
+            keras.layers.Conv2D(1, kernel_size=(1,3), activation='relu'),
 
-        #     keras.layers.Flatten()
-        # ])
+            keras.layers.Flatten()
+        ])
 
     model.compile(optimizer=op, loss=lossFunc)
     return model
@@ -313,12 +313,12 @@ def rnn(form, op, lossFunc, size=0):
     #     keras.layers.Dense(1)
     # ])
 
-    model = keras.models.Sequential([
-        keras.Input(shape=form),
-        keras.layers.Bidirectional(keras.layers.GRU(20, return_sequences=True, activation='relu')),
-        keras.layers.GRU(20, activation='relu'),
-        keras.layers.Dense(1)
-    ])
+    # model = keras.models.Sequential([
+    #     keras.Input(shape=form),
+    #     keras.layers.Bidirectional(keras.layers.GRU(20, return_sequences=True, activation='relu')),
+    #     keras.layers.GRU(20, activation='relu'),
+    #     keras.layers.Dense(1)
+    # ])
 
     # masking model
     # model = keras.models.Sequential([
@@ -330,13 +330,13 @@ def rnn(form, op, lossFunc, size=0):
     #     keras.layers.Dense(1)
     # ])
 
-    # model = keras.models.Sequential([
-    #     keras.Input(shape=form),
-    #     # keras.layers.Masking(mask_value=0),
-    #     keras.layers.GRU(20, return_sequences=True, activation='relu'),
-    #     keras.layers.GRU(20, activation='relu'),
-    #     keras.layers.Dense(1)
-    # ])
+    model = keras.models.Sequential([
+        keras.Input(shape=form),
+        keras.layers.Masking(mask_value=0),
+        keras.layers.GRU(20, return_sequences=True, activation='relu'),
+        keras.layers.GRU(20, activation='relu'),
+        keras.layers.Dense(1)
+    ])
 
     # LSTM Masking
     # model = keras.models.Sequential([
@@ -453,16 +453,47 @@ def wavenet(form, op, lossFunc):
     return model
 
 
-def transformer(form, op, lossFunc):
-    model = keras.Sequential([
-            
-    ])
-    model.compile(optimizer=op, loss=lossFunc)
-    return
 
-def rnnAttention(op, lossFunc):
-    model = keras.Sequential([
-            
-    ])
-    model.compile(optimizer=op, loss=lossFunc)
-    return
+# RNN with attention
+
+
+# class Encoder(tf.keras.layers.Layer):
+#   def __init__(self, trainingData, units):
+#     super(Encoder, self).__init__()
+#     self.training = trainingData
+#     self.size = trainingData.shape[0]
+#     self.units = units
+
+#     # The embedding layer converts tokens to vectors
+#     self.embedding = tf.keras.layers.Embedding(self.vocab_size, units,
+#                                                mask_zero=True)
+
+#     # The RNN layer processes those vectors sequentially.
+#     self.rnn = tf.keras.layers.Bidirectional(
+#         merge_mode='sum',
+#         layer=tf.keras.layers.GRU(units,
+#                             # Return the sequence and state
+#                             return_sequences=True,
+#                             recurrent_initializer='glorot_uniform'))
+
+#   def call(self, x):
+#     shape_checker = ShapeChecker()
+#     shape_checker(x, 'batch s')
+
+#     # 2. The embedding layer looks up the embedding vector for each token.
+#     x = self.embedding(x)
+#     shape_checker(x, 'batch s units')
+
+#     # 3. The GRU processes the sequence of embeddings.
+#     x = self.rnn(x)
+#     shape_checker(x, 'batch s units')
+
+#     # 4. Returns the new sequence of embeddings.
+#     return x
+
+#   def convert_input(self, texts):
+#     texts = tf.convert_to_tensor(texts)
+#     if len(texts.shape) == 0:
+#       texts = tf.convert_to_tensor(texts)[tf.newaxis]
+#     context = self.training(texts).to_tensor()
+#     context = self(context)
