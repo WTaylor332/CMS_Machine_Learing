@@ -197,7 +197,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
     minX = np.argmin(val_loss) + 1
     minY = np.min(val_loss)
-    plt.scatter(minX, minY, color='green', label='minimum')
+    plt.scatter(minX, minY, color='green', label='minimum', s=20)
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name), dpi=1200)
@@ -317,7 +317,7 @@ def comparison(models, train, xTest, yTest):
         plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
         minX = np.argmin(val_loss) + 1
         minY = np.min(val_loss)
-        plt.scatter(minX, minY, edgecolors='black', linewidths=1, label='minimum '+str(round(minY, 5)))
+        plt.scatter(minX, minY, edgecolors='black', linewidths=1, label='minimum '+str(round(minY, 5)), s=20)
     
     plt.title('Training and Validation Loss')
     plt.legend()
@@ -403,7 +403,7 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
     minX = np.argmin(val_loss) + 1
     minY = np.min(val_loss)
-    plt.scatter(minX, minY, color='green', label='minimum')
+    plt.scatter(minX, minY, color='green', label='minimum', s=20)
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name),dpi=1200)
