@@ -197,7 +197,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
     minX = np.argmin(val_loss) + 1
     minY = np.min(val_loss)
-    plt.scatter(minX, minY, color='green', label='minimum', s=20)
+    plt.scatter(minX, minY, color='green', label='minimum', s=10)
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name), dpi=1200)
@@ -242,7 +242,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
 
 def comparison(models, train, xTest, yTest):
     print()
-    name = "{start}_comparison_of_pconv_architecture_{d}_{t}".format(start=models[0][:28], d=nameData, t=clock)
+    name = "{start}_comparison_of_conv_architecture_{d}_{t}".format(start=models[0][:27], d=nameData, t=clock)
     print(name)
     # Percentage vs difference plot comparsion
     plt.clf()
@@ -317,7 +317,7 @@ def comparison(models, train, xTest, yTest):
         plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
         minX = np.argmin(val_loss) + 1
         minY = np.min(val_loss)
-        plt.scatter(minX, minY, edgecolors='black', linewidths=1, label='minimum '+str(round(minY, 5)), s=20)
+        plt.scatter(minX, minY, edgecolors='black', linewidths=0.3, label='minimum '+str(round(minY, 5)), s=10)
     
     plt.title('Training and Validation Loss')
     plt.legend()
