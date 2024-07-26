@@ -197,7 +197,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
     minX = np.argmin(val_loss) + 1
     minY = np.min(val_loss)
-    plt.scatter(minX, minY, color='green', label='minimum', s=10)
+    plt.scatter(minX, minY, color='green', label='minimum', s=6)
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name), dpi=1200)
@@ -296,7 +296,7 @@ def comparison(models, train, xTest, yTest):
 
         percentile = np.zeros(len(sortedDiff)) + per
         tolerance = np.zeros(len(diff)) + tol
-        plt.plot(sortedDiff, percent, label=labels[i], linewidth=0.7)
+        plt.plot(sortedDiff, percent, label=labels[i], linewidth=0.8)
         print()
      
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
@@ -317,7 +317,7 @@ def comparison(models, train, xTest, yTest):
         plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
         minX = np.argmin(val_loss) + 1
         minY = np.min(val_loss)
-        plt.scatter(minX, minY, edgecolors='black', linewidths=0.3, label='minimum '+str(round(minY, 5)), s=10)
+        plt.scatter(minX, minY, edgecolors='black', linewidths=0.4, label='minimum '+str(round(minY, 5)), s=6)
     
     plt.title('Training and Validation Loss')
     plt.legend()
@@ -403,7 +403,7 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
     minX = np.argmin(val_loss) + 1
     minY = np.min(val_loss)
-    plt.scatter(minX, minY, color='green', label='minimum', s=20)
+    plt.scatter(minX, minY, color='green', label='minimum', s=6)
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name),dpi=1200)
@@ -449,17 +449,17 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-nameData = 'TTbar'
-rawD = np.load('TTbarRaw5.npz')
-binD = np.load('TTbarBin4.npz')
+# nameData = 'TTbar'
+# rawD = np.load('TTbarRaw5.npz')
+# binD = np.load('TTbarBin4.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
 # binD = np.load('WJetsToLNu_Bin.npz')
 
-# nameData = 'QCD'
-# rawD = np.load('QCD_Pt-15To3000.npz')
-# binD = np.load('QCD_Pt-15To3000_Bin.npz')
+nameData = 'QCD'
+rawD = np.load('QCD_Pt-15To3000.npz')
+binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
 # nameData = 'Merged'
 # rawD = np.load('Merged_deacys_Raw.npz')
@@ -477,13 +477,13 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
-# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
@@ -523,7 +523,7 @@ print()
 #                     ])
 
 
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
@@ -590,5 +590,5 @@ trainingCompare = ['training_Bin_model_2inputs_conv_adam_huber_loss_TTbar_172198
 #         epochs = range(1, len(loss) + 1)
 #         print(epochs)
 
-print(xTest.shape)
-comparison(modelsCompare, trainingCompare, xTest, yTest)
+# print(xTest.shape)
+# comparison(modelsCompare, trainingCompare, xTest, yTest)
