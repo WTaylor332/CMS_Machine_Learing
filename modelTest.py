@@ -242,7 +242,8 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
 
 def comparison(models, train, xTest, yTest):
     print()
-    name = "{start}_comparison_of_conv_architecture_{d}_{t}".format(start=models[0][:27], d=nameData, t=clock)
+    endStart =[i for i, letter in enumerate(models[0]) if letter == '_']
+    name = "{start}_comparison_of_losses_{d}_{t}".format(start=models[0][:endStart[4]], d=nameData, t=clock)
     print(name)
     # Percentage vs difference plot comparsion
     plt.clf()
@@ -252,9 +253,9 @@ def comparison(models, train, xTest, yTest):
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     # labels = np.array(['CCPCCPCC ks=8 ps=4', 'CPCPCPC ks=6 ps=4', 'CPCPCPC ks=8 ps=4', 'CPCPCPCPCPC ks=8 ps=2'])
     # labels = ['MAE', 'MSE', 'Huber']
-    labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
+    # labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
     # labels = ['MLP','CNN + MLP', 'PURE CNN', 'WAVENET', 'RNN']
-    # labels = ['GRU100 GRU50 D1', 'GRU20 GRU20 D1']
+    labels = ['GRU100 GRU50 D1', 'GRU20 GRU20 D1']
     # labels = ['dr(1,2) dr(1,2)', 'dr(1,2)']
     for i in range(0, len(models)):    
         print()
@@ -453,13 +454,13 @@ def testLoadedModel(model, train, xTest, yTest):
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 
-# nameData = 'WJets'
-# rawD = np.load('WJetsToLNu.npz')
-# binD = np.load('WJetsToLNu_Bin.npz')
+nameData = 'WJets'
+rawD = np.load('WJetsToLNu.npz')
+binD = np.load('WJetsToLNu_Bin.npz')
 
-nameData = 'QCD'
-rawD = np.load('QCD_Pt-15To3000.npz')
-binD = np.load('QCD_Pt-15To3000_Bin.npz')
+# nameData = 'QCD'
+# rawD = np.load('QCD_Pt-15To3000.npz')
+# binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
 # nameData = 'Merged'
 # rawD = np.load('Merged_deacys_Raw.npz')
@@ -477,13 +478,13 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
@@ -523,12 +524,12 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 #                     ])
 
 
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
@@ -552,17 +553,17 @@ xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 #                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721750592.log',\
 #                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log']
 
-modelsCompare = ['Bin_model_2inputs_conv_adam_huber_loss_TTbar_1721984304.keras',\
-                 'Bin_model_2inputs_conv_adam_huber_loss_TTbar_1721750154.keras',\
-                 'Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras']
-trainingCompare = ['training_Bin_model_2inputs_conv_adam_huber_loss_TTbar_1721984304.log',\
-                   'training_Bin_model_2inputs_conv_adam_huber_loss_TTbar_1721750154.log',\
-                   'training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log']
+# modelsCompare = ['Bin_model_2inputs_conv_adam_mean_absolute_error_QCD_1721916879.keras',\
+#                  'Bin_model_2inputs_conv_adam_mean_squared_error_QCD_1721983185.keras',\
+#                  'Bin_model_2inputs_conv_adam_huber_loss_QCD_1721910220.keras']
+# trainingCompare = ['training_Bin_model_2inputs_conv_adam_mean_absolute_error_QCD_1721916879.log',\
+#                    'training_Bin_model_2inputs_conv_adam_mean_squared_error_QCD_1721983185.log',\
+#                    'training_Bin_model_2inputs_conv_adam_huber_loss_QCD_1721910220.log']
 
-# modelsCompare = ['Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721901641.keras',\
-#                  'Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721898114.keras']
-# trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721901641.log',\
-#                    'training_Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721898114.log']
+modelsCompare = ['Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721901641.keras',\
+                 'Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721898114.keras']
+trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721901641.log',\
+                   'training_Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721898114.log']
 
 # print(modelsCompare[0][:27])
 # mod = loadModel(modelsCompare[0])
@@ -590,5 +591,5 @@ trainingCompare = ['training_Bin_model_2inputs_conv_adam_huber_loss_TTbar_172198
 #         epochs = range(1, len(loss) + 1)
 #         print(epochs)
 
-# print(xTest.shape)
-# comparison(modelsCompare, trainingCompare, xTest, yTest)
+print(xTest.shape)
+comparison(modelsCompare, trainingCompare, xTest, yTest)
