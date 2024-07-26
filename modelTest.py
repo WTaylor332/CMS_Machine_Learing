@@ -553,29 +553,29 @@ xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 #                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721750592.log',\
 #                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log']
 
-modelsCompare = ['',\
-                 '',\
-                 '']
-trainingCompare = ['',\
-                   '',\
-                   '']
+modelsCompare = ['Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.keras',\
+                 'Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras',\
+                 'Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.keras']
+trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.log',\
+                   'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.log',\
+                   'training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.log']
 
 # modelsCompare = ['Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras',\
 #                  'Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.keras']
 # trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log',\
 #                    'training_Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.log']
 
-endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
-print(modelsCompare[0][:endStart[4]])
-mod = loadModel(modelsCompare[0])
-config = mod.get_config()
-print(config["layers"][0]["config"])
-mod = loadModel(modelsCompare[1])
-config = mod.get_config()
-print(config["layers"][0]["config"])
-mod = loadModel(modelsCompare[2])
-config = mod.get_config()
-print(config["layers"][0]["config"])
+# endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
+# print(modelsCompare[0][:endStart[4]])
+# mod = loadModel(modelsCompare[0])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
+# mod = loadModel(modelsCompare[1])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
+# mod = loadModel(modelsCompare[2])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
 # mod = loadModel(modelsCompare[3])
 # config = mod.get_config()
 # print(config["layers"][0]["config"])
@@ -584,13 +584,13 @@ print(config["layers"][0]["config"])
 # config = mod.get_config()
 # print(config["layers"][0]["config"])
 
-for i in range(len(trainingCompare)):
-        print(i)
-        hist = pd.read_csv(trainingCompare[i], sep=',', engine='python')
-        loss = hist['loss']
-        val_loss = hist['val_loss']
-        epochs = range(1, len(loss) + 1)
-        print(epochs)
+# for i in range(len(trainingCompare)):
+#         print(i)
+#         hist = pd.read_csv(trainingCompare[i], sep=',', engine='python')
+#         loss = hist['loss']
+#         val_loss = hist['val_loss']
+#         epochs = range(1, len(loss) + 1)
+#         print(epochs)
 
 print(xTest.shape)
-# comparison(modelsCompare, trainingCompare, xTest, yTest)
+comparison(modelsCompare, trainingCompare, xTest, yTest)
