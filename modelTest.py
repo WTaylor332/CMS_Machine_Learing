@@ -462,9 +462,9 @@ binD = np.load('WJetsToLNu_Bin.npz')
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
-# nameData = 'Merged'
-# rawD = np.load('Merged_deacys_Raw.npz')
-# binD = np.load('Merged_decays_Bin.npz')
+nameData = 'Merged'
+rawD = np.load('Merged_deacys_Raw.npz')
+binD = np.load('Merged_decays_Bin.npz')
 
 print(nameData)
 
