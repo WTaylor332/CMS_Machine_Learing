@@ -466,6 +466,8 @@ binD = np.load('WJetsToLNu_Bin.npz')
 # rawD = np.load('Merged_deacys_Raw.npz')
 # binD = np.load('Merged_decays_Bin.npz')
 
+print(nameData)
+
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
 trackLength = rawD['tl']
