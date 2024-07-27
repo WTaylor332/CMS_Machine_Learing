@@ -454,10 +454,6 @@ def testLoadedModel(model, train, xTest, yTest):
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 
-nameData = 'WJets'
-rawD = np.load('WJetsToLNu.npz')
-binD = np.load('WJetsToLNu_Bin.npz')
-
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
@@ -465,6 +461,10 @@ binD = np.load('WJetsToLNu_Bin.npz')
 nameData = 'Merged'
 rawD = np.load('Merged_deacys_Raw.npz')
 binD = np.load('Merged_decays_Bin.npz')
+
+nameData = 'WJets'
+rawD = np.load('WJetsToLNu.npz')
+binD = np.load('WJetsToLNu_Bin.npz')
 
 print(nameData)
 
