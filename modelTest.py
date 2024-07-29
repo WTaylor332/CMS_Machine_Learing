@@ -48,7 +48,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     op = keras.optimizers.Adam()
-    lossFunc = keras.losses.Huber()
+    lossFunc = keras.losses.Huber(delta=0.2, name='modified02_huber_loss')
     model, typeM = wavenet(form, op, lossFunc)
     model.summary()
     
@@ -483,17 +483,17 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+nameData = 'TTbar'
+rawD = np.load('TTbarRaw5.npz')
+binD = np.load('TTbarBin4.npz')
 
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
-nameData = 'Merged'
-rawD = np.load('Merged_deacys_Raw.npz')
-binD = np.load('Merged_decays_Bin.npz')
+# nameData = 'Merged'
+# rawD = np.load('Merged_deacys_Raw.npz')
+# binD = np.load('Merged_decays_Bin.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
