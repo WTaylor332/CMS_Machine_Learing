@@ -475,13 +475,17 @@ def wavenet(form, op, lossFunc):
 # shape of data is (no_of_events, no_parameters, tracklength)
 # treat each event as a point in time and then we can treat this as time series data
 # data is already in vector form - a 2D array of shape (no_parameters, tracklength)
-# put data through a GRU - the Encoder layer then through an attention layer
 
-# def rnnAttention(form, op, lossFunc, units):
-#     model = keras.Sequential([
-#         keras.layers.Bidirectional(merge_mode='sum',
-#                             layer=tf.keras.layers.GRU(units, return_sequences=True,recurrent_initializer='glorot_uniform')),
-#         keras.layers.MultiHeadAttention(key_dim=units, num_heads=1),
-#         keras.layers.LayerNomalization() 
+# Encoder - data is the context
 
-#     ])
+# Decoder - pv values are the target 
+
+def rnnAttention(form, op, lossFunc, units):
+    model = keras.Sequential([
+        keras.layers.Bidirectional(merge_mode='sum',
+                            layer=tf.keras.layers.GRU(units, return_sequences=True,recurrent_initializer='glorot_uniform')),
+        keras.layers.MultiHeadAttention(key_dim=units, num_heads=1),
+        keras.layers.LayerNomalization()
+
+
+    ])
