@@ -353,7 +353,8 @@ def loadWeights(name, x):
     print()
     print(form)
     print()
-    model = wavenet(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.Huber())
+    model, typeM = wavenet(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.Huber())
+    print()
     model.load_weights(name)
     model.summary()
     return model
@@ -405,8 +406,8 @@ def trainLoadedModel(name, xTrain, yTrain, xValid, yValid):
 
 def testLoadedModel(model, train, xTest, yTest):
     if model[-2:] == 'h5':
-        mod = loadWeights(model, xTrain)
-        print(mod)
+        print(model)
+        modelLoaded = loadWeights(model, xTest)
     else:
         modelLoaded = loadModel(model)
     hist = pd.read_csv(train, sep=',', engine='python')
@@ -520,7 +521,8 @@ print()
 xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+print(xTest.shape)
 
 # model, history, name = binModel(xTrain, yTrain, xValid, yValid)
 # testing(model, history, xValid, yValid, xTest, yTest, name)
