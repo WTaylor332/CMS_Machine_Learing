@@ -353,7 +353,7 @@ def loadWeights(name, x):
     print()
     print(form)
     print()
-    model = mlp(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.Huber())
+    model = wavenet(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.Huber())
     model.load_weights(name)
     model.summary()
     return model
