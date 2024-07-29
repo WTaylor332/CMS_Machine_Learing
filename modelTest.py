@@ -263,13 +263,14 @@ def comparison(models, train, xTest, yTest):
         if i == 3:
             print('\n\n\n\n')
             # xTest = xTest[:, :, :150]
-            xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1])
+            xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2])
         if models[i][-2:] == 'h5':
             modelLoaded = loadWeights(models[i], xTest)
         else:
             modelLoaded = loadModel(models[i])
         print()
         print(models[i])
+        print(xTest.shape)
 
         hist = pd.read_csv(train[i], sep=',', engine='python')
         val_loss = hist['val_loss']
@@ -277,7 +278,8 @@ def comparison(models, train, xTest, yTest):
 
         print(np.sort(val_loss)[:5])
         yPredicted = modelLoaded.predict(xTest).flatten()
-
+        print(yPredicted.shape)
+        print(yTest.shape)
         diff = abs(yPredicted - yTest.flatten())
         print(max(diff), min(diff))
         print(np.std(diff), np.mean(diff))
@@ -335,7 +337,7 @@ def loadModel(name):
 
 
 def loadWeights(name, x):
-    form = x.shape[1:-1]
+    form = x.shape[1:]
     print()
     print(form)
     print()
@@ -542,7 +544,7 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatte
 xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
-name = 'Bin_model_2inputs_wavenet_weights_adam_huber_loss_WJets_1722116156.weights.h5'
+# name = 'Bin_model_2inputs_wavenet_weights_adam_huber_loss_WJets_1722116156.weights.h5'
 # trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(xTest, yTest)
 
@@ -554,16 +556,16 @@ name = 'Bin_model_2inputs_wavenet_weights_adam_huber_loss_WJets_1722116156.weigh
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
 
 # Comparing various models
-modelsCompare = ['Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.keras',\
-                 'Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.keras',\
-                 'Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras',\
-                 'Bin_model_2inputs_mlp_weights_adam_huber_loss_TTbar_1722240595.weights.h5',\
-                 'Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras']
-trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.log',\
-                   'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log',\
-                   'training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log',\
-                   'training_Bin_model_2inputs_mlp_adam_huber_loss_TTbar_1722240595.log',\
-                   'training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log']
+# modelsCompare = ['Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.keras',\
+#                  'Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.keras',\
+#                  'Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras',\
+#                  'Bin_model_2inputs_mlp_weights_adam_huber_loss_TTbar_1722246780.weights.h5',\
+#                  'Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras']
+# trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.log',\
+#                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log',\
+#                    'training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log',\
+#                    'training_Bin_model_2inputs_mlp_adam_huber_loss_TTbar_1722246780.log',\
+#                    'training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log']
 
 # modelsCompare = ['Raw_model_3inputs_rnn_adam_huber_loss_1721315255.keras',\
 #                  'Raw_model_3inputs_rnn_adam_huber_loss_1721396555.keras',\
@@ -574,12 +576,12 @@ trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_172
 #                    'training_Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899207.log',\
 #                    'training_Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899435.log']
 
-# modelsCompare = ['Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.keras',\
-#                  'Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras',\
-#                  'Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.keras']
-# trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.log',\
-#                    'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.log',\
-#                    'training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.log']
+modelsCompare = ['Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1721811974.keras',\
+                 'Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1721815766.keras',\
+                 'Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1722116156.keras']
+trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1721811974.log',\
+                   'training_Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1721815766.log',\
+                   'training_Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1722116156.log']
 
 # modelsCompare = ['Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras',\
 #                  'Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.keras']
@@ -616,5 +618,5 @@ trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_172
 #         epochs = range(1, len(loss) + 1)
 #         print(epochs)
 
-print(xTest.shape)
+# print(xTest.shape)
 comparison(modelsCompare, trainingCompare, xTest, yTest)
