@@ -403,12 +403,12 @@ def trainLoadedModel(name, xTrain, yTrain, xValid, yValid):
 
 
 def testLoadedModel(model, train, xTest, yTest):
-    modelLoaded = model
+    modelLoaded = loadModel(model)
     hist = pd.read_csv(train, sep=',', engine='python')
     print()
     print(model)
 
-    name = model[:-6]
+    name = model[:-16] + f'TTbar_test_data_{clock}'
     # plot of epochs against training and validation loss
     loss = hist['loss']
     val_loss = hist['val_loss']
@@ -432,6 +432,7 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name),dpi=1200)
+    print('Train valid plot made')
 
     yPredicted = modelLoaded.predict(xTest)
 
@@ -449,6 +450,7 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.hist(diff[diff<5], bins=300)
     plt.title('Loss of predicted vs test Histogram')
     plt.savefig("Hist_loss_{}.png".format(name), dpi=1200)
+    print('Hist plot made')
 
     # plotting % of predictions vs loss
     print()
@@ -475,23 +477,24 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.ylabel('Percentage')
     plt.title("Percentage of values vs Difference")
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
+    print('Percentage vs difference plot made')
 
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------- MAIN -----------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+nameData = 'TTbar'
+rawD = np.load('TTbarRaw5.npz')
+binD = np.load('TTbarBin4.npz')
 
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
-nameData = 'Merged'
-rawD = np.load('Merged_deacys_Raw.npz')
-binD = np.load('Merged_decays_Bin.npz')
+# nameData = 'Merged'
+# rawD = np.load('Merged_deacys_Raw.npz')
+# binD = np.load('Merged_decays_Bin.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -499,10 +502,10 @@ binD = np.load('Merged_decays_Bin.npz')
 
 # print(nameData)
 
-zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
-ptBin, trackBin = binD['ptB'], binD['tB']
-trackLength = rawD['tl']
-print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
+# zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
+# ptBin, trackBin = binD['ptB'], binD['tB']
+# trackLength = rawD['tl']
+# print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
 clock = int(time.time())
 
@@ -511,13 +514,13 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
@@ -528,35 +531,6 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # Loaded model test and comparison to other models
 
-# models = np.array(['Raw_model_3inputs_rnn_adam_huber_loss_1721296121.keras',\
-#                    'Raw_model_3inputs_rnn_adam_huber_loss_1721396555.keras',\
-#                    'Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721832523.keras',\
-#                    'Raw_model_3inputs_rnn_adam_huber_loss_1721296121.keras',\
-#                    'Raw_model_3inputs_rnn_adam_huber_loss_1721315255.keras',\
-#                    'Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras',\
-#                     'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.keras',\
-#                     'Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.keras',\
-#                     'Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.keras',\
-#                     # 'Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras',\
-#                     'Bin_model_2inputs_pconv_adam_huber_loss_1721227042.keras'
-#                     #'Bin_model_2inputs_pconv_adam_huber_loss_1721228818.keras'
-#                     ])
-
-# training = np.array(['training_Raw_model_3inputs_rnn_adam_huber_loss_1721296121.log',\
-#                      'training_Raw_model_3inputs_rnn_adam_huber_loss_1721396555.log',\
-#                      'training_Bin_model_2inputs_rnn_adam_huber_loss_WJets_1721832523.log',\
-#                      'training_Raw_model_3inputs_rnn_adam_huber_loss_1721296121.log',\
-#                      'training_Raw_model_3inputs_rnn_adam_huber_loss_1721315255.log',\
-#                      'training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log',\
-#                      'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721659080.log',\
-#                      'training_Bin_model_2inputs_conv_adam_huber_loss_WJets_1721661172.log',\
-#                     'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.log',\
-#                     # 'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.log',\
-#                     'training_Bin_model_2inputs_pconv_adam_huber_loss_1721227042.log',\
-#                     #'training_Bin_model_2inputs_pconv_adam_huber_loss_1721228818.log'
-#                     ])
-
-
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 
@@ -565,9 +539,12 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
-# name = 'Bin_model_2inputs_wavenet_weights_adam_huber_loss_WJets_1722116156.weights.h5'
+
+name = 'Bin_model_2inputs_conv_adam_huber_loss_Merged_1721923682.keras'
+train = 'training_Bin_model_2inputs_conv_adam_huber_loss_Merged_1721923682.log'
+print(name[:-16])
 # trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
-# testLoadedModel(xTest, yTest)
+# testLoadedModel(name, train, xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
@@ -577,16 +554,16 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
 
 # Comparing various models
-modelsCompare = ['Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.keras',\
-                 'Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.keras',\
-                 'Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras',\
-                 'Bin_model_2inputs_mlp_adam_huber_loss_TTbar_1722246839.keras',\
-                 'Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras']
-trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.log',\
-                   'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log',\
-                   'training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log',\
-                   'training_Bin_model_2inputs_mlp_adam_huber_loss_TTbar_1722246839.log',\
-                   'training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log']
+# modelsCompare = ['Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.keras',\
+#                  'Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.keras',\
+#                  'Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras',\
+#                  'Bin_model_2inputs_mlp_adam_huber_loss_TTbar_1722246839.keras',\
+#                  'Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras']
+# trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.log',\
+#                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log',\
+#                    'training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log',\
+#                    'training_Bin_model_2inputs_mlp_adam_huber_loss_TTbar_1722246839.log',\
+#                    'training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log']
 
 # modelsCompare = ['Raw_model_3inputs_rnn_adam_huber_loss_1721315255.keras',\
 #                  'Raw_model_3inputs_rnn_adam_huber_loss_1721396555.keras',\
