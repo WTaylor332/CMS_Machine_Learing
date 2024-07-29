@@ -45,7 +45,7 @@ def binModelSplit(pt, pv, track=np.array([])):
 
 def binModel(xTrain, yTrain, xValid, yValid):
 
-    form = (xTrain.shape[1], xTrain.shape[2])#, 1)
+    form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     op = keras.optimizers.Adam()
     lossFunc = keras.losses.Huber()
@@ -198,6 +198,8 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     minX = np.argmin(val_loss) + 1
     minY = np.min(val_loss)
     plt.scatter(minX, minY, color='green', label='minimum', s=6)
+    plt.xlabel('Epoch number')
+    plt.ylabel('Loss')
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name), dpi=1200)
@@ -210,7 +212,11 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     # histogram of difference on test sample
     print()
     plt.clf()
-    plt.hist(diff, bins=300)
+    fig, ax = plt.subplots()
+    ax.minorticks_on()
+    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    plt.hist(diff[diff<5], bins=300)
     plt.title('Loss of predicted vs test Histogram')
     plt.savefig("Hist_loss_{}.png".format(name), dpi=1200)
 
@@ -235,6 +241,8 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    plt.xlabel('Difference between predicted and true value')
+    plt.ylabel('Percentage')
     plt.title("Percentage of values vs Difference")
     plt.legend()
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
@@ -303,10 +311,12 @@ def comparison(models, train, xTest, yTest):
         tolerance = np.zeros(len(diff)) + tol
         plt.plot(sortedDiff, percent, label=labels[i], linewidth=0.8)
         print()
-     
+ 
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
     plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
     plt.legend()
+    plt.xlabel('Difference between predicted and true value')
+    plt.ylabel('Percentage')
     plt.title("Percentage of values vs Difference")
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
     print('percentage vs difference plot made')
@@ -324,6 +334,8 @@ def comparison(models, train, xTest, yTest):
         minY = np.min(val_loss)
         plt.scatter(minX, minY, edgecolors='black', linewidths=0.4, label='minimum '+str(round(minY, 5)), s=6)
     
+    plt.xlabel('Epoch number')
+    plt.ylabel('Validation Loss') 
     plt.title('Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name), dpi=1200)
@@ -415,6 +427,8 @@ def testLoadedModel(model, train, xTest, yTest):
     minX = np.argmin(val_loss) + 1
     minY = np.min(val_loss)
     plt.scatter(minX, minY, color='green', label='minimum', s=6)
+    plt.xlabel('Epoch number')
+    plt.ylabel('Loss') 
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig("Train_valid_loss_{}.png".format(name),dpi=1200)
@@ -423,11 +437,16 @@ def testLoadedModel(model, train, xTest, yTest):
 
     # histogram of loss on test sample
     print()
-    plt.clf()
     diff = abs(yPredicted.flatten() - yTest.flatten())
     print(max(diff), min(diff))
     print(np.std(diff), np.mean(diff))
-    plt.hist(diff, bins=200)
+
+    plt.clf()
+    fig, ax = plt.subplots()
+    ax.minorticks_on()
+    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    plt.hist(diff[diff<5], bins=300)
     plt.title('Loss of predicted vs test Histogram')
     plt.savefig("Hist_loss_{}.png".format(name), dpi=1200)
 
@@ -452,6 +471,8 @@ def testLoadedModel(model, train, xTest, yTest):
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    plt.xlabel('Difference between predicted and true value')
+    plt.ylabel('Percentage')
     plt.title("Percentage of values vs Difference")
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
 
