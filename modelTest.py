@@ -584,8 +584,8 @@ trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_172
 # trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log',\
 #                    'training_Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.log']
 
-# endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
-print(modelsCompare[0][:endStart[4]])
+endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
+print(modelsCompare[0][:endStart[2]])
 mod = loadModel(modelsCompare[0])
 config = mod.get_config()
 print(config["layers"][0]["config"])
