@@ -243,7 +243,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
 def comparison(models, train, xTest, yTest):
     print()
     endStart =[i for i, letter in enumerate(models[0]) if letter == '_']
-    name = "{start}_comparison_of_rnn_architecture_{d}_{t}".format(start=models[0][:endStart[4]], d=nameData, t=clock)
+    name = "{start}_comparison_of_model_types_{d}_{t}".format(start=models[0][:endStart[2]], d=nameData, t=clock)
     print(name)
     # Percentage vs difference plot comparsion
     plt.clf()
@@ -254,9 +254,9 @@ def comparison(models, train, xTest, yTest):
     # labels = np.array(['CCPCCPCC ks=8 ps=4', 'CPCPCPC ks=6 ps=4', 'CPCPCPC ks=8 ps=4', 'CPCPCPCPCPC ks=8 ps=2'])
     # labels = ['MAE', 'MSE', 'Huber']
     # labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
-    # labels = ['WAVENET', 'PURE CNN', 'CNN + MLP', 'MLP', 'RNN']
+    labels = ['WAVENET', 'PURE CNN', 'CNN + MLP', 'MLP', 'RNN']
     # labels = ['GRU100 GRU50 D1', 'GRU20 GRU20 D1']
-    labels = ['T150 GRU100 GRU50', 'BiGRU20 GRU20', 'MASK GRU50', 'MASK GRU20 GRU20', 'MASK LSTM20 LSTM20']
+    # labels = ['T150 GRU100 GRU50', 'BiGRU20 GRU20', 'MASK GRU50', 'MASK GRU20 GRU20', 'MASK LSTM20 LSTM20']
     # labels = ['dr(1,2) dr(1,2)', 'dr(1,2)', 'dr(1,3)']
     for i in range(0, len(models)):    
         print()
@@ -264,11 +264,10 @@ def comparison(models, train, xTest, yTest):
             modelLoaded = loadWeights(models[i], xTest)
         else:
             modelLoaded = loadModel(models[i])
-        print(i)
         if i == 3:
             print('\n\n\n\n')
-            xTest = xTest[:, :, :150]
-            # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
+            # xTest = xTest[:, :, :150]
+            xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1])
         print()
         print(models[i])
 
@@ -336,30 +335,34 @@ def loadModel(name):
 
 
 def loadWeights(name, x):
-    if len(x.shape) > 3:
-        form = (x.shape[1], 2, 1)
-    else:
-        form = (x.shape[1], 1)
+    form = x.shape[1:]
     print(form)
-    model = cnn(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.Huber())
+    model = mlp(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.Huber())
     model.load_weights(name)
     model.summary()
     return model
 
 
-def trainLoadedModel(model, train, xTrain, yTrain, xValid, yValid):
-    modelLoaded = model
+def trainLoadedModel(name, xTrain, yTrain, xValid, yValid):
+    if name[-2:] == 'h5':
+        mod = loadWeights(name, xTrain)
+        weights = name
+        print(mod)
+        model = 'Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1722116156.keras'
+    else:
+        weights = name[:-6] + '.weights.h5'
+        print(weights)
+    
+    train = 'training_Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1722116156.log'
+    modelLoaded = mod
     hist = pd.read_csv(train, sep=',', engine='python')
     epochs = len(hist['loss'])
-
     print(epochs)
 
-    weights = model[:-6] + '.weights.h5'
-    print(weights)
     time.sleep(5)
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
     lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
-    csvLogger = keras.callbacks.CSVLogger(train, separator=',', append=False)
+    csvLogger = keras.callbacks.CSVLogger(train, separator=',', append=True)
     stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
@@ -529,17 +532,17 @@ print()
 #                     ])
 
 
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
-
-# trainLoadedModel(mod, training[0], xTrain, yTrain, xValid, yValid)
-# testLoadedModel(mod, training[0], xTest, yTest)
+name = 'Bin_model_2inputs_wavenet_weights_adam_huber_loss_WJets_1722116156.weights.h5'
+# trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
+# testLoadedModel(xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
@@ -549,25 +552,25 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
 
 # Comparing various models
-# modelsCompare = ['Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.keras',\
-#                  'Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.keras',\
-#                  'Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras',\
-#                  '',\
-#                  'Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras']
-# trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.log',\
-#                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log',\
-#                    'training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log',\
-#                    '',\
-#                    'training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log']
+modelsCompare = ['Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.keras',\
+                 'Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.keras',\
+                 'Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras',\
+                 'Bin_model_2inputs_mlp_weights_adam_huber_loss_TTbar_1722240595.weights.h5',\
+                 'Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras']
+trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.log',\
+                   'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log',\
+                   'training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log',\
+                   'training_Bin_model_2inputs_mlp_adam_huber_loss_TTbar_1722240595.log',\
+                   'training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log']
 
-modelsCompare = ['Raw_model_3inputs_rnn_adam_huber_loss_1721315255.keras',\
-                 'Raw_model_3inputs_rnn_adam_huber_loss_1721396555.keras',\
-                 'Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899207.keras',\
-                 'Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899435.keras']
-trainingCompare = ['training_Raw_model_3inputs_rnn_adam_huber_loss_1721315255.log',\
-                   'training_Raw_model_3inputs_rnn_adam_huber_loss_1721396555.log',\
-                   'training_Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899207.log',\
-                   'training_Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899435.log']
+# modelsCompare = ['Raw_model_3inputs_rnn_adam_huber_loss_1721315255.keras',\
+#                  'Raw_model_3inputs_rnn_adam_huber_loss_1721396555.keras',\
+#                  'Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899207.keras',\
+#                  'Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899435.keras']
+# trainingCompare = ['training_Raw_model_3inputs_rnn_adam_huber_loss_1721315255.log',\
+#                    'training_Raw_model_3inputs_rnn_adam_huber_loss_1721396555.log',\
+#                    'training_Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899207.log',\
+#                    'training_Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899435.log']
 
 # modelsCompare = ['Bin_model_2inputs_wavenet_adam_huber_loss_1721391189.keras',\
 #                  'Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras',\
@@ -582,34 +585,34 @@ trainingCompare = ['training_Raw_model_3inputs_rnn_adam_huber_loss_1721315255.lo
 #                    'training_Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.log']
 
 # endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
-# print(modelsCompare[0][:endStart[4]])
-# mod = loadModel(modelsCompare[0])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadModel(modelsCompare[1])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadModel(modelsCompare[2])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadModel(modelsCompare[3])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadModel(modelsCompare[4])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
+print(modelsCompare[0][:endStart[4]])
+mod = loadModel(modelsCompare[0])
+config = mod.get_config()
+print(config["layers"][0]["config"])
+mod = loadModel(modelsCompare[1])
+config = mod.get_config()
+print(config["layers"][0]["config"])
+mod = loadModel(modelsCompare[2])
+config = mod.get_config()
+print(config["layers"][0]["config"])
+mod = loadModel(modelsCompare[3])
+config = mod.get_config()
+print(config["layers"][0]["config"])
+mod = loadModel(modelsCompare[4])
+config = mod.get_config()
+print(config["layers"][0]["config"])
 
 # mod = loadModel('Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras')
 # config = mod.get_config()
 # print(config["layers"][0]["config"])
 
-# for i in range(len(trainingCompare)):
-#         print(i)
-#         hist = pd.read_csv(trainingCompare[i], sep=',', engine='python')
-#         loss = hist['loss']
-#         val_loss = hist['val_loss']
-#         epochs = range(1, len(loss) + 1)
-#         print(epochs)
+for i in range(len(trainingCompare)):
+        print(i)
+        hist = pd.read_csv(trainingCompare[i], sep=',', engine='python')
+        loss = hist['loss']
+        val_loss = hist['val_loss']
+        epochs = range(1, len(loss) + 1)
+        print(epochs)
 
 print(xTest.shape)
-comparison(modelsCompare, trainingCompare, xTest, yTest)
+# comparison(modelsCompare, trainingCompare, xTest, yTest)
