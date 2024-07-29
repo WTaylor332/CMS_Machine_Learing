@@ -9,6 +9,7 @@ def multiLayerPerceptron(form, op, lossFunc):
     #     # keras.layers.Dropout(rate=0.3),
     #     keras.layers.Dense(50, activation="relu"),
     #     # keras.layers.Dropout(rate=0.3),
+    #     keras.layers.Flatten(),
     #     keras.layers.Dense(1)
     # ])
     # model = keras.models.Sequential([
@@ -18,6 +19,7 @@ def multiLayerPerceptron(form, op, lossFunc):
     #     keras.layers.Dense(40, activation="relu"),
     #     keras.layers.Dense(20, activation="relu"),
     #     # keras.layers.Dropout(rate=0.3),
+    #     keras.layers.Flatten(),
     #     keras.layers.Dense(1)
     # ])
     # model = keras.models.Sequential([
@@ -28,6 +30,7 @@ def multiLayerPerceptron(form, op, lossFunc):
     #     keras.layers.Dense(20, activation="relu"),
     #     keras.layers.Dense(10, activation="relu"),
     #     # keras.layers.Dropout(rate=0.3),
+    #     keras.layers.Flatten(),
     #     keras.layers.Dense(1)
     # ])
     # model = keras.models.Sequential([
@@ -39,6 +42,7 @@ def multiLayerPerceptron(form, op, lossFunc):
     #     keras.layers.Dense(20, activation="relu"),
     #     keras.layers.Dense(10, activation="relu"),
     #     # keras.layers.Dropout(rate=0.3),
+    #     keras.layers.Flatten(),
     #     keras.layers.Dense(1)
     # ])
     model = keras.models.Sequential([
@@ -50,6 +54,7 @@ def multiLayerPerceptron(form, op, lossFunc):
         keras.layers.Dense(4, activation="relu"),
         keras.layers.Dense(2, activation="relu"),
         # keras.layers.Dropout(rate=0.3),
+        keras.layers.Flatten(),
         keras.layers.Dense(1)
     ])
     model.compile(optimizer=op, loss=lossFunc)
