@@ -3,41 +3,52 @@ from tensorflow import keras
 import numpy as np
 
 def multiLayerPerceptron(form, op, lossFunc):
+    # model = keras.models.Sequential([
+    #     keras.Input(shape=form),
+    #     keras.layers.Dense(100, activation="relu"),
+    #     # keras.layers.Dropout(rate=0.3),
+    #     keras.layers.Dense(50, activation="relu"),
+    #     # keras.layers.Dropout(rate=0.3),
+    #     keras.layers.Dense(1)
+    # ])
+    # model = keras.models.Sequential([
+    #     keras.Input(shape=form),
+    #     keras.layers.Dense(80, activation="relu"),
+    #     # keras.layers.Dropout(rate=0.3),
+    #     keras.layers.Dense(40, activation="relu"),
+    #     keras.layers.Dense(20, activation="relu"),
+    #     # keras.layers.Dropout(rate=0.3),
+    #     keras.layers.Dense(1)
+    # ])
+    # model = keras.models.Sequential([
+    #     keras.Input(shape=form),
+    #     keras.layers.Dense(60, activation="relu"),
+    #     # keras.layers.Dropout(rate=0.3),
+    #     keras.layers.Dense(40, activation="relu"),
+    #     keras.layers.Dense(20, activation="relu"),
+    #     keras.layers.Dense(10, activation="relu"),
+    #     # keras.layers.Dropout(rate=0.3),
+    #     keras.layers.Dense(1)
+    # ])
+    # model = keras.models.Sequential([
+    #     keras.Input(shape=form),
+    #     keras.layers.Dense(50, activation="relu"),
+    #     # keras.layers.Dropout(rate=0.3),
+    #     keras.layers.Dense(40, activation="relu"),
+    #     keras.layers.Dense(30, activation="relu"),
+    #     keras.layers.Dense(20, activation="relu"),
+    #     keras.layers.Dense(10, activation="relu"),
+    #     # keras.layers.Dropout(rate=0.3),
+    #     keras.layers.Dense(1)
+    # ])
     model = keras.models.Sequential([
         keras.Input(shape=form),
-        keras.layers.Dense(100, activation="relu"),
-        # keras.layers.Dropout(rate=0.3),
-        keras.layers.Dense(50, activation="relu"),
-        # keras.layers.Dropout(rate=0.3),
-        keras.layers.Dense(1)
-    ])
-    model = keras.models.Sequential([
-        keras.Input(shape=form),
-        keras.layers.Dense(80, activation="relu"),
-        # keras.layers.Dropout(rate=0.3),
-        keras.layers.Dense(40, activation="relu"),
-        keras.layers.Dense(20, activation="relu"),
-        # keras.layers.Dropout(rate=0.3),
-        keras.layers.Dense(1)
-    ])
-    model = keras.models.Sequential([
-        keras.Input(shape=form),
-        keras.layers.Dense(60, activation="relu"),
-        # keras.layers.Dropout(rate=0.3),
-        keras.layers.Dense(40, activation="relu"),
-        keras.layers.Dense(20, activation="relu"),
         keras.layers.Dense(10, activation="relu"),
         # keras.layers.Dropout(rate=0.3),
-        keras.layers.Dense(1)
-    ])
-    model = keras.models.Sequential([
-        keras.Input(shape=form),
-        keras.layers.Dense(50, activation="relu"),
-        # keras.layers.Dropout(rate=0.3),
-        keras.layers.Dense(40, activation="relu"),
-        keras.layers.Dense(30, activation="relu"),
-        keras.layers.Dense(20, activation="relu"),
-        keras.layers.Dense(10, activation="relu"),
+        keras.layers.Dense(8, activation="relu"),
+        keras.layers.Dense(6, activation="relu"),
+        keras.layers.Dense(4, activation="relu"),
+        keras.layers.Dense(2, activation="relu"),
         # keras.layers.Dropout(rate=0.3),
         keras.layers.Dense(1)
     ])
@@ -461,12 +472,11 @@ def wavenet(form, op, lossFunc):
 # data is already in vector form - a 2D array of shape (no_parameters, tracklength)
 # put data through a GRU - the Encoder layer then through an attention layer
 
-# def rnnAttention(form, op, lossFunc):
+# def rnnAttention(form, op, lossFunc, units):
 #     model = keras.Sequential([
 #         keras.layers.Bidirectional(merge_mode='sum',
-#         layer=tf.keras.layers.GRU(units,
-#                             # Return the sequence and state
-#                             return_sequences=True,
-#                             recurrent_initializer='glorot_uniform'))
+#                             layer=tf.keras.layers.GRU(units, return_sequences=True,recurrent_initializer='glorot_uniform')),
+#         keras.layers.MultiHeadAttention(key_dim=units, num_heads=1),
+#         keras.layers.LayerNomalization() 
 
 #     ])
