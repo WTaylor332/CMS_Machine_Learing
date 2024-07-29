@@ -260,14 +260,14 @@ def comparison(models, train, xTest, yTest):
     # labels = ['dr(1,2) dr(1,2)', 'dr(1,2)', 'dr(1,3)']
     for i in range(0, len(models)):    
         print()
-        if models[i][-2:] == 'h5':
-            modelLoaded = loadWeights(models[i], xTest)
-        else:
-            modelLoaded = loadModel(models[i])
         if i == 3:
             print('\n\n\n\n')
             # xTest = xTest[:, :, :150]
             xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1])
+        if models[i][-2:] == 'h5':
+            modelLoaded = loadWeights(models[i], xTest)
+        else:
+            modelLoaded = loadModel(models[i])
         print()
         print(models[i])
 
@@ -335,8 +335,10 @@ def loadModel(name):
 
 
 def loadWeights(name, x):
-    form = x.shape[1:]
+    form = x.shape[1:-1]
+    print()
     print(form)
+    print()
     model = mlp(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.Huber())
     model.load_weights(name)
     model.summary()
@@ -584,35 +586,35 @@ trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_172
 # trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log',\
 #                    'training_Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.log']
 
-endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
-print(modelsCompare[0][:endStart[2]])
-mod = loadModel(modelsCompare[0])
-config = mod.get_config()
-print(config["layers"][0]["config"])
-mod = loadModel(modelsCompare[1])
-config = mod.get_config()
-print(config["layers"][0]["config"])
-mod = loadModel(modelsCompare[2])
-config = mod.get_config()
-print(config["layers"][0]["config"])
-mod = loadModel(modelsCompare[3])
-config = mod.get_config()
-print(config["layers"][0]["config"])
-mod = loadModel(modelsCompare[4])
-config = mod.get_config()
-print(config["layers"][0]["config"])
+# endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
+# print(modelsCompare[0][:endStart[2]])
+# mod = loadModel(modelsCompare[0])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
+# mod = loadModel(modelsCompare[1])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
+# mod = loadModel(modelsCompare[2])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
+# mod = loadWeights(modelsCompare[3], xTrain)
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
+# mod = loadModel(modelsCompare[4])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
 
 # mod = loadModel('Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras')
 # config = mod.get_config()
 # print(config["layers"][0]["config"])
 
-for i in range(len(trainingCompare)):
-        print(i)
-        hist = pd.read_csv(trainingCompare[i], sep=',', engine='python')
-        loss = hist['loss']
-        val_loss = hist['val_loss']
-        epochs = range(1, len(loss) + 1)
-        print(epochs)
+# for i in range(len(trainingCompare)):
+#         print(i)
+#         hist = pd.read_csv(trainingCompare[i], sep=',', engine='python')
+#         loss = hist['loss']
+#         val_loss = hist['val_loss']
+#         epochs = range(1, len(loss) + 1)
+#         print(epochs)
 
 print(xTest.shape)
-# comparison(modelsCompare, trainingCompare, xTest, yTest)
+comparison(modelsCompare, trainingCompare, xTest, yTest)
