@@ -367,10 +367,11 @@ def trainLoadedModel(name, xTrain, yTrain, xValid, yValid):
         model = 'Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1722116156.keras'
     else:
         weights = name[:-6] + '.weights.h5'
+        model = name
+        modelLoaded = loadModel(model)
         print(weights)
     
     train = 'training_Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1722116156.log'
-    modelLoaded = mod
     hist = pd.read_csv(train, sep=',', engine='python')
     epochs = len(hist['loss'])
     print(epochs)
@@ -403,12 +404,16 @@ def trainLoadedModel(name, xTrain, yTrain, xValid, yValid):
 
 
 def testLoadedModel(model, train, xTest, yTest):
-    modelLoaded = loadModel(model)
+    if model[-2:] == 'h5':
+        mod = loadWeights(model, xTrain)
+        print(mod)
+    else:
+        modelLoaded = loadModel(model)
     hist = pd.read_csv(train, sep=',', engine='python')
     print()
     print(model)
 
-    name = model[:-16] + f'TTbar_test_data_{clock}'
+    name = model[:-16] #+ f'TTbar_test_data_{clock}'
     # plot of epochs against training and validation loss
     loss = hist['loss']
     val_loss = hist['val_loss']
@@ -434,22 +439,21 @@ def testLoadedModel(model, train, xTest, yTest):
     print('Train valid plot made')
 
     yPredicted = modelLoaded.predict(xTest)
-
-    # histogram of loss on test sample
     print()
     diff = abs(yPredicted.flatten() - yTest.flatten())
     print(max(diff), min(diff))
     print(np.std(diff), np.mean(diff))
-
-    plt.clf()
-    fig, ax = plt.subplots()
-    ax.minorticks_on()
-    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    plt.hist(diff[diff<5], bins=300)
-    plt.title('Loss of predicted vs test Histogram')
-    plt.savefig("Hist_loss_{}.png".format(name), dpi=1200)
-    print('Hist plot made')
+    
+    # histogram of loss on test sample
+    # plt.clf()
+    # fig, ax = plt.subplots()
+    # ax.minorticks_on()
+    # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    # plt.hist(diff[diff<5], bins=300)
+    # plt.title('Loss of predicted vs test Histogram')
+    # plt.savefig("Hist_loss_{}.png".format(name), dpi=1200)
+    # print('Hist plot made')
 
     # plotting % of predictions vs loss
     print()
@@ -514,12 +518,12 @@ clock = int(time.time())
 
 print()
 xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
@@ -539,11 +543,11 @@ testing(model, history, xValid, yValid, xTest, yTest, name)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-# name = 'Bin_model_2inputs_conv_adam_huber_loss_Merged_1721923682.keras'
-# train = 'training_Bin_model_2inputs_conv_adam_huber_loss_Merged_1721923682.log'
-# print(name[:-16])
+name = 'Bin_model_2inputs_wavenet_weights_adam_modified02_huber_loss_TTbar_1722267372.weights.h5'
+train = 'training_Bin_model_2inputs_wavenet_adam_modified02_huber_loss_TTbar_1722267372.log'
+print(name[:-16])
 # trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
-# testLoadedModel(name, train, xTest, yTest)
+testLoadedModel(name, train, xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
