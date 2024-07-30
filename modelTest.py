@@ -10,6 +10,7 @@ print()
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
 from model_types import convModel as cnn, pureCNN as pcnn, rnn, wavenet, multiLayerPerceptron as mlp
+from customLoss import welsch 
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
@@ -48,7 +49,8 @@ def binModel(xTrain, yTrain, xValid, yValid):
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     op = keras.optimizers.Adam()
-    lossFunc = keras.losses.Huber(delta=0.001, name='modified0001_huber_loss')
+    # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
+    lossFunc = welsch
     model, typeM = cnn(form, op, lossFunc)
     model.summary()
     
