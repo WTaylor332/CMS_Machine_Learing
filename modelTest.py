@@ -60,10 +60,10 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
     stopTraining = haltCallback()
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
 
     epochNo = 500
     history = model.fit(xTrain, yTrain, epochs=epochNo,\
