@@ -62,13 +62,14 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=50, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
     stopTraining = haltCallback()
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=20)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)
 
     epochNo = 500
-    history = model.fit(xTrain, yTrain, epochs=epochNo,\
+    bSize = 2048
+    history = model.fit(xTrain, yTrain, epochs=epochNo, batch_size=bSize,\
                         validation_data=(xValid, yValid),\
                         callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
 
@@ -247,6 +248,34 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.title("Percentage of values vs Difference")
     plt.legend()
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
+
+
+    # plot of scattered train and validation data
+    plt.clf()
+    fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
+    ax[0].axis('equal')
+    ax[0].scatter(yTrain.flatten(), model.predict(xTrain).flatten(), marker='^', color='r', edgecolor='k')
+    ax[0].plot([0,1], [0,1], color='blue')
+    ax[0].plot([0,1], [0.2, 1.2], '--', c='orange')
+    ax[0].plot([0,1], [-0.2, 0.8], '--', c='orange')
+    ax[0].plot([0,1], [0.1, 1.1], '--', c='pink')
+    ax[0].plot([0,1], [-0.1, 0.9], '--', c='pink')
+    ax[0].set_title('Training Set')
+    ax[0].set_ylim(0,1)
+    ax[0].grid(which='both', alpha=0.8, c='#DDDDDD')
+
+    ax[1].axis('equal')
+    ax[1].scatter(yTest.flatten(), model.predict(xTest).flatten(), marker='^', color='r', edgecolor='k')
+    ax[1].plot([0,1], [0,1], color='blue')
+    ax[1].plot([0,1], [0.2, 1.2], '--', c='orange')
+    ax[1].plot([0,1], [-0.2, 0.8], '--', c='orange')
+    ax[1].plot([0,1], [0.1, 1.1], '--', c='pink')
+    ax[1].plot([0,1], [-0.1, 0.9], '--', c='pink')
+    ax[1].set_title('Test Set')
+    ax[1].set_ylim(0,1)
+    ax[1].grid(which='both', alpha=0.8, c='#DDDDDD')
+    print('scatter plot made')
+    plt.savefig(f'True_vs_predicted_scatter_{name}.png', dpi=1200)
 
 
 def comparison(models, train, xTest, yTest):
@@ -484,6 +513,33 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
     print('Percentage vs difference plot made')
 
+    # plot of scattered train and validation data
+    plt.clf()
+    fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
+    ax[0].axis('equal')
+    ax[0].scatter(yTrain.flatten(), model.predict(xTrain).flatten(), marker='^', color='r', edgecolor='k')
+    ax[0].plot([0,1], [0,1], color='blue')
+    ax[0].plot([0,1], [0.2, 1.2], '--', c='orange')
+    ax[0].plot([0,1], [-0.2, 0.8], '--', c='orange')
+    ax[0].plot([0,1], [0.1, 1.1], '--', c='pink')
+    ax[0].plot([0,1], [-0.1, 0.9], '--', c='pink')
+    ax[0].set_title('Test Set')
+    ax[0].set_ylim(0,1)
+    ax[0].grid(which='both', alpha=0.8, c='#DDDDDD')
+
+    ax[1].axis('equal')
+    ax[1].scatter(yTest.flatten(), model.predict(xTest).flatten(), marker='^', color='r', edgecolor='k')
+    ax[1].plot([0,1], [0,1], color='blue')
+    ax[1].plot([0,1], [0.2, 1.2], '--', c='orange')
+    ax[1].plot([0,1], [-0.2, 0.8], '--', c='orange')
+    ax[1].plot([0,1], [0.1, 1.1], '--', c='pink')
+    ax[1].plot([0,1], [-0.1, 0.9], '--', c='pink')
+    ax[1].set_title('Validation Set')
+    ax[1].set_ylim(0,1)
+    ax[1].grid(which='both', alpha=0.8, c='#DDDDDD')
+    print('scatter plot made')
+    plt.savefig(f'True_vs_predicted_scatter_{name}.png', dpi=1200)
+
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------- MAIN -----------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -519,19 +575,19 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-# print(xTest.shape)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+print(xTest.shape)
 
-# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
