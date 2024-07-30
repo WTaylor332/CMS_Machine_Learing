@@ -13,8 +13,8 @@ from model_types import convModel as cnn, pureCNN as pcnn, rnn, wavenet, multiLa
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
-        if (logs.get('val_loss') < 0.01):
-            print('\n\nValuation loss reach 0.01 so training stopped.\n\n')
+        if (logs.get('val_loss') < 0.00001):
+            print('\n\nValuation loss reach 0.00001 so training stopped.\n\n')
             self.model.stop_training = True
 
 
@@ -48,8 +48,8 @@ def binModel(xTrain, yTrain, xValid, yValid):
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     op = keras.optimizers.Adam()
-    lossFunc = keras.losses.Huber(delta=0.2, name='modified02_huber_loss')
-    model, typeM = wavenet(form, op, lossFunc)
+    lossFunc = keras.losses.Huber(delta=0.001, name='modified0001_huber_loss')
+    model, typeM = cnn(form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
@@ -60,10 +60,10 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
     stopTraining = haltCallback()
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=20)
 
     epochNo = 500
     history = model.fit(xTrain, yTrain, epochs=epochNo,\
@@ -519,13 +519,13 @@ clock = int(time.time())
 
 print()
 xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
 xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 print(xTest.shape)
 
-# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
@@ -545,11 +545,11 @@ print(xTest.shape)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-name = 'Bin_model_2inputs_wavenet_weights_adam_modified02_huber_loss_TTbar_1722267372.weights.h5'
-train = 'training_Bin_model_2inputs_wavenet_adam_modified02_huber_loss_TTbar_1722267372.log'
-print(name[:-16])
+# name = 'Bin_model_2inputs_wavenet_weights_adam_modified02_huber_loss_TTbar_1722267372.weights.h5'
+# train = 'training_Bin_model_2inputs_wavenet_adam_modified02_huber_loss_TTbar_1722267372.log'
+# print(name[:-16])
 # trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
+# testLoadedModel(name, train, xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
