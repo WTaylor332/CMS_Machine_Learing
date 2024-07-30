@@ -55,9 +55,9 @@ def binModel(xTrain, yTrain, xValid, yValid):
     model.summary()
     
     # saving the model and best weights
-    weights = "Bin_model_{n}inputs_{type}_weights_{o}_{l}_{d}_{t}.weights.h5".format(n=num, type=typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    weights = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}.weights.h5".format(n=num, type=typeM, o='adam', l=lossFunc.__name__, d=nameData, t=clock)
     modelDirectory = "models"
-    modelName = "Bin_model_{n}inputs_{type}_{o}_{l}_{d}_{t}".format(n=num, type =typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    modelName = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}".format(n=num, type =typeM, o='adam', l=lossFunc.__name__, d=nameData, t=clock)
     print(modelName)
 
     # callbacks
@@ -92,9 +92,9 @@ def rawModelSplit(z, pt, eta, pv):
     columnZ = scaler.transform(columnZ)
     z = columnZ.reshape(pt.shape[0], pt.shape[1])
 
-    z = np.nan_to_num(z, nan=0)
-    pt = np.nan_to_num(pt, nan=0)
-    eta = np.nan_to_num(eta, nan=0)
+    z = np.nan_to_num(z, nan=-99999.99)
+    pt = np.nan_to_num(pt, nan=-99999.99)
+    eta = np.nan_to_num(eta, nan=-99999.99)
 
     # z = z[:,:150]
     # pt = pt[:,:150]
@@ -153,7 +153,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
     stopTraining = haltCallback()
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=20)
 
     epochNum = 500
     print()
@@ -520,20 +520,19 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-print(xTest.shape)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# print(xTest.shape)
 
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xValid, yValid, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models

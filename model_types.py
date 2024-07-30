@@ -392,13 +392,13 @@ def rnn(form, op, lossFunc, size=0):
     #     keras.layers.Dense(1)
     # ])
 
-    model = keras.models.Sequential([
-        keras.Input(shape=form),
-        keras.layers.Masking(mask_value=0),
-        keras.layers.GRU(20, return_sequences=True, activation='relu'),
-        keras.layers.GRU(20, activation='relu'),
-        keras.layers.Dense(1)
-    ])
+    # model = keras.models.Sequential([
+    #     keras.Input(shape=form),
+    #     keras.layers.Masking(mask_value=0),
+    #     keras.layers.GRU(20, return_sequences=True, activation='relu'),
+    #     keras.layers.GRU(20, activation='relu'),
+    #     keras.layers.Dense(1)
+    # ])
 
     # LSTM Masking
     # model = keras.models.Sequential([
@@ -409,17 +409,17 @@ def rnn(form, op, lossFunc, size=0):
     #     keras.layers.Dense(1)
     # ])
 
-    # doesn't work
-    # model = keras.models.Sequential([
-    #     keras.layers.Embedding(size, 64),
-    #     keras.layers.GRU(20, return_sequences=True, activation='relu'),
-    #     keras.layers.GRU(20, activation='relu'),
-    #     keras.layers.Dense(1)
-    # ])
+    model = keras.models.Sequential([
+        keras.Input(shape=form),
+        keras.layers.Masking(mask_value=-99999.99),
+        keras.layers.GRU(20, return_sequences=True, activation='relu'),
+        keras.layers.GRU(20, activation='relu'),
+        keras.layers.Dense(1)
+    ])
 
     # Ragged RNN model - not working
     # model = keras.models.Sequential([
-    #     keras.layers.InputLayer(shape=(None, 3), dytpe=tf.float64, ragged=True),
+    #     keras.layers.InputLayer(shape=[None, 3], dytpe=tf.float64, ragged=True),
     #     keras.layers.GRU(20, use_bias=False, return_sequences=True, activation='relu'),
     #     keras.layers.GRU(20, use_bias=False, activation='relu'),
     #     keras.layers.Dense(1)
