@@ -265,9 +265,6 @@ def convModel(shape, op, lossFunc):
             keras.layers.MaxPool2D(pool_size=(1,4)),
 
             keras.layers.Conv2D(50, kernel_size=(1,8), activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(1,4)),
-
-            keras.layers.Conv2D(50, kernel_size=(1,8), activation='relu'),
             keras.layers.MaxPool2D(pool_size=(1,2)),
 
             # multi later perceptron
