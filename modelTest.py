@@ -49,7 +49,8 @@ def binModel(xTrain, yTrain, xValid, yValid):
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     op = keras.optimizers.Adam()
-    lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
+    # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
+    lossFunc = keras.losses.Huber()
     # lossFunc = welsch
     model, typeM = cnn(form, op, lossFunc)
     model.summary()
@@ -65,10 +66,10 @@ def binModel(xTrain, yTrain, xValid, yValid):
     lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=50, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
     stopTraining = haltCallback()
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
     epochNo = 500
-    bSize = 2048
+    bSize = 512
     history = model.fit(xTrain, yTrain, epochs=epochNo, batch_size=bSize,\
                         validation_data=(xValid, yValid),\
                         callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
@@ -93,9 +94,9 @@ def rawModelSplit(z, pt, eta, pv):
     columnZ = scaler.transform(columnZ)
     z = columnZ.reshape(pt.shape[0], pt.shape[1])
 
-    z = np.nan_to_num(z, nan=-99999.99)
-    pt = np.nan_to_num(pt, nan=-99999.99)
-    eta = np.nan_to_num(eta, nan=-99999.99)
+    z = np.nan_to_num(z, nan=MASK_NO)
+    pt = np.nan_to_num(pt, nan=MASK_NO)
+    eta = np.nan_to_num(eta, nan=MASK_NO)
 
     # z = z[:,:150]
     # pt = pt[:,:150]
@@ -142,7 +143,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     op = keras.optimizers.Adam()
     lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
 
-    model, typeM = rnn(form, op, lossFunc, xTrain.shape[0])
+    model, typeM = rnn(form, op, lossFunc, MASK_NO)
     
     # saving the model and best weights
     weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
@@ -150,16 +151,17 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     modelName = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_{t}".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
 
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=50, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
     stopTraining = haltCallback()
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=20)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
     epochNum = 500
+    batchNo = 2048
     print()
     print(modelName)
     print(xTrain.shape)
-    history = model.fit(xTrain, yTrain, epochs=epochNum,\
+    history = model.fit(xTrain, yTrain, epochs=epochNum, batch_size=batchNo,\
                         validation_data=(xValid, yValid),\
                         callbacks=[checkpointCallback, lr, csvLogger, stopTraining, earlyStop])
 
@@ -204,7 +206,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss')
     plt.legend()
-    plt.savefig("Train_valid_loss_{}.png".format(name), dpi=1200)
+    plt.savefig(f"{name[:start[1]]}_Train_valid_loss_{name[start[1:]+1:]}.png", dpi=1200)
     print('min val loss:', min(val_loss))
     print('At epoch number:',np.argmin(val_loss)+1)
     print('min loss:', min(loss))
@@ -220,7 +222,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     plt.hist(diff[diff<5], bins=300)
     plt.title('Loss of predicted vs test Histogram')
-    plt.savefig("Hist_loss_{}.png".format(name), dpi=1200)
+    plt.savefig(f"{name[:start[1]]}_Hist_loss_{name[start[1:]+1:]}.png", dpi=1200)
 
     # plotting % of predictions vs difference
     plt.clf()
@@ -236,8 +238,10 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     perIndex = np.where(tolPercent <= per)
     print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
     print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
+
     fig, ax = plt.subplots()
-    plt.plot(sortedDiff, percent, color="green", label=name, linewidth=0.7)
+    start =[i for i, letter in enumerate(name) if letter == '_']
+    plt.plot(sortedDiff, percent, color="green", label=name[start[3]+1:start[-1]], linewidth=0.7)
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
     plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
     ax.minorticks_on()
@@ -247,35 +251,35 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.ylabel('Percentage')
     plt.title("Percentage of values vs Difference")
     plt.legend()
-    plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
+    plt.savefig(f"{name[:start[1]]}_Percentage_vs_loss_{name[start[1:]+1:]}.png", dpi=1200)
 
 
     # plot of scattered train and validation data
-    plt.clf()
-    fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
-    ax[0].axis('equal')
-    ax[0].scatter(yTrain.flatten(), model.predict(xTrain).flatten(), marker='^', color='r', edgecolor='k')
-    ax[0].plot([0,1], [0,1], color='blue')
-    ax[0].plot([0,1], [0.2, 1.2], '--', c='orange')
-    ax[0].plot([0,1], [-0.2, 0.8], '--', c='orange')
-    ax[0].plot([0,1], [0.1, 1.1], '--', c='pink')
-    ax[0].plot([0,1], [-0.1, 0.9], '--', c='pink')
-    ax[0].set_title('Training Set')
-    ax[0].set_ylim(0,1)
-    ax[0].grid(which='both', alpha=0.8, c='#DDDDDD')
+    # plt.clf()
+    # fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
+    # ax[0].axis('equal')
+    # ax[0].scatter(yTrain.flatten(), model.predict(xTrain).flatten(), marker='^', color='r', edgecolor='k')
+    # ax[0].plot([0,1], [0,1], color='blue')
+    # ax[0].plot([0,1], [0.2, 1.2], '--', c='orange')
+    # ax[0].plot([0,1], [-0.2, 0.8], '--', c='orange')
+    # ax[0].plot([0,1], [0.1, 1.1], '--', c='pink')
+    # ax[0].plot([0,1], [-0.1, 0.9], '--', c='pink')
+    # ax[0].set_title('Training Set')
+    # ax[0].set_ylim(0,1)
+    # ax[0].grid(which='both', alpha=0.8, c='#DDDDDD')
 
-    ax[1].axis('equal')
-    ax[1].scatter(yTest.flatten(), model.predict(xTest).flatten(), marker='^', color='r', edgecolor='k')
-    ax[1].plot([0,1], [0,1], color='blue')
-    ax[1].plot([0,1], [0.2, 1.2], '--', c='orange')
-    ax[1].plot([0,1], [-0.2, 0.8], '--', c='orange')
-    ax[1].plot([0,1], [0.1, 1.1], '--', c='pink')
-    ax[1].plot([0,1], [-0.1, 0.9], '--', c='pink')
-    ax[1].set_title('Test Set')
-    ax[1].set_ylim(0,1)
-    ax[1].grid(which='both', alpha=0.8, c='#DDDDDD')
-    print('scatter plot made')
-    plt.savefig(f'True_vs_predicted_scatter_{name}.png', dpi=1200)
+    # ax[1].axis('equal')
+    # ax[1].scatter(yTest.flatten(), model.predict(xTest).flatten(), marker='^', color='r', edgecolor='k')
+    # ax[1].plot([0,1], [0,1], color='blue')
+    # ax[1].plot([0,1], [0.2, 1.2], '--', c='orange')
+    # ax[1].plot([0,1], [-0.2, 0.8], '--', c='orange')
+    # ax[1].plot([0,1], [0.1, 1.1], '--', c='pink')
+    # ax[1].plot([0,1], [-0.1, 0.9], '--', c='pink')
+    # ax[1].set_title('Test Set')
+    # ax[1].set_ylim(0,1)
+    # ax[1].grid(which='both', alpha=0.8, c='#DDDDDD')
+    # print('scatter plot made')
+    # plt.savefig(f'True_vs_predicted_scatter_{name}.png', dpi=1200)
 
 
 def comparison(models, train, xTest, yTest):
@@ -585,6 +589,7 @@ model, history, name = binModel(xTrain, yTrain, xValid, yValid)
 testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
+MASK_NO = -9999.99
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 # model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 # testing(model, history, xValid, yValid, xTest, yTest, name)

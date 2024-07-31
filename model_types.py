@@ -290,7 +290,6 @@ def convModel(shape, op, lossFunc):
         # ])
 
     model.compile(optimizer=op, loss=lossFunc)
-    model.summary()
     return model, 'conv'
 
 
@@ -390,7 +389,7 @@ def pureCNN(form, op, lossFunc):
     return model, 'pconv'
 
 
-def rnn(form, op, lossFunc, size=0):
+def rnn(form, op, lossFunc, maskNo):
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
     #     keras.layers.GRU(100, return_sequences=True, activation='relu'),
@@ -426,7 +425,7 @@ def rnn(form, op, lossFunc, size=0):
     # LSTM Masking
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
-    #     keras.layers.Masking(mask_value=0),
+    #     keras.layers.Masking(mask_value=maskNo),
     #     keras.layers.LSTM(20, return_sequences=True, activation='relu'),
     #     keras.layers.LSTM(20, activation='relu'),
     #     keras.layers.Dense(1)
@@ -434,7 +433,7 @@ def rnn(form, op, lossFunc, size=0):
 
     model = keras.models.Sequential([
         keras.Input(shape=form),
-        keras.layers.Masking(mask_value=-99999.99),
+        keras.layers.Masking(mask_value=maskNo),
         keras.layers.GRU(20, return_sequences=True, activation='relu'),
         keras.layers.GRU(20, activation='relu'),
         keras.layers.Dense(1)
@@ -442,7 +441,7 @@ def rnn(form, op, lossFunc, size=0):
 
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
-    #     keras.layers.Masking(mask_value=-99999.99),
+    #     keras.layers.Masking(mask_value=maskNo),
     #     keras.layers.GRU(40, return_sequences=True, activation='relu'),
     #     keras.layers.GRU(40, activation='relu'),
     #     keras.layers.Dense(1)
