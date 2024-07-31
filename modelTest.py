@@ -10,7 +10,7 @@ print()
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
 from model_types import convModel as cnn, pureCNN as pcnn, rnn, wavenet, multiLayerPerceptron as mlp
-from customLoss import welsch, piec
+from customFunction import welsch
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
@@ -49,8 +49,8 @@ def binModel(xTrain, yTrain, xValid, yValid):
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     op = keras.optimizers.Adam()
-    # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
-    lossFunc = keras.losses.Huber()
+    lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
+    # lossFunc = keras.losses.Huber()
     # lossFunc = welsch
     model, typeM = cnn(form, op, lossFunc)
     model.summary()
@@ -70,7 +70,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
     epochNo = 500
-    bSize = 512
+    bSize = 2048
     history = model.fit(xTrain, yTrain, epochs=epochNo, batch_size=bSize,\
                         validation_data=(xValid, yValid),\
                         callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
@@ -208,7 +208,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss')
     plt.legend()
-    plt.savefig(f"{name[:start[1]]}_Train_valid_loss_{name[start[1:]+1:]}.png", dpi=1200)
+    plt.savefig(f"{name[:start[1]]}_Train_valid_loss_{name[start[1]+1:]}.png", dpi=1200)
     print('min val loss:', min(val_loss))
     print('At epoch number:',np.argmin(val_loss)+1)
     print('min loss:', min(loss))
@@ -224,7 +224,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     plt.hist(diff[diff<5], bins=300)
     plt.title('Loss of predicted vs test Histogram')
-    plt.savefig(f"{name[:start[1]]}_Hist_loss_{name[start[1:]+1:]}.png", dpi=1200)
+    plt.savefig(f"{name[:start[1]]}_Hist_loss_{name[start[1]+1:]}.png", dpi=1200)
 
     # plotting % of predictions vs difference
     plt.clf()
@@ -252,7 +252,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.ylabel('Percentage')
     plt.title("Percentage of values vs Difference")
     plt.legend()
-    plt.savefig(f"{name[:start[1]]}_Percentage_vs_loss_{name[start[1:]+1:]}.png", dpi=1200)
+    plt.savefig(f"{name[:start[1]]}_Percentage_vs_loss_{name[start[1]+1:]}.png", dpi=1200)
 
 
     # plot of scattered train and validation data
@@ -448,6 +448,7 @@ def testLoadedModel(model, train, xTest, yTest):
     hist = pd.read_csv(train, sep=',', engine='python')
     start =[i for i, letter in enumerate(model) if letter == '_']
     print()
+    print(start)
     print(model)
 
     # name = model[:-16] #+ f'TTbar_test_data_{clock}'
@@ -472,7 +473,7 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.ylabel('Loss') 
     plt.title('Training and Validation Loss')
     plt.legend()
-    plt.savefig(f"{model[:start[1]]}_Train_valid_loss_{model[start[1:]+1:]}.png",dpi=1200)
+    plt.savefig(f"{model[:start[1]]}_Train_valid_loss_{model[start[1]+1:]}.png",dpi=1200)
     print('Train valid plot made')
 
     yPredicted = modelLoaded.predict(xTest)
@@ -516,7 +517,7 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.xlabel('Difference between predicted and true value')
     plt.ylabel('Percentage')
     plt.title("Percentage of values vs Difference")
-    plt.savefig(f"{model[:start[1]]}_Percentage_vs_loss_{model[start[1:]+1:]}.png", dpi=1200)
+    plt.savefig(f"{model[:start[1]]}_Percentage_vs_loss_{model[start[1]+1:]}.png", dpi=1200)
     print('Percentage vs difference plot made')
 
     # plot of scattered train and validation data
@@ -544,7 +545,7 @@ def testLoadedModel(model, train, xTest, yTest):
     ax[1].set_ylim(0,1)
     ax[1].grid(which='both', alpha=0.8, c='#DDDDDD')
     print('scatter plot made')
-    plt.savefig(f'{model[:start[1]]}_True_vs_predicted_scatter_{model[start[1:]+1:]}.png', dpi=1200)
+    plt.savefig(f'{model[:start[1]]}_True_vs_predicted_scatter_{model[start[1]+1:]}.png', dpi=1200)
 
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------- MAIN -----------------------------------------------------------------------------------------------------
@@ -581,14 +582,14 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-print(xTest.shape)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# print(xTest.shape)
 
-model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xValid, yValid, xTest, yTest, name)
+# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xValid, yValid, xTest, yTest, name)
 
 # print()
 MASK_NO = -9999.99
@@ -599,12 +600,12 @@ MASK_NO = -9999.99
 
 # Loaded model test and comparison to other models
 
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
