@@ -214,18 +214,6 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     print('min loss:', min(loss))
     print('At epoch number:',np.argmin(loss)+1)
 
-
-    # histogram of difference on test sample
-    print()
-    plt.clf()
-    fig, ax = plt.subplots()
-    ax.minorticks_on()
-    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    plt.hist(diff[diff<5], bins=300)
-    plt.title('Loss of predicted vs test Histogram')
-    plt.savefig(f"{name[:start[0]]}_Hist_loss_{name[start[0]+1:]}.png", dpi=1200)
-
     # plotting % of predictions vs difference
     plt.clf()
     per = 90
@@ -254,117 +242,9 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.legend()
     plt.savefig(f"{name[:start[0]]}_Percentage_vs_loss_{name[start[0]+1:]}.png", dpi=1200)
 
-
-    # plot of scattered train and validation data
-    # plt.clf()
-    # fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
-    # ax[0].axis('equal')
-    # ax[0].scatter(yTrain.flatten(), model.predict(xTrain).flatten(), marker='^', color='r', edgecolor='k')
-    # ax[0].plot([0,1], [0,1], color='blue')
-    # ax[0].plot([0,1], [0.2, 1.2], '--', c='orange')
-    # ax[0].plot([0,1], [-0.2, 0.8], '--', c='orange')
-    # ax[0].plot([0,1], [0.1, 1.1], '--', c='pink')
-    # ax[0].plot([0,1], [-0.1, 0.9], '--', c='pink')
-    # ax[0].set_title('Training Set')
-    # ax[0].set_ylim(0,1)
-    # ax[0].grid(which='both', alpha=0.8, c='#DDDDDD')
-
-    # ax[1].axis('equal')
-    # ax[1].scatter(yTest.flatten(), model.predict(xTest).flatten(), marker='^', color='r', edgecolor='k')
-    # ax[1].plot([0,1], [0,1], color='blue')
-    # ax[1].plot([0,1], [0.2, 1.2], '--', c='orange')
-    # ax[1].plot([0,1], [-0.2, 0.8], '--', c='orange')
-    # ax[1].plot([0,1], [0.1, 1.1], '--', c='pink')
-    # ax[1].plot([0,1], [-0.1, 0.9], '--', c='pink')
-    # ax[1].set_title('Test Set')
-    # ax[1].set_ylim(0,1)
-    # ax[1].grid(which='both', alpha=0.8, c='#DDDDDD')
-    # print('scatter plot made')
-    # plt.savefig(f'True_vs_predicted_scatter_{name}.png', dpi=1200)
-
-
-    if model[-2:] == 'h5':
-        print(model)
-        modelLoaded = loadWeights(model, xTest)
-    else:
-        modelLoaded = loadModel(model)
-    hist = pd.read_csv(train, sep=',', engine='python')
-    start =[i for i, letter in enumerate(model) if letter == '_']
-    print()
-    print(model)
-
-    # name = model[:-16] #+ f'TTbar_test_data_{clock}'
-    # plot of epochs against training and validation loss
-    loss = hist['loss']
-    val_loss = hist['val_loss']
-    epochs = range(1, len(loss) + 1)
-    print()
-    print('min val loss:', min(val_loss))
-    print('At epoch number:',np.argmin(val_loss)+1)
-    print('min loss:', min(loss))
-    print('At epoch number:',np.argmin(loss)+1)
-
-    # plt.clf()
-    # plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
-    # plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
-    # minX = np.argmin(val_loss) + 1
-    # minY = np.min(val_loss)
-    # plt.scatter(minX, minY, color='green', label='minimum', s=6)
-    # plt.xlabel('Epoch number')
-    # plt.ylabel('Loss') 
-    # plt.title('Training and Validation Loss')
-    # plt.legend()
-    # plt.savefig(f"{model[:start[0]]}_Train_valid_loss_{model[start[0]+1:]}.png",dpi=1200)
-    # print('Train valid plot made')
-    
-    # print()
-    yPredicted = modelLoaded.predict(xTest).flatten()
-    # print()
-    # diff = abs(yPredicted.flatten() - yTest.flatten())
-    # print(max(diff), min(diff))
-    # print(np.std(diff), np.mean(diff))
-    
-    # # histogram of loss on test sample
-    # # plt.clf()
-    # # fig, ax = plt.subplots()
-    # # ax.minorticks_on()
-    # # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    # # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # # plt.hist(diff[diff<5], bins=300)
-    # # plt.title('Loss of predicted vs test Histogram')
-    # # plt.savefig(f"{model[:start[0]]}_Hist_loss_{model[start[0]+1:]}.png", dpi=1200)
-    # # print('Hist plot made')
-
-    # # plotting % of predictions vs loss
-    # print()
-    # plt.clf()
-    # sortedDiff = np.sort(diff[diff<2])
-    # percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    # percentile = np.zeros(len(sortedDiff)) + 90
-    # tolerance = np.zeros(len(diff)) + 0.1
-    # tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
-    # per = 90
-    # tol = 0.15
-    # tolIndex = np.where(sortedDiff <= tol)
-    # perIndex = np.where(tolPercent <= per)
-    # print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    # print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
-    # fig, ax = plt.subplots()
-    # plt.plot(sortedDiff, percent, color="green", linewidth=0.7)
-    # plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
-    # plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
-    # ax.minorticks_on()
-    # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # plt.xlabel('Difference between predicted and true value')
-    # plt.ylabel('Percentage')
-    # plt.title("Percentage of values vs Difference")
-    # plt.savefig(f"{model[:start[0]]}_Percentage_vs_loss_{model[start[0]+1:]}.png", dpi=1200)
-    # print('Percentage vs difference plot made')
-
     # plot of scattered train and validation data
     print()
-    yPredTrain = modelLoaded.predict(xTrain).flatten()
+    yPredTrain = model.predict(xTrain).flatten()
     plt.clf()
     fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
     ax[0].axis('equal')
@@ -404,7 +284,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
     ax[0].axis('equal')
     extent = np.array([[min(yTrain), max(yTrain)], [min(yPredTrain), max(yPredTrain)]])
-    heatmap = ax[0].hist2d(yTrain, yPredTrain, bins=20, cmap='Wistia', range=extent)
+    heatmap = ax[0].hist2d(yTrain, yPredTrain, bins=20, cmap='hot_r', range=extent)
     fig.colorbar(heatmap[3], ax=ax[0])
     line = np.array([-15, 15])
     ax[0].plot(line, line, color='black')
@@ -420,7 +300,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
 
     ax[1].axis('equal')
     extent = np.array([[min(yTest), max(yTest)], [min(yPredicted), max(yPredicted)]])
-    heatmap = ax[1].hist2d(yTrain, yPredTrain, bins=20, cmap='Wistia', range=extent)
+    heatmap = ax[1].hist2d(yTrain, yPredTrain, bins=20, cmap='hot_r', range=extent)
     fig.colorbar(heatmap[3], ax=ax[1])
     ax[1].plot([-15,15], [-15,15], color='black')
     ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
@@ -434,7 +314,6 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
     plt.savefig(f'{model[:start[0]]}_True_vs_predicted_map_{model[start[0]+1:]}.png')
     print('map plot made')
-
 
 
 def comparison(models, train, xTest, yTest):
@@ -634,17 +513,6 @@ def testLoadedModel(model, train, xTest, yTest):
     # diff = abs(yPredicted.flatten() - yTest.flatten())
     # print(max(diff), min(diff))
     # print(np.std(diff), np.mean(diff))
-    
-    # # histogram of loss on test sample
-    # # plt.clf()
-    # # fig, ax = plt.subplots()
-    # # ax.minorticks_on()
-    # # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    # # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # # plt.hist(diff[diff<5], bins=300)
-    # # plt.title('Loss of predicted vs test Histogram')
-    # # plt.savefig(f"{model[:start[0]]}_Hist_loss_{model[start[0]+1:]}.png", dpi=1200)
-    # # print('Hist plot made')
 
     # # plotting % of predictions vs loss
     # print()
