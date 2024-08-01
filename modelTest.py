@@ -10,7 +10,7 @@ print()
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
 from model_types import convModel as cnn, pureCNN as pcnn, rnn, wavenet, multiLayerPerceptron as mlp
-from customFunction import welsch, learningRate, power_decay
+from customFunction import welsch, learningRate, power_decay, piecewise_constant_fn
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
@@ -49,8 +49,9 @@ def binModel(xTrain, yTrain, xValid, yValid):
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     op = keras.optimizers.Adam()
-    lossFunc = keras.losses.Huber(delta=0.00001, name='modified000001_huber_loss')
+    lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
     # lossFunc = keras.losses.Huber()
+    # lossFunc = keras.losses.MeanAbsoluteError()
     # lossFunc = welsch
     model, typeM = cnn(form, op, lossFunc)
     model.summary()
@@ -60,12 +61,13 @@ def binModel(xTrain, yTrain, xValid, yValid):
     modelDirectory = "models"
     modelName = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}".format(n=num, type =typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
     print(modelName)
+    start =[i for i, letter in enumerate(modelName) if letter == '_']
 
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
-    # lr = keras.callbacks.LearningRateScheduler(learningRate())
-    csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
+    # lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.LearningRateScheduler(piecewise_constant_fn)
+    csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
     stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
@@ -182,7 +184,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 def testing(model, hist, xTest, yTest, name):
     print()
     print(name)
-    yPredicted = model.predict(xTest)
+    yPredicted = model.predict(xTest).flatten()
     diff = abs(yPredicted.flatten() - yTest.flatten())
     print()
     print(max(diff), min(diff))
@@ -704,8 +706,8 @@ xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-name = 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.keras'
-train = 'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.log'
+name = 'Merged_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722501200.keras'
+train = 'training_Merged_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722501200.log'
 # print(name[:-16])
 # trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
