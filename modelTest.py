@@ -10,7 +10,7 @@ print()
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
 from model_types import convModel as cnn, pureCNN as pcnn, rnn, wavenet, multiLayerPerceptron as mlp
-from customFunction import welsch, learningRate, power_decay, piecewise_constant_fn
+from customFunction import welsch, learningRate, power_decay, piecewise_constant_fn, OneCycleLr
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
@@ -48,11 +48,15 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
+    epochNo = 500
+    bSize = 800
+
     op = keras.optimizers.Adam()
     # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
     # lossFunc = keras.losses.Huber()
     lossFunc = keras.losses.MeanAbsoluteError()
     # lossFunc = welsch
+    lossFunc = OneCycleLr(max_lr=0.001, steps_per_epoch=len(xTrain), epochs=epochNo)
     model, typeM = cnn(form, op, lossFunc)
     model.summary()
     
@@ -71,8 +75,6 @@ def binModel(xTrain, yTrain, xValid, yValid):
     stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
-    epochNo = 500
-    bSize = 800
     history = model.fit(xTrain, yTrain, epochs=epochNo, batch_size=bSize,\
                         validation_data=(xValid, yValid),\
                         callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
@@ -87,7 +89,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
     modelFilename = os.path.join(modelDirectory, modelName)
     model.save(modelName+".keras")
 
-    return model, history, modelName
+    return model, history, modelName, lossFunc
 
 
 def rawModelSplit(z, pt, eta, pv):
@@ -155,13 +157,13 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=50, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
     stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
-    epochNum = 100
-    batchNo = None
+    epochNum = 50
+    batchNo = 2048
     history = model.fit(xTrain, yTrain, epochs=epochNum, batch_size=batchNo,\
                         validation_data=(xValid, yValid),\
                         callbacks=[checkpointCallback, lr, csvLogger, stopTraining, earlyStop])
@@ -179,7 +181,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     return model, history, modelName
 
 
-def testing(model, hist, xTest, yTest, name):
+def testing(model, hist, xTest, yTest, name, lossFunc):
     print()
     print(name)
     yPredicted = model.predict(xTest).flatten()
@@ -569,6 +571,7 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.xlabel('Difference between predicted and true value')
     plt.ylabel('Percentage')
     plt.title("Percentage of values vs Difference")
+    plt.legend()
     plt.savefig(f"{name}_Percentage_vs_loss_{model[start[0]+1:]}.png", dpi=1200)
     print('Percentage vs difference plot made')
 
@@ -658,22 +661,35 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.savefig(f"{name}_Learning_rate_{model[start[0]+1:]}.png")
     print('learning rate plot made')
 
+    # plotting learning rate against epochs
+    print()
+    lr = hist['learning_rate']
+    plt.clf()
+    plt.plot(lr, val_loss, color='b', linewidth=0.7)
+    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+    plt.xlabel('Epoch number')
+    plt.ylabel('Learning Rate')
+    plt.title('Learning Rate against epochs')
+    plt.savefig(f"{name}_Learning_rate_vs_valuation_loss_{model[start[0]+1:]}.png")
+    print('learning rate plot made')
+
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------- MAIN -----------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-nameData = 'TTbar'
-rawD = np.load('TTbarRaw5.npz')
-binD = np.load('TTbarBin4.npz')
+# nameData = 'TTbar'
+# rawD = np.load('TTbarRaw5.npz')
+# binD = np.load('TTbarBin4.npz')
 
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
-# nameData = 'Merged'
-# rawD = np.load('Merged_deacys_Raw.npz')
-# binD = np.load('Merged_decays_Bin.npz')
+nameData = 'Merged'
+rawD = np.load('Merged_deacys_Raw.npz')
+binD = np.load('Merged_decays_Bin.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -693,14 +709,14 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-# print(xTest.shape)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+print(xTest.shape)
 
-# model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xTest, yTest, name)
+model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xTest, yTest, name, lossFunc)
 
 # print()
 MASK_NO = -9999.99
@@ -715,7 +731,7 @@ MASK_NO = -9999.99
 
 # Loaded model test and comparison to other models
 
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 
 xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
@@ -724,11 +740,11 @@ xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-name = 'Merged_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722501200.keras'
-train = 'training_Merged_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722501200.log'
+name = 'Merged_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722428998.keras'
+train = 'training_Merged_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722428998.log'
 # print(name[:-16])
 # trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
+# testLoadedModel(name, train, xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
