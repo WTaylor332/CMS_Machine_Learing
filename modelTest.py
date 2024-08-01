@@ -10,7 +10,7 @@ print()
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
 from model_types import convModel as cnn, pureCNN as pcnn, rnn, wavenet, multiLayerPerceptron as mlp
-from customFunction import welsch
+from customFunction import welsch, learningRate, power_decay
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
@@ -63,14 +63,14 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=50, cooldown = 1, min_lr=0.00000001, verbose=1)
-    # lr = keras.callbacks.LearningRateScheduler(piecewise_constant_fn)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
+    # lr = keras.callbacks.LearningRateScheduler(learningRate())
     csvLogger = keras.callbacks.CSVLogger("training_{}.log".format(modelName), separator=',', append=False)
     stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
     epochNo = 500
-    bSize = 1024
+    bSize = 800
     history = model.fit(xTrain, yTrain, epochs=epochNo, batch_size=bSize,\
                         validation_data=(xValid, yValid),\
                         callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
@@ -179,10 +179,9 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     return model, history, modelName
 
 
-def testing(model, hist, xValid, yValid, xTest, yTest, name):
+def testing(model, hist, xTest, yTest, name):
     print()
     print(name)
-    model.evaluate(xValid, yValid)
     yPredicted = model.predict(xTest)
     diff = abs(yPredicted.flatten() - yTest.flatten())
     print()
@@ -203,7 +202,7 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
     minX = np.argmin(val_loss) + 1
     minY = np.min(val_loss)
-    plt.scatter(minX, minY, color='green', label='minimum', s=6)
+    plt.scatter(minX, minY, color='green', label='minimum '+str(round(minY, 5)), s=6)
     plt.xlabel('Epoch number')
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss')
@@ -314,6 +313,19 @@ def testing(model, hist, xValid, yValid, xTest, yTest, name):
     ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
     plt.savefig(f'{model[:start[0]]}_True_vs_predicted_map_{model[start[0]+1:]}.png')
     print('map plot made')
+
+    # plotting learning rate against epochs
+    print()
+    lr = hist.history['learning_rate']
+    plt.clf()
+    plt.plot(epochs, lr, color='b', linewidth=0.7)
+    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+    plt.xlabel('Epoch number')
+    plt.ylabel('Learning Rate')
+    plt.title('Learning Rate against epochs')
+    plt.savefig(f"{name[:start[0]]}_Learning_rate_{name[start[0]+1:]}.png")
+    print('learning rate plot made')
 
 
 def comparison(models, train, xTest, yTest):
@@ -494,88 +506,88 @@ def testLoadedModel(model, train, xTest, yTest):
     print('min loss:', min(loss))
     print('At epoch number:',np.argmin(loss)+1)
 
-    # plt.clf()
-    # plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
-    # plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
-    # minX = np.argmin(val_loss) + 1
-    # minY = np.min(val_loss)
-    # plt.scatter(minX, minY, color='green', label='minimum', s=6)
-    # plt.xlabel('Epoch number')
-    # plt.ylabel('Loss') 
-    # plt.title('Training and Validation Loss')
-    # plt.legend()
-    # plt.savefig(f"{model[:start[0]]}_Train_valid_loss_{model[start[0]+1:]}.png",dpi=1200)
-    # print('Train valid plot made')
+    plt.clf()
+    plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
+    plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
+    minX = np.argmin(val_loss) + 1
+    minY = np.min(val_loss)
+    plt.scatter(minX, minY, color='green', label='minimum', s=6)
+    plt.xlabel('Epoch number')
+    plt.ylabel('Loss') 
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.savefig(f"{nameData}_Train_valid_loss_{model[start[0]+1:]}.png",dpi=1200)
+    print('Train valid plot made')
     
-    # print()
+    print()
     yPredicted = modelLoaded.predict(xTest).flatten()
-    # print()
-    # diff = abs(yPredicted.flatten() - yTest.flatten())
-    # print(max(diff), min(diff))
-    # print(np.std(diff), np.mean(diff))
+    print()
+    diff = abs(yPredicted.flatten() - yTest.flatten())
+    print(max(diff), min(diff))
+    print(np.std(diff), np.mean(diff))
 
-    # # plotting % of predictions vs loss
-    # print()
-    # plt.clf()
-    # sortedDiff = np.sort(diff[diff<2])
-    # percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    # percentile = np.zeros(len(sortedDiff)) + 90
-    # tolerance = np.zeros(len(diff)) + 0.1
-    # tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
-    # per = 90
-    # tol = 0.15
-    # tolIndex = np.where(sortedDiff <= tol)
-    # perIndex = np.where(tolPercent <= per)
-    # print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    # print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
-    # fig, ax = plt.subplots()
-    # plt.plot(sortedDiff, percent, color="green", linewidth=0.7)
-    # plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
-    # plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
-    # ax.minorticks_on()
-    # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # plt.xlabel('Difference between predicted and true value')
-    # plt.ylabel('Percentage')
-    # plt.title("Percentage of values vs Difference")
-    # plt.savefig(f"{model[:start[0]]}_Percentage_vs_loss_{model[start[0]+1:]}.png", dpi=1200)
-    # print('Percentage vs difference plot made')
+    # plotting % of predictions vs loss
+    print()
+    plt.clf()
+    sortedDiff = np.sort(diff[diff<2])
+    percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
+    percentile = np.zeros(len(sortedDiff)) + 90
+    tolerance = np.zeros(len(diff)) + 0.1
+    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
+    per = 90
+    tol = 0.15
+    tolIndex = np.where(sortedDiff <= tol)
+    perIndex = np.where(tolPercent <= per)
+    print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
+    print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
+    fig, ax = plt.subplots()
+    plt.plot(sortedDiff, percent, color="green", linewidth=0.7)
+    plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
+    plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
+    ax.minorticks_on()
+    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    plt.xlabel('Difference between predicted and true value')
+    plt.ylabel('Percentage')
+    plt.title("Percentage of values vs Difference")
+    plt.savefig(f"{nameData}_Percentage_vs_loss_{model[start[0]+1:]}.png", dpi=1200)
+    print('Percentage vs difference plot made')
 
     # plot of scattered train and validation data
     print()
     yPredTrain = modelLoaded.predict(xTrain).flatten()
-    # plt.clf()
-    # fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
-    # ax[0].axis('equal')
-    # ax[0].scatter(yTrain.flatten(), yPredTrain.flatten(), marker='^', color='r', edgecolor='k')
-    # line = np.array([-15, 15])
-    # ax[0].plot(line, line, color='black')
-    # ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
-    # ax[0].plot(line, line-max(line)*0.2, '--', c='orange')
-    # ax[0].plot(line, line+max(line)*0.1, '--', c='pink')
-    # ax[0].plot(line, line-max(line)*0.1, '--', c='pink')
-    # ax[0].set_title('Test Set')
-    # ax[0].set_xlabel('True values')
-    # ax[0].set_ylabel('Predicted values')
-    # ax[0].set_ylim(-15,15)
-    # ax[0].minorticks_on()
-    # ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
+    plt.clf()
+    fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
+    ax[0].axis('equal')
+    ax[0].scatter(yTrain.flatten(), yPredTrain.flatten(), marker='^', color='r', edgecolor='k')
+    line = np.array([-15, 15])
+    ax[0].plot(line, line, color='black')
+    ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[0].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[0].set_title('Test Set')
+    ax[0].set_xlabel('True values')
+    ax[0].set_ylabel('Predicted values')
+    ax[0].set_ylim(-15,15)
+    ax[0].minorticks_on()
+    ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
 
-    # ax[1].axis('equal')
-    # ax[1].scatter(yTest.flatten(), yPredicted.flatten(), marker='^', color='r', edgecolor='k')
-    # ax[1].plot([-15,15], [-15,15], color='black')
-    # ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
-    # ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
-    # ax[1].plot(line, line+max(line)*0.1, '--', c='pink')
-    # ax[1].plot(line, line-max(line)*0.1, '--', c='pink')
-    # ax[1].set_title('Validation Set')
-    # ax[1].set_xlabel('True values')
-    # ax[1].set_ylabel('Predicted values')
-    # ax[1].set_ylim(-15,15)
-    # ax[1].minorticks_on()
-    # ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    # plt.savefig(f'{model[:start[0]]}_True_vs_predicted_scatter_{model[start[0]+1:]}.png', dpi=1000)
-    # print('scatter plot made')
+    ax[1].axis('equal')
+    ax[1].scatter(yTest.flatten(), yPredicted.flatten(), marker='^', color='r', edgecolor='k')
+    ax[1].plot([-15,15], [-15,15], color='black')
+    ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
+    ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[1].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[1].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[1].set_title('Validation Set')
+    ax[1].set_xlabel('True values')
+    ax[1].set_ylabel('Predicted values')
+    ax[1].set_ylim(-15,15)
+    ax[1].minorticks_on()
+    ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
+    plt.savefig(f'{nameData}_True_vs_predicted_scatter_{model[start[0]+1:]}.png', dpi=1000)
+    print('scatter plot made')
 
     # plot of scattered train and validation data
     print()
@@ -611,7 +623,7 @@ def testLoadedModel(model, train, xTest, yTest):
     ax[1].set_ylabel('Predicted values')
     ax[1].set_ylim(-15,15)
     ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    plt.savefig(f'{model[:start[0]]}_True_vs_predicted_map_{model[start[0]+1:]}.png')
+    plt.savefig(f'{nameData}_True_vs_predicted_map_{model[start[0]+1:]}.png')
     print('map plot made')
 
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -619,17 +631,17 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+nameData = 'TTbar'
+rawD = np.load('TTbarRaw5.npz')
+binD = np.load('TTbarBin4.npz')
 
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
-nameData = 'Merged'
-rawD = np.load('Merged_deacys_Raw.npz')
-binD = np.load('Merged_decays_Bin.npz')
+# nameData = 'Merged'
+# rawD = np.load('Merged_deacys_Raw.npz')
+# binD = np.load('Merged_decays_Bin.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -656,13 +668,13 @@ print()
 # print(xTest.shape)
 
 # model, history, name = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+# testing(model, history, xTest, yTest, name)
 
 # print()
 MASK_NO = -9999.99
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 # model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xValid, yValid, xTest, yTest, name)
+# testing(model, history, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
@@ -676,8 +688,8 @@ xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-name = 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.keras'
-train = 'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.log'
+name = 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722418918.keras'
+train = 'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722418918.log'
 # print(name[:-16])
 # trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
 testLoadedModel(name, train, xTest, yTest)
