@@ -274,7 +274,7 @@ def testing(model, hist, xTest, yTest, name):
     ax[1].set_ylim(-15,15)
     ax[1].minorticks_on()
     ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    plt.savefig(f'{model[:start[0]]}_True_vs_predicted_scatter_{model[start[0]+1:]}.png', dpi=1000)
+    plt.savefig(f'{name[:start[0]]}_True_vs_predicted_scatter_{name[start[0]+1:]}.png', dpi=1000)
     print('scatter plot made')
 
     # plot of scattered train and validation data
@@ -311,7 +311,7 @@ def testing(model, hist, xTest, yTest, name):
     ax[1].set_ylabel('Predicted values')
     ax[1].set_ylim(-15,15)
     ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    plt.savefig(f'{model[:start[0]]}_True_vs_predicted_map_{model[start[0]+1:]}.png')
+    plt.savefig(f'{name[:start[0]]}_True_vs_predicted_map_{name[start[0]+1:]}.png')
     print('map plot made')
 
     # plotting learning rate against epochs
@@ -331,8 +331,9 @@ def testing(model, hist, xTest, yTest, name):
 def comparison(models, train, xTest, yTest):
     print()
     endStart =[i for i, letter in enumerate(models[0]) if letter == '_']
-    name = "{start}_comparison_of_model_types_{d}_{t}".format(start=models[0][:endStart[2]], d=nameData, t=clock)
+    name = "{start}_comparison_of_batch_sizes_{t}".format(start=models[0][endStart[0]+1:endStart[7]], t=clock)
     print(name)
+    time.sleep(5)
     # Percentage vs difference plot comparsion
     plt.clf()
     fig, ax = plt.subplots()
@@ -342,20 +343,22 @@ def comparison(models, train, xTest, yTest):
     # labels = np.array(['CCPCCPCC ks=8 ps=4', 'CPCPCPC ks=6 ps=4', 'CPCPCPC ks=8 ps=4', 'CPCPCPCPCPC ks=8 ps=2'])
     # labels = ['MAE', 'MSE', 'Huber']
     # labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
-    labels = ['WAVENET', 'PURE CNN', 'CNN + MLP', 'MLP', 'RNN']
+    # labels = ['WAVENET', 'PURE CNN', 'CNN + MLP', 'MLP', 'RNN']
     # labels = ['GRU100 GRU50 D1', 'GRU20 GRU20 D1']
     # labels = ['T150 GRU100 GRU50', 'BiGRU20 GRU20', 'MASK GRU50', 'MASK GRU20 GRU20', 'MASK LSTM20 LSTM20']
     # labels = ['dr(1,2) dr(1,2)', 'dr(1,2)', 'dr(1,3)']
+    labels = ['None', '32', '512', '2048', str(len(xTrain))]
     for i in range(0, len(models)):    
         print()
-        if i == 3:
-            print('\n\n\n\n')
-            # xTest = xTest[:, :, :150]
-            xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2])
+        # if i == 3:
+        #     print('\n\n\n\n')
+        #     # xTest = xTest[:, :, :150]
+        #     xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2])
         if models[i][-2:] == 'h5':
             modelLoaded = loadWeights(models[i], xTest)
         else:
             modelLoaded = loadModel(models[i])
+
         print()
         print(models[i])
         print(xTest.shape)
@@ -398,7 +401,7 @@ def comparison(models, train, xTest, yTest):
     plt.xlabel('Difference between predicted and true value')
     plt.ylabel('Percentage')
     plt.title("Percentage of values vs Difference")
-    plt.savefig("Percentage_vs_loss_{}.png".format(name), dpi=1200)
+    plt.savefig(f"{nameData}_Percentage_vs_loss_{name}.png", dpi=1200)
     print('percentage vs difference plot made')
 
     plt.clf()
@@ -418,7 +421,7 @@ def comparison(models, train, xTest, yTest):
     plt.ylabel('Validation Loss') 
     plt.title('Validation Loss')
     plt.legend()
-    plt.savefig("Train_valid_loss_{}.png".format(name), dpi=1200)
+    plt.savefig(f"{nameData}_Train_valid_loss_{name}.png", dpi=1200)
     print('val loss plot made')
 
 
@@ -529,13 +532,13 @@ def testLoadedModel(model, train, xTest, yTest):
     # plotting % of predictions vs loss
     print()
     plt.clf()
-    sortedDiff = np.sort(diff[diff<2])
-    percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    percentile = np.zeros(len(sortedDiff)) + 90
-    tolerance = np.zeros(len(diff)) + 0.1
-    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
     per = 90
     tol = 0.15
+    sortedDiff = np.sort(diff[diff<2])
+    percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
+    percentile = np.zeros(len(sortedDiff)) + per
+    tolerance = np.zeros(len(diff)) + tol
+    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
     tolIndex = np.where(sortedDiff <= tol)
     perIndex = np.where(tolPercent <= per)
     print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
@@ -626,22 +629,35 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.savefig(f'{nameData}_True_vs_predicted_map_{model[start[0]+1:]}.png')
     print('map plot made')
 
+    # plotting learning rate against epochs
+    print()
+    lr = hist['learning_rate']
+    plt.clf()
+    plt.plot(epochs, lr, color='b', linewidth=0.7)
+    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+    plt.xlabel('Epoch number')
+    plt.ylabel('Learning Rate')
+    plt.title('Learning Rate against epochs')
+    plt.savefig(f"{nameData}_Learning_rate_{name[start[0]+1:]}.png")
+    print('learning rate plot made')
+
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------- MAIN -----------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-nameData = 'TTbar'
-rawD = np.load('TTbarRaw5.npz')
-binD = np.load('TTbarBin4.npz')
+# nameData = 'TTbar'
+# rawD = np.load('TTbarRaw5.npz')
+# binD = np.load('TTbarBin4.npz')
 
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
-# nameData = 'Merged'
-# rawD = np.load('Merged_deacys_Raw.npz')
-# binD = np.load('Merged_decays_Bin.npz')
+nameData = 'Merged'
+rawD = np.load('Merged_deacys_Raw.npz')
+binD = np.load('Merged_decays_Bin.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -688,11 +704,11 @@ xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-name = 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722418918.keras'
-train = 'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722418918.log'
+name = 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.keras'
+train = 'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.log'
 # print(name[:-16])
 # trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
+# testLoadedModel(name, train, xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
@@ -702,37 +718,16 @@ testLoadedModel(name, train, xTest, yTest)
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
 
 # Comparing various models
-# modelsCompare = ['Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.keras',\
-#                  'Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.keras',\
-#                  'Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras',\
-#                  'Bin_model_2inputs_mlp_adam_huber_loss_TTbar_1722246839.keras',\
-#                  'Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras']
-# trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_TTbar_1721990770.log',\
-#                    'training_Bin_model_2inputs_pconv_adam_huber_loss_TTbar_1721751238.log',\
-#                    'training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log',\
-#                    'training_Bin_model_2inputs_mlp_adam_huber_loss_TTbar_1722246839.log',\
-#                    'training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log']
-
-# modelsCompare = ['Raw_model_3inputs_rnn_adam_huber_loss_1721315255.keras',\
-#                  'Raw_model_3inputs_rnn_adam_huber_loss_1721396555.keras',\
-#                  'Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899207.keras',\
-#                  'Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899435.keras']
-# trainingCompare = ['training_Raw_model_3inputs_rnn_adam_huber_loss_1721315255.log',\
-#                    'training_Raw_model_3inputs_rnn_adam_huber_loss_1721396555.log',\
-#                    'training_Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899207.log',\
-#                    'training_Raw_model_3inputs_rnn_adam_huber_loss_TTbar_1721899435.log']
-
-# modelsCompare = ['Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1721811974.keras',\
-#                  'Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1721815766.keras',\
-#                  'Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1722116156.keras']
-# trainingCompare = ['training_Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1721811974.log',\
-#                    'training_Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1721815766.log',\
-#                    'training_Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1722116156.log']
-
-# modelsCompare = ['Bin_model_2inputs_rnn_adam_huber_loss_1721311690.keras',\
-#                  'Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.keras']
-# trainingCompare = ['training_Bin_model_2inputs_rnn_adam_huber_loss_1721311690.log',\
-#                    'training_Bin_model_2inputs_rnn_adam_huber_loss_TTbar_1721749990.log']
+modelsCompare = ['Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415564.keras',\
+                 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722418918.keras',\
+                 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.keras',\
+                 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415353.keras',\
+                 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722417342.keras']
+trainingCompare = ['training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415564.log',\
+                   'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722418918.log',\
+                   'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.log',\
+                   'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415353.log',\
+                   'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722417342.log']
 
 # endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
 # print(modelsCompare[0][:endStart[2]])
@@ -768,4 +763,4 @@ testLoadedModel(name, train, xTest, yTest)
 #         print(epochs)
 
 # print(xTest.shape)
-# comparison(modelsCompare, trainingCompare, xTest, yTest)
+comparison(modelsCompare, trainingCompare, xTest, yTest)
