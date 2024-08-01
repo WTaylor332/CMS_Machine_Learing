@@ -226,15 +226,15 @@ def testing(model, hist, xTest, yTest, name):
     tolIndex = np.where(sortedDiff <= tol)
     perIndex = np.where(tolPercent <= per)
     print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
+    print('Value of', per, 'th percentile:', np.sort(diff)[perIndex[0][-1]])
 
     fig, ax = plt.subplots()
     plt.plot(sortedDiff, percent, color="green", label=name[start[3]+1:start[-1]], linewidth=0.7)
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
     plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
-    plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(percent[tolIndex[0][-1]]))
+    plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
     if np.sort(diff)[perIndex[0][-1]] < 2:
-        plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(np.sort(diff)[perIndex[0][-1]]))
+        plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)))
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
@@ -387,7 +387,7 @@ def comparison(models, train, xTest, yTest):
         perIndex = np.where(tolPercent <= per)
         
         print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-        print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
+        print('Value of', per, 'th percentile:', np.sort(diff)[perIndex[0][-1]])
         print('min val loss:', min(val_loss))
         print('At epoch number:',np.argmin(val_loss)+1)
         print('min loss:', min(loss))
@@ -396,9 +396,9 @@ def comparison(models, train, xTest, yTest):
         percentile = np.zeros(len(sortedDiff)) + per
         tolerance = np.zeros(len(diff)) + tol
         plt.plot(sortedDiff, percent, label=labels[i], linewidth=0.8)
-        plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(percent[tolIndex[0][-1]]))
+        plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
         if np.sort(diff)[perIndex[0][-1]] < 2:
-            plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(np.sort(diff)[perIndex[0][-1]]))
+            plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+'th percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)))
         print()
  
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
@@ -560,9 +560,9 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.plot(sortedDiff, percent, color="green", linewidth=0.7)
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
     plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
-    plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(percent[tolIndex[0][-1]]))
+    plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
     if np.sort(diff)[perIndex[0][-1]] < 2:
-        plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(np.sort(diff)[perIndex[0][-1]]))
+        plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)))
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
