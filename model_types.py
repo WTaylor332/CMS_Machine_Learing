@@ -233,6 +233,33 @@ def convModel(shape, op, lossFunc):
     #     keras.layers.Dense(1)
     # ])
 
+    # conv model with regression and classification combines
+    model = keras.models.Sequential([
+            keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu', input_shape=(shape)),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
+
+            keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,4)),
+
+            keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu'),
+            keras.layers.MaxPool2D(pool_size=(1,2)),
+
+            # multi later perceptron
+            keras.layers.Flatten(),
+            keras.layers.Dense(6, activation="relu"),
+            keras.layers.Dense(6, activation="relu"),
+            keras.layers.Dense(6, activation="relu"),
+            keras.layers.Dense(6, activation="relu"),
+            keras.layers.Dense(6, activation="relu"),
+            keras.layers.Dense(6, activation="relu"),
+            keras.layers.Dense(6, activation="relu"),
+            keras.layers.Dense(6, activation="relu"),
+            keras.layers.Dense(6, activation="relu"),
+            keras.layers.Dense(6, activation="relu"),
+            keras.layers.Dense(1)
+    ])
+    lossFunc = [lossFunc, 'sparse_catgorical_crossentropy']
+
 
 
 
