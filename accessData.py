@@ -239,9 +239,6 @@ def percentageHardVertex(z, pv, bins=30):
 # eventZ,  eventPT, eventPV, eventEta = loadData(name)
 
 # zRaw, ptRaw, etaRaw, trackLength, mv = rawPaddedData(eventZ, eventPT, eventEta)
-
-# print()
-
 # np.savez('TTbarRaw5', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
 
 # rawD = np.load('QCD_Pt-15To3000.npz')
@@ -250,15 +247,12 @@ def percentageHardVertex(z, pv, bins=30):
 # m = rawD['maxValue']
 # print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
 
-
 # ptBin, trackBin = histogramData(zRaw, ptRaw)
 
 # np.savez('QCD_Pt-15To3000_Bin', ptB=ptBin, tB=trackBin)
-
 # q = np.load('QCD_Pt-15To3000_Bin.npz')
 # print(q['ptB'].shape)
 # print(q['tB'].shape)
-
 
 
 # merge and sort all decays
@@ -280,5 +274,6 @@ mergeData = np.load('Merged_deacys_Raw.npz')
 # print(q['tB'].shape)
 
 # adding probability of hard vertext to mixed data
-vertProb, vertBin = percentageHardVertex(mergeData['z'], mergeData['pv'])
-
+b = 30
+vertProb, vertBin = percentageHardVertex(mergeData['z'], mergeData['pv'], b)
+np.savez(f'Hard_Vertex_Probaility_{b}_bins', prob=vertProb, bins=vertBin)

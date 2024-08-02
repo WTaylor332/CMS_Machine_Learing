@@ -40,15 +40,15 @@ def piecewise_constant_fn(epoch):
     if epoch < 50:
         return 0.001
     elif epoch < 80:
-        return 0.0002
+        return 0.0005
     elif epoch < 120:
-        return 0.00004
+        return 0.00025
     elif epoch < 160:
-        return 0.000
+        return 0.000125
     elif epoch < 200:
-        return 0.000008
+        return 0.0000625
     elif epoch < 250:
-        return 0.0000016
+        return 0.00003625
     else:
         return 0.000001
     

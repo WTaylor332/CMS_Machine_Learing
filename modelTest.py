@@ -629,7 +629,7 @@ def testLoadedModel(model, train, xTest, yTest):
     fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
     ax[0].axis('equal')
     extent = np.array([[min(yTrain), max(yTrain)], [min(yPredTrain), max(yPredTrain)]])
-    heatmap = ax[0].hist2d(yTrain, yPredTrain, bins=20, cmap='Wistia', range=extent)
+    heatmap = ax[0].hist2d(yTrain, yPredTrain, bins=40, cmap='Wistia', range=extent)
     fig.colorbar(heatmap[3], ax=ax[0])
     line = np.array([-15, 15])
     ax[0].plot(line, line, color='black')
@@ -645,7 +645,7 @@ def testLoadedModel(model, train, xTest, yTest):
 
     ax[1].axis('equal')
     extent = np.array([[min(yTest), max(yTest)], [min(yPredicted), max(yPredicted)]])
-    heatmap = ax[1].hist2d(yTrain, yPredTrain, bins=20, cmap='Wistia', range=extent)
+    heatmap = ax[1].hist2d(yTrain, yPredTrain, bins=40, cmap='Wistia', range=extent)
     fig.colorbar(heatmap[3], ax=ax[1])
     ax[1].plot([-15,15], [-15,15], color='black')
     ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
@@ -703,7 +703,6 @@ print(nameData)
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
 # trackLength = rawD['tl']
-# prob, vertBin = vert['vertProb'], vert['vertBin']
 print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
 clock = int(time.time())
@@ -713,14 +712,14 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-# print(xTest.shape)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+print(xTest.shape)
 
-# model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xTest, yTest, name, lossFunc)
+model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xTest, yTest, name, lossFunc)
 
 # print()
 MASK_NO = -9999.99
@@ -732,12 +731,12 @@ MASK_NO = -9999.99
 
 # Loaded model test and comparison to other models
 
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 # print(xTest[0,0,:])
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
@@ -745,7 +744,7 @@ name = 'Merged_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722594932.kera
 train = 'Merged_training_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722594932.log'
 # print(name[:-16])
 # trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
+# testLoadedModel(name, train, xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
@@ -755,16 +754,16 @@ testLoadedModel(name, train, xTest, yTest)
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
 
 # Comparing various models
-modelsCompare = ['Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415564.keras',\
-                 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722418918.keras',\
-                 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.keras',\
-                 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415353.keras',\
-                 'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722417342.keras']
-trainingCompare = ['training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415564.log',\
-                   'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722418918.log',\
-                   'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.log',\
-                   'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415353.log',\
-                   'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722417342.log']
+# modelsCompare = ['Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415564.keras',\
+#                  'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722418918.keras',\
+#                  'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.keras',\
+#                  'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415353.keras',\
+#                  'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722417342.keras']
+# trainingCompare = ['training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415564.log',\
+#                    'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722418918.log',\
+#                    'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.log',\
+#                    'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415353.log',\
+#                    'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722417342.log']
 
 # endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
 # print(modelsCompare[0][:endStart[2]])
