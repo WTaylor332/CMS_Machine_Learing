@@ -49,9 +49,10 @@ def binModel(xTrain, yTrain, xValid, yValid):
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     epochNo = 500
-    bSize = 800
+    bSize = 256
 
-    op = keras.optimizers.Adam()
+    # op = keras.optimizers.Adam()
+    op = keras.optimizers.Adamax()
     # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
     # lossFunc = keras.losses.Huber()
     lossFunc = keras.losses.MeanAbsoluteError()
@@ -60,9 +61,9 @@ def binModel(xTrain, yTrain, xValid, yValid):
     model.summary()
     
     # saving the model and best weights
-    weights = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}.weights.h5".format(n=num, type=typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    weights = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}.weights.h5".format(n=num, type=typeM, o='adamax', l=lossFunc.name, d=nameData, t=clock)
     modelDirectory = "models"
-    modelName = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}".format(n=num, type =typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    modelName = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}".format(n=num, type =typeM, o='adamax', l=lossFunc.name, d=nameData, t=clock)
     print(modelName)
     start =[i for i, letter in enumerate(modelName) if letter == '_']
 
@@ -93,6 +94,9 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
 
 def rawModelSplit(z, pt, eta, pv):
+    print(z[0,0])
+    print(pt[0,0])
+    print(eta[0,0])
     # scaling z
     columnZ = z.reshape(z.shape[0]*z.shape[1], 1)
     scaler = StandardScaler().fit(columnZ)
@@ -102,6 +106,7 @@ def rawModelSplit(z, pt, eta, pv):
     z = np.nan_to_num(z, nan=MASK_NO)
     pt = np.nan_to_num(pt, nan=MASK_NO)
     eta = np.nan_to_num(eta, nan=MASK_NO)
+    print(z[0,0])
 
     # z = z[:,:150]
     # pt = pt[:,:150]
@@ -445,7 +450,7 @@ def loadWeights(name, x):
     print()
     print(form)
     print()
-    model, typeM = wavenet(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.Huber())
+    model, typeM = rnn(form, op=keras.optimizers.Adam(delta=0.1), lossFunc=keras.losses.Huber(), maskNo=MASK_NO)
     print()
     model.load_weights(name)
     model.summary()
@@ -720,33 +725,35 @@ print()
 
 # print()
 MASK_NO = -9999.99
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-print(xTrain[0,:,0])
-xTrain = xTrain.swapaxes(1,2)
-xValid = xValid.swapaxes(1,2)
-xTest = xTest.swapaxes(1,2)
-print(xTrain[0,0,:])
-print(xTrain.shape)
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xTest, yTest, name)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+# print(xTrain[0,:,0])
+# xTrain = xTrain.swapaxes(1,2)
+# xValid = xValid.swapaxes(1,2)
+# xTest = xTest.swapaxes(1,2)
+# print(xTrain[0,0,:])
+# print(xTrain.shape)
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+xTrain = xTrain.swapaxes(1,2)
+xValid = xValid.swapaxes(1,2)
+xTest = xTest.swapaxes(1,2)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-name = 'Merged_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722428998.keras'
-train = 'training_Merged_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722428998.log'
+name = 'TTbar_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722591257.weights.h5'
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722591257.log'
 # print(name[:-16])
 # trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
-# testLoadedModel(name, train, xTest, yTest)
+testLoadedModel(name, train, xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
