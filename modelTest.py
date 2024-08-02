@@ -12,6 +12,8 @@ from sklearn.preprocessing import StandardScaler
 from model_types import convModel as cnn, pureCNN as pcnn, rnn, wavenet, multiLayerPerceptron as mlp
 from customFunction import welsch, learningRate, power_decay, piecewise_constant_fn, OneCycleLr
 
+print("Num GPUs availabel: ", len(tf.config.list_physical_devices('GPU')))
+
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
         if (logs.get('val_loss') < 0.00001):
@@ -51,19 +53,18 @@ def binModel(xTrain, yTrain, xValid, yValid):
     epochNo = 500
     bSize = 256
 
-    # op = keras.optimizers.Adam()
-    op = keras.optimizers.Adamax()
-    # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
+    op = keras.optimizers.Adam()
+    lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
     # lossFunc = keras.losses.Huber()
-    lossFunc = keras.losses.MeanAbsoluteError()
+    # lossFunc = keras.losses.MeanAbsoluteError()
     # lossFunc = welsch
     model, typeM = cnn(form, op, lossFunc)
     model.summary()
     
     # saving the model and best weights
-    weights = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}.weights.h5".format(n=num, type=typeM, o='adamax', l=lossFunc.name, d=nameData, t=clock)
+    weights = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}.weights.h5".format(n=num, type=typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
     modelDirectory = "models"
-    modelName = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}".format(n=num, type =typeM, o='adamax', l=lossFunc.name, d=nameData, t=clock)
+    modelName = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}".format(n=num, type =typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
     print(modelName)
     start =[i for i, letter in enumerate(modelName) if letter == '_']
 
@@ -134,6 +135,7 @@ def rawModelSplit(z, pt, eta, pv):
     v = len(pv)//5
 
     # padded data split
+    rawDataAll = rawDataAll.swapaxes(1,2)
     xTest, xValid, xTrain = rawDataAll[:t], rawDataAll[t:v], rawDataAll[v:]
     # jagged data split
     # xTest, xValid, xTrain = allJag[:t], allJag[t:v], allJag[v:]
@@ -162,12 +164,12 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=8, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
     stopTraining = haltCallback()
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=80)
 
-    epochNum = 50
+    epochNum = 250
     batchNo = 2048
     history = model.fit(xTrain, yTrain, epochs=epochNum, batch_size=batchNo,\
                         validation_data=(xValid, yValid),\
@@ -186,7 +188,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     return model, history, modelName
 
 
-def testing(model, hist, xTest, yTest, name, lossFunc):
+def testing(model, hist, xTest, yTest, name):
     print()
     print(name)
     yPredicted = model.predict(xTest).flatten()
@@ -326,7 +328,7 @@ def testing(model, hist, xTest, yTest, name, lossFunc):
 
     # plotting learning rate against epochs
     print()
-    lr = hist.history['learning_rate']
+    lr = hist.history['lr']
     plt.clf()
     plt.plot(epochs, lr, color='b', linewidth=0.7)
     plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
@@ -450,7 +452,7 @@ def loadWeights(name, x):
     print()
     print(form)
     print()
-    model, typeM = rnn(form, op=keras.optimizers.Adam(delta=0.1), lossFunc=keras.losses.Huber(), maskNo=MASK_NO)
+    model, typeM = rnn(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.Huber(delta=0.1), maskNo=MASK_NO)
     print()
     model.load_weights(name)
     model.summary()
@@ -668,7 +670,7 @@ def testLoadedModel(model, train, xTest, yTest):
 
     # plotting learning rate against epochs
     print()
-    lr = hist['learning_rate']
+    lr = hist['lr']
     plt.clf()
     plt.plot(lr, val_loss, color='b', linewidth=0.7)
     plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
@@ -725,13 +727,8 @@ print()
 
 # print()
 MASK_NO = -9999.99
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-# print(xTrain[0,:,0])
-# xTrain = xTrain.swapaxes(1,2)
-# xValid = xValid.swapaxes(1,2)
-# xTest = xTest.swapaxes(1,2)
-# print(xTrain[0,0,:])
-# print(xTrain.shape)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+print(xTrain.shape)
 # model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 # testing(model, history, xTest, yTest, name)
 
@@ -739,21 +736,19 @@ MASK_NO = -9999.99
 # Loaded model test and comparison to other models
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
-xTrain = xTrain.swapaxes(1,2)
-xValid = xValid.swapaxes(1,2)
-xTest = xTest.swapaxes(1,2)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+# print(xTest[0,0,:])
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-name = 'TTbar_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722591257.weights.h5'
+name = 'TTbar_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722591257.keras'
 train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722591257.log'
 # print(name[:-16])
 # trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
+# testLoadedModel(name, train, xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
@@ -795,7 +790,7 @@ trainingCompare = ['training_Merged_Bin_model_2inputs_conv_adam_huber_loss_17224
 # mod = loadModel('Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras')
 # config = mod.get_config()
 # print(config["layers"][0]["config"])
-# train = 'training_Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.log'
+# train = 'Merged_training_Bin_model_2inputs_conv_adamax_modified01_huber_loss_1722592046.log'
 # hist = pd.read_csv(train, sep=',', engine='python')
 # print(hist.columns)
 
