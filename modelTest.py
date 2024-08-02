@@ -71,7 +71,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    # lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
     # lr = OneCycleLr(max_lr=0.001, steps_per_epoch=len(xTrain), epochs=epochNo)
     # lr = keras.callbacks.LearningRateScheduler(piecewise_constant_fn)
     csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
@@ -80,7 +80,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     history = model.fit(xTrain, yTrain, epochs=epochNo, batch_size=bSize,\
                         validation_data=(xValid, yValid),\
-                        callbacks=[checkpointCallback, csvLogger, stopTraining, earlyStop])
+                        callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
 
     checkpointFilename = os.path.join(modelDirectory, weights)
     check = os.path.isdir(modelDirectory)
@@ -514,6 +514,7 @@ def testLoadedModel(model, train, xTest, yTest):
     else:
         modelLoaded = loadModel(model)
     hist = pd.read_csv(train, sep=',', engine='python')
+    print(hist.columns)
     start =[i for i, letter in enumerate(model) if letter == '_']
     print()
     print(model)
@@ -661,29 +662,19 @@ def testLoadedModel(model, train, xTest, yTest):
 
     # plotting learning rate against epochs
     print()
-    lr = hist['learning_rate']
-    plt.clf()
-    plt.plot(epochs, lr, color='b', linewidth=0.7)
-    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
-    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
-    plt.xlabel('Epoch number')
-    plt.ylabel('Learning Rate')
-    plt.title('Learning Rate against epochs')
-    plt.savefig(f"{name}_Learning_rate_{model[start[0]+1:]}.png")
-    print('learning rate plot made')
-
-    # plotting learning rate against epochs
-    print()
-    lr = hist['lr']
-    plt.clf()
-    plt.plot(lr, val_loss, color='b', linewidth=0.7)
-    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
-    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
-    plt.xlabel('Epoch number')
-    plt.ylabel('Learning Rate')
-    plt.title('Learning Rate against epochs')
-    plt.savefig(f"{name}_Learning_rate_vs_valuation_loss_{model[start[0]+1:]}.png")
-    print('learning rate plot made')
+    if 'lr' in hist.columns[0]:
+        lr = hist['lr']
+        plt.clf()
+        plt.plot(epochs, lr, color='b', linewidth=0.7)
+        plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
+        plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+        plt.xlabel('Epoch number')
+        plt.ylabel('Learning Rate')
+        plt.title('Learning Rate against epochs')
+        plt.savefig(f"{name}_Learning_rate_{model[start[0]+1:]}.png")
+        print('learning rate plot made')
+    else:
+        print('No learning rate stored for each epoch')
 
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------- MAIN -----------------------------------------------------------------------------------------------------
@@ -701,6 +692,7 @@ def testLoadedModel(model, train, xTest, yTest):
 nameData = 'Merged'
 rawD = np.load('Merged_deacys_Raw.npz')
 binD = np.load('Merged_decays_Bin.npz')
+# vert = np.load('Hard_Vertex_Probability_30_bins.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -710,7 +702,8 @@ print(nameData)
 
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
-trackLength = rawD['tl']
+# trackLength = rawD['tl']
+# prob, vertBin = vert['vertProb'], vert['vertBin']
 print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
 clock = int(time.time())
@@ -720,14 +713,14 @@ clock = int(time.time())
 # plt.savefig("TTbarTrackDistribution.png")
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-print(xTest.shape)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
+# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+# print(xTest.shape)
 
-model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xTest, yTest, name, lossFunc)
+# model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xTest, yTest, name, lossFunc)
 
 # print()
 MASK_NO = -9999.99
@@ -739,20 +732,20 @@ MASK_NO = -9999.99
 
 # Loaded model test and comparison to other models
 
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 # print(xTest[0,0,:])
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-name = 'TTbar_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722591257.keras'
-train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722591257.log'
+name = 'Merged_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722594932.keras'
+train = 'Merged_training_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722594932.log'
 # print(name[:-16])
 # trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
-# testLoadedModel(name, train, xTest, yTest)
+testLoadedModel(name, train, xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
