@@ -205,6 +205,31 @@ def merge():
     return zMerge, ptMerge, etaMerge, pvMerge, trackLength
 
 
+def percentageHardVertex(z, pv, bins=30):
+    print(z.dtype)
+    print(z[0])
+    print(pv.dtype)
+    hardVertexProb = np.zeros((z.shape[0], bins))
+    vertexBinned = np.zeros((z.shape[0], bins))
+    binValues = np.linspace(-15, 15, bins)
+    for i in tqdm(range(z.shape[0])):
+        for j in range(1, bins):
+            rangeBin = z[i, (z[i]<binValues[j]) & (z[i]>binValues[j-1])]
+            if len(rangeBin) > 0:
+                averageZ = np.nanmean(rangeBin)
+            else:
+                averageZ = 0
+            if pv[i] < binValues[j] and pv[i] > binValues[j-1]:
+                hardVertexProb[i, j] = 1
+                vertexBinned[i, j] = pv[i]
+            else:
+                hardVertexProb[i, j] = 0
+                vertexBinned[i, j] = averageZ
+
+    print(hardVertexProb[:2])
+    print(vertexBinned[:2])
+
+    return hardVertexProb, vertexBinned
 
 # -------------------------------------------------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------MAIN----------------------------------------------------------------------
@@ -235,20 +260,25 @@ def merge():
 # print(q['tB'].shape)
 
 
+
 # merge and sort all decays
 
-zMerge, ptMerge, etaMerge, pvMerge, trackLength = merge()
-np.savez('Merged_deacys_Raw', z=zMerge, pt=ptMerge, eta=etaMerge, pv=np.array(pvMerge), tl=trackLength)
+# zMerge, ptMerge, etaMerge, pvMerge, trackLength = merge()
+# np.savez('Merged_deacys_Raw', z=zMerge, pt=ptMerge, eta=etaMerge, pv=np.array(pvMerge), tl=trackLength)
 mergeData = np.load('Merged_deacys_Raw.npz')
-z, pt, eta = mergeData['z'], mergeData['pt'], mergeData['eta']
-print()
-print(z.shape, pt.shape, eta.shape)
+# z, pt, eta = mergeData['z'], mergeData['pt'], mergeData['eta']
+# print()
+# print(z.shape, pt.shape, eta.shape)
 
-# bin merged decays
-ptBin, trackBin = histogramData(z, pt)
-np.savez('Merged_decays_Bin', ptB=ptBin, tB=trackBin)
+# # bin merged decays
+# ptBin, trackBin = histogramData(z, pt)
+# np.savez('Merged_decays_Bin', ptB=ptBin, tB=trackBin)
 
-q = np.load('Merged_decays_Bin.npz')
-print()
-print(q['ptB'].shape)
-print(q['tB'].shape)
+# q = np.load('Merged_decays_Bin.npz')
+# print()
+# print(q['ptB'].shape)
+# print(q['tB'].shape)
+
+# adding probability of hard vertext to mixed data
+vertProb, vertBin = percentageHardVertex(mergeData['z'], mergeData['pv'])
+
