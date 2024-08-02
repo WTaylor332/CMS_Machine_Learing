@@ -378,13 +378,13 @@ def rnn(form, op, lossFunc, maskNo):
     #     keras.layers.Dense(1)
     # ])
 
-    model = keras.models.Sequential([
-        keras.Input(shape=form),
-        keras.layers.Masking(mask_value=maskNo),
-        keras.layers.GRU(20, return_sequences=True, activation='tanh'),
-        keras.layers.GRU(20, activation='tanh'),
-        keras.layers.Dense(1)
-    ])
+    # model = keras.models.Sequential([
+    #     keras.Input(shape=form),
+    #     keras.layers.Masking(mask_value=maskNo),
+    #     keras.layers.GRU(20, return_sequences=True, activation='tanh'),
+    #     keras.layers.GRU(20, activation='tanh'),
+    #     keras.layers.Dense(1)
+    # ])
 
     # model = keras.models.Sequential([
     #      keras.layers.Masking(mask_value=maskNo, input_shape=form),
@@ -392,13 +392,13 @@ def rnn(form, op, lossFunc, maskNo):
     #      keras.layers.GRU(20),
     #      keras.layers.Dense(1)
     #  ])
-    # model = keras.models.Sequential([
-    #     keras.Input(shape=form),
-    #     keras.layers.Masking(mask_value=maskNo),
-    #     keras.layers.SimpleRNN(20, return_sequences=True, activation='relu'),
-    #     keras.layers.SimpleRNN(20, activation='relu'),
-    #     keras.layers.Dense(1)
-    # ])
+    model = keras.models.Sequential([
+        keras.Input(shape=form),
+        keras.layers.Masking(mask_value=maskNo),
+        keras.layers.SimpleRNN(20, return_sequences=True, activation='tanh'),
+        keras.layers.SimpleRNN(20, activation='tanh'),
+        keras.layers.Dense(1)
+    ])
 
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
