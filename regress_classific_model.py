@@ -274,7 +274,10 @@ def testing(model, xTest, yTest, name):
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss')
     plt.legend()
-    plt.savefig(f"{nameData}_Train_valid_loss_{name[start[0]+1:]}.png", dpi=1200)
+    if nameData != name[:start[0]]:
+        plt.savefig(f"{nameData}_Train_valid_loss_{name}.png", dpi=1200)
+    else:
+        plt.savefig(f"{nameData}_Train_valid_loss_{name[start[0]+1:]}.png", dpi=1200)
     print('min val loss:', min(val_loss))
     print('At epoch number:',np.argmin(val_loss)+1)
     print('min loss:', min(loss))
@@ -316,7 +319,10 @@ def testing(model, xTest, yTest, name):
     plt.ylabel('Percentage')
     plt.title("Percentage of values vs Difference")
     plt.legend()
-    plt.savefig(f"{nameData}_Percentage_vs_loss_{name[start[0]+1:]}.png", dpi=1200)
+    if nameData != name[:start[0]]:
+        plt.savefig(f"{nameData}_Percentage_vs_loss_{name}.png", dpi=1200)
+    else:
+        plt.savefig(f"{nameData}_Percentage_vs_loss_{name[start[0]+1:]}.png", dpi=1200)
 
     # plot of scattered train and validation data
     print()
@@ -351,7 +357,10 @@ def testing(model, xTest, yTest, name):
     ax[1].set_ylim(-15,15)
     ax[1].minorticks_on()
     ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    plt.savefig(f'{nameData}_True_vs_predicted_scatter_{name[start[0]+1:]}.png', dpi=1000)
+    if nameData != name[:start[0]]:
+        plt.savefig(f"{nameData}_True_vs_predicted_scatter_{name}.png", dpi=1000)
+    else:
+        plt.savefig(f'{nameData}_True_vs_predicted_scatter_{name[start[0]+1:]}.png', dpi=1000)
     print('scatter plot made')
 
     # plot of map train and validation data
@@ -388,7 +397,10 @@ def testing(model, xTest, yTest, name):
     ax[1].set_ylabel('Predicted values')
     ax[1].set_ylim(-15,15)
     ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    plt.savefig(f'{nameData}_True_vs_predicted_map_{name[start[0]+1:]}.png')
+    if nameData != name[:start[0]]:
+        plt.savefig(f"{nameData}_True_vs_predicted_map_{name}.png", dpi=1000)
+    else:
+        plt.savefig(f'{nameData}_True_vs_predicted_map_{name[start[0]+1:]}.png')
     print('map plot made')
 
     # plotting learning rate against epochs
@@ -401,7 +413,10 @@ def testing(model, xTest, yTest, name):
     plt.xlabel('Epoch number')
     plt.ylabel('Learning Rate')
     plt.title('Learning Rate against epochs')
-    plt.savefig(f"{nameData}_Learning_rate_{name[start[0]+1:]}.png")
+    if nameData != name[:start[0]]:
+        plt.savefig(f"{nameData}_Learning_rate_{name}.png", dpi=1000)
+    else:
+        plt.savefig(f"{nameData}_Learning_rate_{name[start[0]+1:]}.png")
     print('learning rate plot made')
 
     # % values that predicted the correct bin
@@ -432,7 +447,10 @@ def testing(model, xTest, yTest, name):
     sn.heatmap(cm, annot=True, fmt='d')
     plt.xlabel('Predicted')
     plt.ylabel('True')
-    plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
+    if nameData != name[:start[0]]:
+        plt.savefig(f"{nameData}_cm_probability_{name}.png", dpi=1000)
+    else:
+        plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
     print('cm plot made')
 
 
