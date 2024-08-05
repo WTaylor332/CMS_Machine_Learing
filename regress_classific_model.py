@@ -43,6 +43,20 @@ def cnn(form, op, lossFunc, bins):
     return model, 'conv'
 
 
+def rnn(form, op, lossFunc, maskNo, bins):
+    inp = keras.Input(shape=form)
+    mask = keras.layers.Masking(mask_value=maskNo)(inp)
+    gru1 = keras.layers.GRU(20, return_sequences=True, activation='tanh')(mask)
+    gru2 = keras.layers.GRU(20, activation='tanh')(gru1)
+
+    outReg = keras.layers.Dense(1)(gru2)
+    outClass = keras.layers.Dense(bins, activation='softmax')(gru2)
+
+    model = keras.Model(inputs=inp, outputs=[outReg, outClass])
+    model.compile(optimizer=op, loss=lossFunc)
+    return model, 'rnn'
+
+
 def binModelSplit(pt, track, vertBin, prob, pv):
     # scaling 
     columnPT = pt.reshape(pt.shape[0]*pt.shape[1], 1)
@@ -92,8 +106,8 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
-    epochNo = 10
-    bSize = 2048
+    epochNo = 500
+    bSize = None
 
     op = keras.optimizers.Adam()
     lossFunc = [keras.losses.Huber(delta=0.1, name='modified01_huber_loss'), keras.losses.CategoricalCrossentropy()]
@@ -133,6 +147,83 @@ def binModel(xTrain, yTrain, xValid, yValid):
     model.save(modelName+".keras")
 
     return model, history, modelName, lossFunc
+
+
+def rawModelSplit(z, pt, eta, pv, prob):
+
+    # scaling z
+    columnZ = z.reshape(z.shape[0]*z.shape[1], 1)
+    scaler = StandardScaler().fit(columnZ)
+    columnZ = scaler.transform(columnZ)
+    z = columnZ.reshape(pt.shape[0], pt.shape[1])
+
+    z = np.nan_to_num(z, nan=MASK_NO)
+    pt = np.nan_to_num(pt, nan=MASK_NO)
+    eta = np.nan_to_num(eta, nan=MASK_NO)
+
+    rawDataAll = np.stack((z,pt,eta), axis=1)
+    print(rawDataAll.shape)
+
+    # splitting data into test, validation and training data
+    t = len(pv)//10
+    v = len(pv)//5
+
+    # padded data split
+    rawDataAll = rawDataAll.swapaxes(1,2)
+    xTest, xValid, xTrain = rawDataAll[:t], rawDataAll[t:v], rawDataAll[v:]
+
+    # desired values
+    yTestReg, yValidReg, yTrainReg = pv[:t], pv[t:v], pv[v:]
+    yTestClass, yValidClass, yTrainClass = prob[:t], prob[t:v], prob[v:]
+    yTrain = [yTrainReg, yTrainClass]
+    yValid = [yValidReg, yValidClass]
+    yTest = [yTestReg, yTestClass]
+
+    return xTrain, yTrain, xValid, yValid, xTest, yTest
+
+
+def rawModel(xTrain, yTrain, xValid, yValid):
+
+    num = xTrain.shape[2]
+    form = (xTrain.shape[1], xTrain.shape[2])
+
+    # creating model
+    op = keras.optimizers.Adam()
+    lossFunc = [keras.losses.Huber(delta=0.1, name='modified01_huber_loss'), keras.losses.CategoricalCrossentropy()] 
+    model, typeM = rnn(form, op, lossFunc, MASK_NO, bins=yTrain[1].shape[1])
+    
+    # saving the model and best weights
+    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    modelDirectory = "models"
+    modelName = weights[:-11]
+    start =[i for i, letter in enumerate(modelName) if letter == '_']
+    print(modelName)
+    print()
+
+    # callbacks
+    checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
+    csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
+
+    epochNum = 10
+    batchNo = 256
+    history = model.fit(xTrain, yTrain, epochs=epochNum, batch_size=batchNo,\
+                        validation_data=(xValid, yValid),\
+                        callbacks=[checkpointCallback, lr, csvLogger, earlyStop])
+
+    checkpointFilename = os.path.join(modelDirectory, weights)
+    check = os.path.isdir(modelDirectory)
+    if not check:
+        os.makedirs(modelDirectory)
+        print("Created directory:" , modelDirectory)
+
+    # saves full model
+    modelFilename = os.path.join(modelDirectory, modelName)
+    model.save(modelName+'.keras')
+
+    return model, history, modelName
+
 
 
 def testing(model, hist, xTest, yTest, name):
@@ -298,33 +389,27 @@ def testing(model, hist, xTest, yTest, name):
 # ----------------------------------------------------------------------- MAIN ------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+MASK_NO = -9999.99
 
-# nameData = 'QCD'
-# rawD = np.load('QCD_Pt-15To3000.npz')
-# binD = np.load('QCD_Pt-15To3000_Bin.npz')
+# loading numpy arrays of data
 
 nameData = 'Merged'
 rawD = np.load('Merged_deacys_Raw.npz')
 binD = np.load('Merged_decays_Bin.npz')
 vert = np.load('Hard_Vertex_Probability_30_bins.npz')
 
-# nameData = 'WJets'
-# rawD = np.load('WJetsToLNu.npz')
-# binD = np.load('WJetsToLNu_Bin.npz')
-
 print(nameData)
 
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
-prob, vertBin = vert['prob'], vert['bins']
+probability, vertBin = vert['prob'], vert['bins']
 
 clock = int(time.time())
 
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, track=trackBin, vertBin=vertBin, prob=prob, pv=pvRaw.flatten())
+# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, track=trackBin, vertBin=vertBin, prob=probability, pv=pvRaw.flatten())
+# model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xTest, yTest, name)
 
-model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 testing(model, history, xTest, yTest, name)
