@@ -10,7 +10,6 @@ print()
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
 from customFunction import welsch, learningRate, power_decay, piecewise_constant_fn, OneCycleLr
-from modelTest import testing
 
 def cnn(form, op, lossFunc, bins):
     # conv model with regression and classification combines
@@ -18,37 +17,27 @@ def cnn(form, op, lossFunc, bins):
     conv1 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(inp)
     pool1 = keras.layers.MaxPool2D(pool_size=(1,4))(conv1)
 
-    flatten =  keras.layers.Flatten()(pool1)
+    conv2 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(pool1)
+    pool2 = keras.layers.MaxPool2D(pool_size=(1,4))(conv2)
+
+    conv3 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(pool2)
+    pool3 = keras.layers.MaxPool2D(pool_size=(1,2))(conv3)
+
+    flatten =  keras.layers.Flatten()(pool3)
     hidden1 = keras.layers.Dense(10, activation="relu")(flatten)
     hidden2 = keras.layers.Dense(10, activation="relu")(hidden1)
+    hidden3 = keras.layers.Dense(6, activation="relu")(hidden2)
+    hidden4 = keras.layers.Dense(6, activation="relu")(hidden3)
+    hidden5 = keras.layers.Dense(6, activation="relu")(hidden4)
+    hidden6 = keras.layers.Dense(6, activation="relu")(hidden5)
+    hidden7 = keras.layers.Dense(6, activation="relu")(hidden6)
+    hidden8 = keras.layers.Dense(6, activation="relu")(hidden7)
+    hidden9 = keras.layers.Dense(6, activation="relu")(hidden8)
+    hidden10 = keras.layers.Dense(6, activation="relu")(hidden9)
 
-    outReg = keras.layers.Dense(1)(hidden2)
-    outClass = keras.layers.Dense(bins, activation='softmax')(hidden2)
+    outReg = keras.layers.Dense(1)(hidden10)
+    outClass = keras.layers.Dense(bins, activation='softmax')(hidden10)
 
-    # model = keras.models.Sequential([
-    #         keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu', input_shape=(form)),
-    #         keras.layers.MaxPool2D(pool_size=(1,4)),
-
-    #         keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu'),
-    #         keras.layers.MaxPool2D(pool_size=(1,4)),
-
-    #         keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu'),
-    #         keras.layers.MaxPool2D(pool_size=(1,2)),
-
-    #         # multi later perceptron
-    #         keras.layers.Flatten(),
-    #         keras.layers.Dense(6, activation="relu"),
-    #         keras.layers.Dense(6, activation="relu"),
-    #         keras.layers.Dense(6, activation="relu"),
-    #         keras.layers.Dense(6, activation="relu"),
-    #         keras.layers.Dense(6, activation="relu"),
-    #         keras.layers.Dense(6, activation="relu"),
-    #         keras.layers.Dense(6, activation="relu"),
-    #         keras.layers.Dense(6, activation="relu"),
-    #         keras.layers.Dense(6, activation="relu"),
-    #         keras.layers.Dense(6, activation="relu"),
-    #         keras.layers.Dense(1)
-    # ])
     model = keras.Model(inputs=inp, outputs=[outReg, outClass])
     model.compile(optimizer=op, loss=lossFunc)
     return model, 'conv'
@@ -98,11 +87,12 @@ def binModelSplit(pt, track, vertBin, prob, pv):
 
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
+
 def binModel(xTrain, yTrain, xValid, yValid):
 
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
-    epochNo = 10
+    epochNo = 50
     bSize = None
 
     # op = keras.optimizers.Adam()
@@ -146,6 +136,159 @@ def binModel(xTrain, yTrain, xValid, yValid):
     return model, history, modelName, lossFunc
 
 
+def testing(model, hist, xTest, yTest, name):
+    print()
+    print(name)
+    yPredicted, yClassPred = model.predict(xTest).flatten()[0]
+    diff = abs(yPredicted - yTest[0].flatten())
+    print()
+    print(max(diff), min(diff))
+    print(np.std(diff), np.mean(diff))
+    start =[i for i, letter in enumerate(name) if letter == '_']
+
+    # plot of epochs against training and validation loss
+    print()
+    loss = hist.history['loss']
+    val_loss = hist.history['val_loss']
+    epochs = range(1, len(loss) + 1)
+
+    plt.clf()
+    plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
+    plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
+    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+    minX = np.argmin(val_loss) + 1
+    minY = np.min(val_loss)
+    plt.scatter(minX, minY, color='green', label='minimum '+str(round(minY, 5)), s=6)
+    plt.xlabel('Epoch number')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.savefig(f"{name[:start[0]]}_Train_valid_loss_{name[start[0]+1:]}.png", dpi=1200)
+    print('min val loss:', min(val_loss))
+    print('At epoch number:',np.argmin(val_loss)+1)
+    print('min loss:', min(loss))
+    print('At epoch number:',np.argmin(loss)+1)
+
+    # plotting % of predictions vs difference
+    plt.clf()
+    per = 90
+    tol = 0.15
+    shortenedDiff = diff[diff<2]
+    percent = (np.arange(0,len(shortenedDiff),1)*100)/len(diff)
+    percentile = np.zeros(len(shortenedDiff)) + per
+    tolerance = np.zeros(len(diff)) + tol
+    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
+    sortedDiff = np.sort(shortenedDiff)
+    tolIndex = np.where(sortedDiff <= tol)
+    perIndex = np.where(tolPercent <= per)
+    print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
+    print('Value of', per, 'th percentile:', np.sort(diff)[perIndex[0][-1]])
+
+    fig, ax = plt.subplots()
+    plt.plot(sortedDiff, percent, color="green", label=name[start[3]+1:start[-1]], linewidth=0.7)
+    plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
+    plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
+    plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
+    if np.sort(diff)[perIndex[0][-1]] < 2:
+        plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)))
+    ax.minorticks_on()
+    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    plt.xlabel('Difference between predicted and true value')
+    plt.ylabel('Percentage')
+    plt.title("Percentage of values vs Difference")
+    plt.legend()
+    plt.savefig(f"{name[:start[0]]}_Percentage_vs_loss_{name[start[0]+1:]}.png", dpi=1200)
+
+    # plot of scattered train and validation data
+    print()
+    yPredTrain = model.predict(xTrain).flatten()[0]
+    plt.clf()
+    fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
+    ax[0].axis('equal')
+    ax[0].scatter(yTrain.flatten(), yPredTrain.flatten(), marker='^', color='r', edgecolor='k')
+    line = np.array([-15, 15])
+    ax[0].plot(line, line, color='black')
+    ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[0].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[0].set_title('Test Set')
+    ax[0].set_xlabel('True values')
+    ax[0].set_ylabel('Predicted values')
+    ax[0].set_ylim(-15,15)
+    ax[0].minorticks_on()
+    ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
+
+    ax[1].axis('equal')
+    ax[1].scatter(yTest[0].flatten(), yPredicted.flatten(), marker='^', color='r', edgecolor='k')
+    ax[1].plot([-15,15], [-15,15], color='black')
+    ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
+    ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[1].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[1].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[1].set_title('Validation Set')
+    ax[1].set_xlabel('True values')
+    ax[1].set_ylabel('Predicted values')
+    ax[1].set_ylim(-15,15)
+    ax[1].minorticks_on()
+    ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
+    plt.savefig(f'{name[:start[0]]}_True_vs_predicted_scatter_{name[start[0]+1:]}.png', dpi=1000)
+    print('scatter plot made')
+
+    # plot of scattered train and validation data
+    print()
+    plt.clf()
+    fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
+    ax[0].axis('equal')
+    extent = np.array([[min(yTrain[0]), max(yTrain[0])], [min(yPredTrain), max(yPredTrain)]])
+    heatmap = ax[0].hist2d(yTrain[0], yPredTrain, bins=20, cmap='hot_r', range=extent)
+    fig.colorbar(heatmap[3], ax=ax[0])
+    line = np.array([-15, 15])
+    ax[0].plot(line, line, color='black')
+    ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[0].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[0].set_title('Test Set')
+    ax[0].set_xlabel('True values')
+    ax[0].set_ylabel('Predicted values')
+    ax[0].set_ylim(-15,15)
+    ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
+
+    ax[1].axis('equal')
+    extent = np.array([[min(yTest[0]), max(yTest[0])], [min(yPredicted), max(yPredicted)]])
+    heatmap = ax[1].hist2d(yTest[0], yPredicted, bins=20, cmap='hot_r', range=extent)
+    fig.colorbar(heatmap[3], ax=ax[1])
+    ax[1].plot([-15,15], [-15,15], color='black')
+    ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
+    ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[1].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[1].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[1].set_title('Validation Set')
+    ax[1].set_xlabel('True values')
+    ax[1].set_ylabel('Predicted values')
+    ax[1].set_ylim(-15,15)
+    ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
+    plt.savefig(f'{name[:start[0]]}_True_vs_predicted_map_{name[start[0]+1:]}.png')
+    print('map plot made')
+
+    # plotting learning rate against epochs
+    print()
+    lr = hist.history['lr']
+    plt.clf()
+    plt.plot(epochs, lr, color='b', linewidth=0.7)
+    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+    plt.xlabel('Epoch number')
+    plt.ylabel('Learning Rate')
+    plt.title('Learning Rate against epochs')
+    plt.savefig(f"{name[:start[0]]}_Learning_rate_{name[start[0]+1:]}.png")
+    print('learning rate plot made')
+
+
+
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------- MAIN ------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -179,4 +322,4 @@ clock = int(time.time())
 xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, track=trackBin, vertBin=vertBin, prob=prob, pv=pvRaw.flatten())
 
 model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xTest, yTest, name, lossFunc)
+testing(model, history, xTest, yTest, name)
