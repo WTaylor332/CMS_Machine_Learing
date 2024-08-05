@@ -161,7 +161,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
     modelFilename = os.path.join(modelDirectory, modelName)
     model.save(modelName+".keras")
 
-    return model, history, modelName, lossFunc
+    return model, modelName
 
 
 def rawModelSplit(z, pt, eta, pv, prob):
@@ -238,14 +238,14 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     modelFilename = os.path.join(modelDirectory, modelName)
     model.save(modelName+'.keras')
 
-    return model, history, modelName
+    return model, modelName
 
 
 def testing(model, xTest, yTest, name):
 
     start =[i for i, letter in enumerate(name) if letter == '_']
-    hist = pd.read_csv(name[start[0]]+'_training_'+ {name[start[0]+1:]}+'.log', sep=',', engine='python')
-    
+    hist = pd.read_csv(name[:start[0]]+'_training_'+name[start[0]+1:]+'.log', sep=',', engine='python')
+
     print()
     print(name)
     print(hist.columns)
@@ -395,17 +395,17 @@ def testing(model, xTest, yTest, name):
     # print('map plot made')
 
     # plotting learning rate against epochs
-    print()
-    lr = hist.history['lr']
-    plt.clf()
-    plt.plot(epochs, lr, color='b', linewidth=0.7)
-    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
-    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
-    plt.xlabel('Epoch number')
-    plt.ylabel('Learning Rate')
-    plt.title('Learning Rate against epochs')
-    plt.savefig(f"{name[:start[0]]}_Learning_rate_{name[start[0]+1:]}.png")
-    print('learning rate plot made')
+    # print()
+    # lr = hist['lr']
+    # plt.clf()
+    # plt.plot(epochs, lr, color='b', linewidth=0.7)
+    # plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    # plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+    # plt.xlabel('Epoch number')
+    # plt.ylabel('Learning Rate')
+    # plt.title('Learning Rate against epochs')
+    # plt.savefig(f"{name[:start[0]]}_Learning_rate_{name[start[0]+1:]}.png")
+    # print('learning rate plot made')
 
     # % values that predicted the correct bin
     indexPred = np.array([np.argmax(event) for event in yClassPred])
@@ -455,11 +455,11 @@ probability, vertBin = vert['prob'], vert['bins']
 clock = int(time.time())
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, track=trackBin, vertBin=vertBin, prob=probability, pv=pvRaw.flatten())
-# model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xTest, yTest, name)
+# model, name = binModel(xTrain, yTrain, xValid, yValid)
+# testing(model, xTest, yTest, name)
 
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# model, name = rawModel(xTrain, yTrain, xValid, yValid)
 
 model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555.keras')
 name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555'
