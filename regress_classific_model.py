@@ -11,36 +11,36 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from customFunction import welsch, learningRate, power_decay, piecewise_constant_fn, OneCycleLr
 
-def cnn(form, op, lossFunc, bins):
-    # conv model with regression and classification combines
-    inp = keras.Input(shape=form)
-    conv1 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(inp)
-    pool1 = keras.layers.MaxPool2D(pool_size=(1,4))(conv1)
+# def cnn(form, op, lossFunc, bins):
+#     # conv model with regression and classification combines
+#     inp = keras.Input(shape=form)
+#     conv1 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(inp)
+#     pool1 = keras.layers.MaxPool2D(pool_size=(1,4))(conv1)
 
-    conv2 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(pool1)
-    pool2 = keras.layers.MaxPool2D(pool_size=(1,4))(conv2)
+#     conv2 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(pool1)
+#     pool2 = keras.layers.MaxPool2D(pool_size=(1,4))(conv2)
 
-    conv3 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(pool2)
-    pool3 = keras.layers.MaxPool2D(pool_size=(1,2))(conv3)
+#     conv3 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(pool2)
+#     pool3 = keras.layers.MaxPool2D(pool_size=(1,2))(conv3)
 
-    flatten =  keras.layers.Flatten()(pool3)
-    hidden1 = keras.layers.Dense(6, activation="relu")(flatten)
-    hidden2 = keras.layers.Dense(6, activation="relu")(hidden1)
-    hidden3 = keras.layers.Dense(6, activation="relu")(hidden2)
-    hidden4 = keras.layers.Dense(6, activation="relu")(hidden3)
-    hidden5 = keras.layers.Dense(6, activation="relu")(hidden4)
-    hidden6 = keras.layers.Dense(6, activation="relu")(hidden5)
-    hidden7 = keras.layers.Dense(6, activation="relu")(hidden6)
-    hidden8 = keras.layers.Dense(6, activation="relu")(hidden7)
-    hidden9 = keras.layers.Dense(6, activation="relu")(hidden8)
-    hidden10 = keras.layers.Dense(6, activation="relu")(hidden9)
+#     flatten =  keras.layers.Flatten()(pool3)
+#     hidden1 = keras.layers.Dense(6, activation="relu")(flatten)
+#     hidden2 = keras.layers.Dense(6, activation="relu")(hidden1)
+#     hidden3 = keras.layers.Dense(6, activation="relu")(hidden2)
+#     hidden4 = keras.layers.Dense(6, activation="relu")(hidden3)
+#     hidden5 = keras.layers.Dense(6, activation="relu")(hidden4)
+#     hidden6 = keras.layers.Dense(6, activation="relu")(hidden5)
+#     hidden7 = keras.layers.Dense(6, activation="relu")(hidden6)
+#     hidden8 = keras.layers.Dense(6, activation="relu")(hidden7)
+#     hidden9 = keras.layers.Dense(6, activation="relu")(hidden8)
+#     hidden10 = keras.layers.Dense(6, activation="relu")(hidden9)
 
-    outReg = keras.layers.Dense(1)(hidden10)
-    outClass = keras.layers.Dense(bins, activation='softmax')(hidden10)
+#     outReg = keras.layers.Dense(1)(hidden10)
+#     outClass = keras.layers.Dense(bins, activation='softmax')(hidden10)
 
-    model = keras.Model(inputs=inp, outputs=[outReg, outClass])
-    model.compile(optimizer=op, loss=lossFunc)
-    return model, 'conv'
+#     model = keras.Model(inputs=inp, outputs=[outReg, outClass])
+#     model.compile(optimizer=op, loss=lossFunc)
+#     return model, 'conv'
 
 
 def rnn(form, op, lossFunc, maskNo, bins):
@@ -55,6 +55,20 @@ def rnn(form, op, lossFunc, maskNo, bins):
     model = keras.Model(inputs=inp, outputs=[outReg, outClass])
     model.compile(optimizer=op, loss=lossFunc)
     return model, 'rnn'
+
+
+def loadRNN(form , op, lossFunc, maskNo, bins):
+    inp = keras.Input(shape=form)
+    mask = keras.layers.Masking(mask_value=maskNo)(inp)
+    gru1 = keras.layers.GRU(20, return_sequences=True, activation='tanh')(mask)
+    gru2 = keras.layers.GRU(20, activation='tanh')(gru1)
+
+    outReg = keras.layers.Dense(1)(gru2)
+    gru3 = keras.layers.GRU(20, activation='tanh')(gru2)
+    outClass = keras.layers.Dense(bins, activation='softmax')(gru3)
+
+    model = keras.Model(inputs=inp, outputs=[outReg, outClass])
+    model.compile(optimizer=op, loss=lossFunc)
 
 
 def binModelSplit(pt, track, vertBin, prob, pv):
@@ -107,7 +121,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     epochNo = 500
-    bSize = None
+    bSize = 2048
 
     op = keras.optimizers.Adam()
     lossFunc = [keras.losses.Huber(delta=0.1, name='modified01_huber_loss'), keras.losses.CategoricalCrossentropy()]
@@ -125,12 +139,12 @@ def binModel(xTrain, yTrain, xValid, yValid):
     start =[i for i, letter in enumerate(modelName) if letter == '_']
 
     # callbacks
-    checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_dense_10_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_dense_10_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
+    checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
     # lr = OneCycleLr(max_lr=0.001, steps_per_epoch=len(xTrain), epochs=epochNo)
     # lr = keras.callbacks.LearningRateScheduler(piecewise_constant_fn)
     csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_dense_10_loss', patience=500)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
     history = model.fit(xTrain, yTrain, epochs=epochNo, batch_size=bSize,\
                         validation_data=(xValid, yValid),\
@@ -193,7 +207,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     model, typeM = rnn(form, op, lossFunc, MASK_NO, bins=yTrain[1].shape[1])
     
     # saving the model and best weights
-    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc[0].name+'_and_'+lossFunc[1].name, d=nameData, t=clock)
     modelDirectory = "models"
     modelName = weights[:-11]
     start =[i for i, letter in enumerate(modelName) if letter == '_']
@@ -201,13 +215,13 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     print()
 
     # callbacks
-    checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
+    checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_dense_loss", save_weights_only=True, save_best_only=True, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_dense_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_dense_loss', patience=500)
 
-    epochNum = 10
-    batchNo = 256
+    epochNum = 500
+    batchNo = 1024
     history = model.fit(xTrain, yTrain, epochs=epochNum, batch_size=batchNo,\
                         validation_data=(xValid, yValid),\
                         callbacks=[checkpointCallback, lr, csvLogger, earlyStop])
@@ -333,7 +347,7 @@ def testing(model, hist, xTest, yTest, name):
     plt.savefig(f'{name[:start[0]]}_True_vs_predicted_scatter_{name[start[0]+1:]}.png', dpi=1000)
     print('scatter plot made')
 
-    # plot of scattered train and validation data
+    # plot of map train and validation data
     print()
     plt.clf()
     fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
