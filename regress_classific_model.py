@@ -9,11 +9,52 @@ from tensorflow import keras
 print()
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
-from model_types import convModel as cnn, pureCNN as pcnn, rnn, wavenet, multiLayerPerceptron as mlp
 from customFunction import welsch, learningRate, power_decay, piecewise_constant_fn, OneCycleLr
 from modelTest import testing
 
-def binModelSplit(pt, vertBin, track, prob):
+def cnn(form, op, lossFunc, bins):
+    # conv model with regression and classification combines
+    inp = keras.Input(shape=form)
+    conv1 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(inp)
+    pool1 = keras.layers.MaxPool2D(pool_size=(1,4))(conv1)
+
+    flatten =  keras.layers.Flatten()(pool1)
+    hidden1 = keras.layers.Dense(10, activation="relu")(flatten)
+    hidden2 = keras.layers.Dense(10, activation="relu")(hidden1)
+
+    outReg = keras.layers.Dense(1)(hidden2)
+    outClass = keras.layers.Dense(bins, activation='softmax')(hidden2)
+
+    # model = keras.models.Sequential([
+    #         keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu', input_shape=(form)),
+    #         keras.layers.MaxPool2D(pool_size=(1,4)),
+
+    #         keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu'),
+    #         keras.layers.MaxPool2D(pool_size=(1,4)),
+
+    #         keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu'),
+    #         keras.layers.MaxPool2D(pool_size=(1,2)),
+
+    #         # multi later perceptron
+    #         keras.layers.Flatten(),
+    #         keras.layers.Dense(6, activation="relu"),
+    #         keras.layers.Dense(6, activation="relu"),
+    #         keras.layers.Dense(6, activation="relu"),
+    #         keras.layers.Dense(6, activation="relu"),
+    #         keras.layers.Dense(6, activation="relu"),
+    #         keras.layers.Dense(6, activation="relu"),
+    #         keras.layers.Dense(6, activation="relu"),
+    #         keras.layers.Dense(6, activation="relu"),
+    #         keras.layers.Dense(6, activation="relu"),
+    #         keras.layers.Dense(6, activation="relu"),
+    #         keras.layers.Dense(1)
+    # ])
+    model = keras.Model(inputs=inp, outputs=[outReg, outClass])
+    model.compile(optimizer=op, loss=lossFunc)
+    return model, 'conv'
+
+
+def binModelSplit(pt, track, vertBin, prob, pv):
     # scaling 
     columnPT = pt.reshape(pt.shape[0]*pt.shape[1], 1)
     scaler = StandardScaler().fit(columnPT)
@@ -26,10 +67,10 @@ def binModelSplit(pt, vertBin, track, prob):
     track = tScale.reshape(pt.shape[0], pt.shape[1])
     binDataAll = np.stack((track,pt), axis=1)
 
-    columnV = vertBin.reshape(vertBin.shape[0]*vertBin.shape[1], 1)
-    scaler = StandardScaler().fit(columnV)
-    vScale = scaler.transform(columnV)
-    vertBin = vScale.reshape(prob.shape[0], prob.shape[1])
+    # columnV = vertBin.reshape(vertBin.shape[0]*vertBin.shape[1], 1)
+    # scaler = StandardScaler().fit(columnV)
+    # vScale = scaler.transform(columnV)
+    # vertBin = vScale.reshape(prob.shape[0], prob.shape[1])
 
     print(vertBin.shape)
     print(prob.shape)
@@ -45,7 +86,15 @@ def binModelSplit(pt, vertBin, track, prob):
     t = len(pt)//10
     v = (len(pt)//10) * 3
     xTest, xValid, xTrain = binDataAll[:t], binDataAll[t:v], binDataAll[v:]
-    yTest, yValid, yTrain = output[:t], output[t:v], output[v:]
+    yTestReg, yValidReg, yTrainReg = pv[:t], pv[t:v], pv[v:]
+    yTestClass, yValidClass, yTrainClass = prob[:t], prob[t:v], prob[v:]
+    yTrain = [yTestReg, yTestClass]
+    yValid = [yValidReg, yValidClass]
+    yTest = [yTrainReg, yTrainClass]
+
+    print(xTrain.shape)
+    print(yTest[0].shape)
+    print(yTest[1].shape)
 
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
@@ -53,20 +102,20 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
-    epochNo = 500
+    epochNo = 10
     bSize = 256
 
     # op = keras.optimizers.Adam()
     op = keras.optimizers.Adadelta()
-    lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
+    lossFunc = [keras.losses.Huber(delta=0.1, name='modified01_huber_loss'), keras.losses.SparseCategoricalCrossentropy()]
     # lossFunc = keras.losses.Huber()
     # lossFunc = keras.losses.MeanAbsoluteError()
     # lossFunc = welsch
-    model, typeM = cnn(form, op, lossFunc)
+    model, typeM = cnn(form, op, lossFunc, bins=yTrain[1].shape[1])
     model.summary()
     
     # saving the model and best weights
-    weights = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}.weights.h5".format(n=num, type=typeM, o=op.name, l=lossFunc.name, d=nameData, t=clock)
+    weights = "{d}_Bin_model_{n}inputs_{type}_{o}_{l}_{t}.weights.h5".format(n=num, type=typeM, o=op.name, l=lossFunc[0].name+'_and_'+lossFunc[1].name, d=nameData, t=clock)
     modelDirectory = "models"
     modelName = weights[:-11]
     print(modelName)
@@ -78,12 +127,11 @@ def binModel(xTrain, yTrain, xValid, yValid):
     # lr = OneCycleLr(max_lr=0.001, steps_per_epoch=len(xTrain), epochs=epochNo)
     # lr = keras.callbacks.LearningRateScheduler(piecewise_constant_fn)
     csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
-    stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
     history = model.fit(xTrain, yTrain, epochs=epochNo, batch_size=bSize,\
                         validation_data=(xValid, yValid),\
-                        callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
+                        callbacks=[lr, checkpointCallback, csvLogger, earlyStop])
 
     checkpointFilename = os.path.join(modelDirectory, weights)
     check = os.path.isdir(modelDirectory)
@@ -125,11 +173,10 @@ print(nameData)
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
 prob, vertBin = vert['prob'], vert['bins']
-print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
 clock = int(time.time())
 
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, vertBin=vertBin, track=trackBin, prob=prob)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, track=trackBin, vertBin=vertBin, prob=prob)
 
 # model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
 # testing(model, history, xTest, yTest, name, lossFunc)
