@@ -24,8 +24,8 @@ def cnn(form, op, lossFunc, bins):
     pool3 = keras.layers.MaxPool2D(pool_size=(1,2))(conv3)
 
     flatten =  keras.layers.Flatten()(pool3)
-    hidden1 = keras.layers.Dense(10, activation="relu")(flatten)
-    hidden2 = keras.layers.Dense(10, activation="relu")(hidden1)
+    hidden1 = keras.layers.Dense(6, activation="relu")(flatten)
+    hidden2 = keras.layers.Dense(6, activation="relu")(hidden1)
     hidden3 = keras.layers.Dense(6, activation="relu")(hidden2)
     hidden4 = keras.layers.Dense(6, activation="relu")(hidden3)
     hidden5 = keras.layers.Dense(6, activation="relu")(hidden4)
@@ -92,8 +92,8 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
-    epochNo = 50
-    bSize = None
+    epochNo = 10
+    bSize = 2048
 
     # op = keras.optimizers.Adam()
     op = keras.optimizers.Adadelta()
@@ -139,8 +139,14 @@ def binModel(xTrain, yTrain, xValid, yValid):
 def testing(model, hist, xTest, yTest, name):
     print()
     print(name)
-    yPredicted, yClassPred = model.predict(xTest).flatten()[0]
-    diff = abs(yPredicted - yTest[0].flatten())
+    print(hist.params)
+    print(hist.history.keys())
+    print()
+    yRegPred, yClassPred = model.predict(xTest)
+    yRegPred = yRegPred.flatten()
+    print(len(yRegPred))
+    print(len(yClassPred))
+    diff = abs(yRegPred - yTest[0].flatten())
     print()
     print(max(diff), min(diff))
     print(np.std(diff), np.mean(diff))
@@ -203,11 +209,11 @@ def testing(model, hist, xTest, yTest, name):
 
     # plot of scattered train and validation data
     print()
-    yPredTrain = model.predict(xTrain).flatten()[0]
+    yRegPredTrain = model.predict(xTrain)[0].flatten()
     plt.clf()
     fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
     ax[0].axis('equal')
-    ax[0].scatter(yTrain.flatten(), yPredTrain.flatten(), marker='^', color='r', edgecolor='k')
+    ax[0].scatter(yTrain.flatten(), yRegPredTrain.flatten(), marker='^', color='r', edgecolor='k')
     line = np.array([-15, 15])
     ax[0].plot(line, line, color='black')
     ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
@@ -222,7 +228,7 @@ def testing(model, hist, xTest, yTest, name):
     ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
 
     ax[1].axis('equal')
-    ax[1].scatter(yTest[0].flatten(), yPredicted.flatten(), marker='^', color='r', edgecolor='k')
+    ax[1].scatter(yTest[0].flatten(), yRegPred.flatten(), marker='^', color='r', edgecolor='k')
     ax[1].plot([-15,15], [-15,15], color='black')
     ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
     ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
@@ -242,8 +248,8 @@ def testing(model, hist, xTest, yTest, name):
     plt.clf()
     fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
     ax[0].axis('equal')
-    extent = np.array([[min(yTrain[0]), max(yTrain[0])], [min(yPredTrain), max(yPredTrain)]])
-    heatmap = ax[0].hist2d(yTrain[0], yPredTrain, bins=20, cmap='hot_r', range=extent)
+    extent = np.array([[min(yTrain[0]), max(yTrain[0])], [min(yRegPredTrain), max(yRegPredTrain)]])
+    heatmap = ax[0].hist2d(yTrain[0], yRegPredTrain, bins=20, cmap='hot_r', range=extent)
     fig.colorbar(heatmap[3], ax=ax[0])
     line = np.array([-15, 15])
     ax[0].plot(line, line, color='black')
@@ -258,8 +264,8 @@ def testing(model, hist, xTest, yTest, name):
     ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
 
     ax[1].axis('equal')
-    extent = np.array([[min(yTest[0]), max(yTest[0])], [min(yPredicted), max(yPredicted)]])
-    heatmap = ax[1].hist2d(yTest[0], yPredicted, bins=20, cmap='hot_r', range=extent)
+    extent = np.array([[min(yTest[0]), max(yTest[0])], [min(yRegPred), max(yRegPred)]])
+    heatmap = ax[1].hist2d(yTest[0], yRegPred, bins=20, cmap='hot_r', range=extent)
     fig.colorbar(heatmap[3], ax=ax[1])
     ax[1].plot([-15,15], [-15,15], color='black')
     ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
