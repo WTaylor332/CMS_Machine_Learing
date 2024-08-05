@@ -72,15 +72,15 @@ def binModelSplit(pt, track, vertBin, prob, pv):
     # vScale = scaler.transform(columnV)
     # vertBin = vScale.reshape(prob.shape[0], prob.shape[1])
 
-    print(vertBin.shape)
+    # print(vertBin.shape)
     print(prob.shape)
 
 
-    output = np.stack((vertBin, prob), axis=1)
-    print()
-    print(output.shape)
-    print(output[0])
-    print()
+    # output = np.stack((vertBin, prob), axis=1)
+    # print()
+    # print(output.shape)
+    # print(output[0])
+    # print()
 
     # splitting data into test, validation and training data
     t = len(pt)//10
@@ -88,9 +88,9 @@ def binModelSplit(pt, track, vertBin, prob, pv):
     xTest, xValid, xTrain = binDataAll[:t], binDataAll[t:v], binDataAll[v:]
     yTestReg, yValidReg, yTrainReg = pv[:t], pv[t:v], pv[v:]
     yTestClass, yValidClass, yTrainClass = prob[:t], prob[t:v], prob[v:]
-    yTrain = [yTestReg, yTestClass]
+    yTrain = [yTrainReg, yTrainClass]
     yValid = [yValidReg, yValidClass]
-    yTest = [yTrainReg, yTrainClass]
+    yTest = [yTestReg, yTestClass]
 
     print(xTrain.shape)
     print(yTest[0].shape)
@@ -176,7 +176,7 @@ prob, vertBin = vert['prob'], vert['bins']
 
 clock = int(time.time())
 
-xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, track=trackBin, vertBin=vertBin, prob=prob)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, track=trackBin, vertBin=vertBin, prob=prob, pv=pvRaw.flatten())
 
-# model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xTest, yTest, name, lossFunc)
+model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xTest, yTest, name, lossFunc)
