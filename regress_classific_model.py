@@ -351,7 +351,7 @@ def testing(model, xTest, yTest, name):
     # ax[1].set_ylim(-15,15)
     # ax[1].minorticks_on()
     # ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    # plt.savefig(f'{name[:start[0]]}_True_vs_predicted_scatter_{name[start[0]+1:]}.png', dpi=1000)
+    # plt.savefig(f'{nameData}_True_vs_predicted_scatter_{name[start[0]+1:]}.png', dpi=1000)
     # print('scatter plot made')
 
     # plot of map train and validation data
@@ -388,7 +388,7 @@ def testing(model, xTest, yTest, name):
     # ax[1].set_ylabel('Predicted values')
     # ax[1].set_ylim(-15,15)
     # ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    # plt.savefig(f'{name[:start[0]]}_True_vs_predicted_map_{name[start[0]+1:]}.png')
+    # plt.savefig(f'{nameData}_True_vs_predicted_map_{name[start[0]+1:]}.png')
     # print('map plot made')
 
     # plotting learning rate against epochs
@@ -401,7 +401,7 @@ def testing(model, xTest, yTest, name):
     # plt.xlabel('Epoch number')
     # plt.ylabel('Learning Rate')
     # plt.title('Learning Rate against epochs')
-    # plt.savefig(f"{name[:start[0]]}_Learning_rate_{name[start[0]+1:]}.png")
+    # plt.savefig(f"{nameData}_Learning_rate_{name[start[0]+1:]}.png")
     # print('learning rate plot made')
 
     # % values that predicted the correct bin
@@ -423,13 +423,17 @@ def testing(model, xTest, yTest, name):
     # confunstion matrix
     print()
     plt.clf()
+    plt.figure(figsize=(30,20))
     yTestLabels = np.array([np.argmax(i) for i in yTest[1]])
-    yClassPredLabels = np.array([np.argmax(i) for i in yClassPred[1]])
+    yClassPredLabels = np.array([np.argmax(i) for i in yClassPred])
+    print(yTestLabels.shape)
+    print(yClassPredLabels.shape)
     cm = tf.math.confusion_matrix(labels=yTestLabels, predictions=yClassPredLabels)
     sn.heatmap(cm, annot=True, fmt='d')
     plt.xlabel('Predicted')
     plt.ylabel('True')
-    plt.savefig(f'{name[:start[0]]}_cm_probability_{name[start[0]+1:]}.png')
+    plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
+    print('cm plot made')
 
 
 def loadModel(name):
@@ -455,6 +459,17 @@ print(nameData)
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
 probability, vertBin = vert['prob'], vert['bins']
+
+# print(probability[2861], pvRaw[2861])
+# print(probability[4615], pvRaw[4615])
+# print(probability[5128], pvRaw[5128])
+# print(probability[13792], pvRaw[13792])
+# print(probability[14286], pvRaw[14286])
+# print(probability[19305], pvRaw[19305])
+# print(probability[21964], pvRaw[21964])
+# print(probability[26059], pvRaw[26059])
+
+
 
 clock = int(time.time())
 
