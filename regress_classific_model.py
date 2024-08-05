@@ -248,12 +248,9 @@ def testing(model, xTest, yTest, name):
 
     print()
     print(name)
-    print(hist.columns)
     print()
     yRegPred, yClassPred = model.predict(xTest)
     yRegPred = yRegPred.flatten()
-    print(len(yRegPred))
-    print(len(yClassPred))
     diff = abs(yRegPred - yTest[0].flatten())
     print()
     print(max(diff), min(diff))
@@ -410,11 +407,18 @@ def testing(model, xTest, yTest, name):
     # % values that predicted the correct bin
     indexPred = np.array([np.argmax(event) for event in yClassPred])
     count = 0
-    for i in range(len(yTest[1])):
-        if indexPred[i] == np.argwhere(yTest[1][i] == 1)[0][0]:
-            count += 1
+    pvNotinBin = 0
+    print(indexPred.shape)
+    print(indexPred[:5])
+    for i in tqdm(range(len(yTest[1]))):
+        if 1 in yTest[1][i]:
+            if indexPred[i] == np.argmax(yTest[1][i]):
+                count += 1
+        else:
+            print(i, 'pv not in bin')
+            pvNotinBin += 1
     print()
-    print('Percentage of correct predicted bin: ', round(count*100/len(yClassPred)),5)
+    print('Percentage of correct predicted bin: ', round(count*100/len(yClassPred), 5))
 
     # confunstion matrix
     print()
