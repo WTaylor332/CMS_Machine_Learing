@@ -112,12 +112,12 @@ def binModel(xTrain, yTrain, xValid, yValid):
     start =[i for i, letter in enumerate(modelName) if letter == '_']
 
     # callbacks
-    checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
+    checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_dense_10_loss", save_weights_only=True, save_best_only=True, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_dense_10_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
     # lr = OneCycleLr(max_lr=0.001, steps_per_epoch=len(xTrain), epochs=epochNo)
     # lr = keras.callbacks.LearningRateScheduler(piecewise_constant_fn)
     csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
+    earlyStop = keras.callbacks.EarlyStopping(monitor='val_dense_10_loss', patience=500)
 
     history = model.fit(xTrain, yTrain, epochs=epochNo, batch_size=bSize,\
                         validation_data=(xValid, yValid),\
@@ -213,7 +213,7 @@ def testing(model, hist, xTest, yTest, name):
     plt.clf()
     fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
     ax[0].axis('equal')
-    ax[0].scatter(yTrain.flatten(), yRegPredTrain.flatten(), marker='^', color='r', edgecolor='k')
+    ax[0].scatter(yTrain[0].flatten(), yRegPredTrain.flatten(), marker='^', color='r', edgecolor='k')
     line = np.array([-15, 15])
     ax[0].plot(line, line, color='black')
     ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
