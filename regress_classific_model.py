@@ -59,17 +59,27 @@ def rnn(form, op, lossFunc, maskNo, bins):
 
 
 def loadRNN(form , op, lossFunc, maskNo, bins):
+    
+    model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555.keras')
     inp = keras.Input(shape=form)
-    mask = keras.layers.Masking(mask_value=maskNo)(inp)
-    gru1 = keras.layers.GRU(20, return_sequences=True, activation='tanh')(mask)
-    gru2 = keras.layers.GRU(20, activation='tanh')(gru1)
+    inp.set_weights(model.layers[0].get_weights())
+    mask = keras.layers.Masking(mask_value=maskNo, trainable=False)(inp)
+    mask.set_weights(model.layers[1].get_weights())
+    gru1 = keras.layers.GRU(20, return_sequences=True, activation='tanh', trainable=False)(mask)
+    gru1.set_weights(model.layers[2].get_weights())
+    gru2 = keras.layers.GRU(20, activation='tanh', trainable=False)(gru1)
+    gru2.set_weights(model.layers[3].get_weights())
 
-    outReg = keras.layers.Dense(1)(gru2)
+    outReg = keras.layers.Dense(1, trainable=False)(gru2)
+    outReg.set_weights(model.layers[4].get_weights())
+
     gru3 = keras.layers.GRU(20, activation='tanh')(gru2)
     outClass = keras.layers.Dense(bins, activation='softmax')(gru3)
 
     model = keras.Model(inputs=inp, outputs=[outReg, outClass])
     model.compile(optimizer=op, loss=lossFunc)
+
+    return model, 'rnn'
 
 
 def binModelSplit(pt, track, vertBin, prob, pv):
@@ -205,7 +215,8 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     # creating model
     op = keras.optimizers.Adam()
     lossFunc = [keras.losses.Huber(delta=0.1, name='modified01_huber_loss'), keras.losses.CategoricalCrossentropy()] 
-    model, typeM = rnn(form, op, lossFunc, MASK_NO, bins=yTrain[1].shape[1])
+    # model, typeM = rnn(form, op, lossFunc, MASK_NO, bins=yTrain[1].shape[1])
+    model, typeM = loadRNN(form, op, lossFunc, MASK_NO, bins=yTrain[1].shape[1])
     model.summary()
     
     # saving the model and best weights
@@ -222,7 +233,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_dense_loss', patience=500)
 
-    epochNum = 700
+    epochNum = 500
     batchNo = 512
     history = model.fit(xTrain, yTrain, epochs=epochNum, batch_size=batchNo,\
                         validation_data=(xValid, yValid),\
@@ -467,15 +478,15 @@ MASK_NO = -9999.99
 
 # loading numpy arrays of data
 
-# nameData = 'Merged'
-# rawD = np.load('Merged_deacys_Raw.npz')
-# binD = np.load('Merged_decays_Bin.npz')
-# vert = np.load('Hard_Vertex_Probability_30_bins.npz')
+nameData = 'Merged'
+rawD = np.load('Merged_deacys_Raw.npz')
+binD = np.load('Merged_decays_Bin.npz')
+vert = np.load('Hard_Vertex_Probability_30_bins.npz')
 
-nameData = 'TTbar'
-rawD = np.load('TTbarRaw5.npz')
-binD = np.load('TTbarBin4.npz')
-vert = np.load('TTbar_Hard_Vertex_Probability_30_bins.npz')
+# nameData = 'TTbar'
+# rawD = np.load('TTbarRaw5.npz')
+# binD = np.load('TTbarBin4.npz')
+# vert = np.load('TTbar_Hard_Vertex_Probability_30_bins.npz')
 
 
 print(nameData)
@@ -502,9 +513,14 @@ clock = int(time.time())
 # testing(model, xTest, yTest, name)
 
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
-# model, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, xTest, yTest, name)
-
-model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555.keras')
-name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555'
+model, name = rawModel(xTrain, yTrain, xValid, yValid)
 testing(model, xTest, yTest, name)
+
+# model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555.keras')
+# config = model.get_config()
+# weights = model.get_weights()
+# print(config['layers'])
+# print(config.keys())
+# name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555'
+
+# testing(model, xTest, yTest, name)
