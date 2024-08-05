@@ -103,11 +103,11 @@ def binModel(xTrain, yTrain, xValid, yValid):
     form = (xTrain.shape[1], xTrain.shape[2], 1)
     num = 2
     epochNo = 10
-    bSize = 256
+    bSize = None
 
     # op = keras.optimizers.Adam()
     op = keras.optimizers.Adadelta()
-    lossFunc = [keras.losses.Huber(delta=0.1, name='modified01_huber_loss'), keras.losses.SparseCategoricalCrossentropy()]
+    lossFunc = [keras.losses.Huber(delta=0.1, name='modified01_huber_loss'), keras.losses.CategoricalCrossentropy()]
     # lossFunc = keras.losses.Huber()
     # lossFunc = keras.losses.MeanAbsoluteError()
     # lossFunc = welsch
