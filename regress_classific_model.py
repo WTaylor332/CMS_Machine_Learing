@@ -95,8 +95,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
     epochNo = 10
     bSize = 2048
 
-    # op = keras.optimizers.Adam()
-    op = keras.optimizers.Adadelta()
+    op = keras.optimizers.Adam()
     lossFunc = [keras.losses.Huber(delta=0.1, name='modified01_huber_loss'), keras.losses.CategoricalCrossentropy()]
     # lossFunc = keras.losses.Huber()
     # lossFunc = keras.losses.MeanAbsoluteError()
