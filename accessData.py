@@ -216,14 +216,22 @@ def distributionTrack(z, bins):
     averageTrackBin = np.mean(numTrackBin, axis=0)
     print(np.amax(numTrackBin, axis=0))
     print(averageTrackBin)
-    fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
-    ax[0].hist(np.sort(z.flatten()), bins=30)
-    ax[0].minorticks_on()
-    ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
-    ax[1].hist(np.sort(z.flatten()), bins=15)
-    ax[1].minorticks_on()
-    ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    plt.savefig('Track_distribution_for_each_bin.png', dpi=1000)
+    print(np.median(numTrackBin.flatten()))
+    print('99.999th percentile: ', np.percentile(numTrackBin.flatten(), 99.999))
+    # fig, ax = plt.subplots(2, 2, figsize=(12,6), sharey=True)
+    # ax[0, 0].hist(np.sort(z.flatten()), bins=30)
+    # ax[0, 0].minorticks_on()
+    # ax[0, 0].grid(which='both', alpha=0.7, c='#DDDDDD')
+    # ax[0, 1].hist(np.sort(z.flatten()), bins=15)
+    # ax[0, 1].minorticks_on()
+    # ax[0, 1].grid(which='both', alpha=0.7, c='#DDDDDD')
+    # ax[1, 0].hist(np.sort(numTrackBin.flatten()), bins=30)
+    # ax[1, 0].minorticks_on()
+    # ax[1, 0].grid(which='both', alpha=0.7, c='#DDDDDD')
+    # ax[1, 1].hist(np.sort(numTrackBin.flatten()), bins=15)
+    # ax[1, 1].minorticks_on()
+    # ax[1, 1].grid(which='both', alpha=0.7, c='#DDDDDD')
+    # plt.savefig('Track_distribution_for_each_bin.png', dpi=1000)
 
 
 def percentageHardVertex(z, pv, bins=30):
@@ -252,27 +260,24 @@ def percentageHardVertex(z, pv, bins=30):
 
 
 def rawBinData(z, pt, eta, binSize):
-    maxTrackLength = 100
-    binValues = np.arange(-15, 16, binSize)
+    maxTrackLength = 40
+    binValues = np.arange(-15, 15+binSize, binSize)
     print(binValues)
     zData = np.zeros((z.shape[0], len(binValues), maxTrackLength))
     ptData = np.zeros((z.shape[0], len(binValues), maxTrackLength))
     etaData = np.zeros((z.shape[0], len(binValues), maxTrackLength))
     for i in tqdm(range(z.shape[0])):
         for j in range(len(binValues)):
-            print(j)
             zPad = np.zeros(maxTrackLength)
             ptPad = np.zeros(maxTrackLength)
             etaPad = np.zeros(maxTrackLength)
             valuesInBin = z[i, (z[i]<binValues[j]) & (z[i]>binValues[j-1])]
             if len(valuesInBin) > 0:
                 index = np.argwhere((z[i]<binValues[j]) & (z[i]>binValues[j-1]))
-                print(index)
                 if len(valuesInBin) > maxTrackLength:
                     zPad = valuesInBin[:maxTrackLength]
-                    print(pt[i, index])
-                    ptPad = pt[i, index].flatten()
-                    etaPad = eta[i, index].flatten()
+                    ptPad = pt[i, index[:maxTrackLength]].flatten()
+                    etaPad = eta[i, index[:maxTrackLength]].flatten()
                 else:
                     zPad[:len(valuesInBin)] = valuesInBin
                     zPad[len(valuesInBin):] = np.nan
@@ -345,10 +350,10 @@ b = 30
 # vertProb, vertBin = percentageHardVertex(mergeData['z'], mergeData['pv'], b)
 # np.savez(f'Hard_Vertex_Probability_{b}_bins', prob=vertProb, bins=vertBin)
 
-# distributionTrack(mergeData['z'], bins=b)
+distributionTrack(mergeData['z'], bins=b)
 
 print()
 binS = 1
-zData, ptData, etaData = rawBinData(mergeData['z'], mergeData['pt'], mergeData['eta'], binS)
-np.savez(f'Merged_Raw_{b}_bins', z=zData, pt=ptData, eta=etaData)
+# zData, ptData, etaData = rawBinData(mergeData['z'], mergeData['pt'], mergeData['eta'], binS)
+# np.savez(f'Merged_Raw_{b}_bins', z=zData, pt=ptData, eta=etaData)
 
