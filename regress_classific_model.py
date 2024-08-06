@@ -62,19 +62,21 @@ def loadRNN(form , op, lossFunc, maskNo, bins):
     
     model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555.keras')
     inp = keras.Input(shape=form)
-    inp.set_weights(model.layers[0].get_weights())
     mask = keras.layers.Masking(mask_value=maskNo, trainable=False)(inp)
-    mask.set_weights(model.layers[1].get_weights())
     gru1 = keras.layers.GRU(20, return_sequences=True, activation='tanh', trainable=False)(mask)
-    gru1.set_weights(model.layers[2].get_weights())
     gru2 = keras.layers.GRU(20, activation='tanh', trainable=False)(gru1)
-    gru2.set_weights(model.layers[3].get_weights())
 
     outReg = keras.layers.Dense(1, trainable=False)(gru2)
-    outReg.set_weights(model.layers[4].get_weights())
 
-    gru3 = keras.layers.GRU(20, activation='tanh')(gru2)
-    outClass = keras.layers.Dense(bins, activation='softmax')(gru3)
+    gru3 = keras.layers.GRU(20, return_sequences=True, activation='tanh')(gru1)
+    gru4 = keras.layers.GRU(20, activation='tanh')(gru3)
+    outClass = keras.layers.Dense(bins, activation='softmax')(gru4)
+
+    model.get_layer(inp).set_weights(model.layers[0].get_weights())
+    model.get_layer(mask).set_weights(model.layers[1].get_weights())
+    model.get_layer(gru1).set_weights(model.layers[2].get_weights())
+    model.get_layer(gru2).set_weights(model.layers[3].get_weights())
+    model.get_layer(outReg).set_weights(model.layers[4].get_weights())
 
     model = keras.Model(inputs=inp, outputs=[outReg, outClass])
     model.compile(optimizer=op, loss=lossFunc)
@@ -258,6 +260,8 @@ def testing(model, xTest, yTest, name):
     hist = pd.read_csv(name[:start[0]]+'_training_'+name[start[0]+1:]+'.log', sep=',', engine='python')
 
     print()
+    print(hist.columns)
+    print(hist.columns[-2])
     print(name)
     print()
     yRegPred, yClassPred = model.predict(xTest)
@@ -294,11 +298,11 @@ def testing(model, xTest, yTest, name):
     print('min loss:', min(loss))
     print('At epoch number:',np.argmin(loss)+1)
     print()
-    print('Min reg val loss:', min(hist['val_dense_loss']))
-    print('At epoch number:',np.argmin(hist['val_dense_loss'])+1)
+    print('Min reg val loss:', min(hist[hist.columns[-3]]))
+    print('At epoch number:',np.argmin(hist[hist.columns[-3]])+1)
     print()
-    print('Min class val loss:', min(hist['val_dense_1_loss']))
-    print('At epoch number:',np.argmin(hist['val_dense_1_loss'])+1)
+    print('Min class val loss:', min(hist[hist.columns[-2]]))
+    print('At epoch number:',np.argmin(hist[hist.columns[-2]])+1)
     print()
 
     # plotting % of predictions vs difference
@@ -411,7 +415,7 @@ def testing(model, xTest, yTest, name):
     if nameData != name[:start[0]]:
         plt.savefig(f"{nameData}_True_vs_predicted_map_{name}.png", dpi=1000)
     else:
-        plt.savefig(f'{nameData}_True_vs_predicted_map_{name[start[0]+1:]}.png')
+        plt.savefig(f'{nameData}_True_vs_predicted_map_{name[start[0]+1:]}.png', dpi=1000)
     print('map plot made')
 
     # plotting learning rate against epochs
@@ -516,11 +520,11 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 model, name = rawModel(xTrain, yTrain, xValid, yValid)
 testing(model, xTest, yTest, name)
 
-# model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555.keras')
+# model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722864526.keras')
 # config = model.get_config()
 # weights = model.get_weights()
 # print(config['layers'])
 # print(config.keys())
-# name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555'
+name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722864526'
 
 # testing(model, xTest, yTest, name)
