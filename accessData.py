@@ -253,7 +253,6 @@ def rawBinData(z, pt, eta, pv, binSize, per):
             valuesInBin = z[i, (z[i]<binValues[j]) & (z[i]>binValues[j-1])]
             if len(valuesInBin) > 0:
                 index = np.argwhere((z[i]<binValues[j]) & (z[i]>binValues[j-1]))
-                averageZ = np.nanmean(valuesInBin)
                 if len(valuesInBin) > maxTrackLength:
                     zPad = valuesInBin[:maxTrackLength]
                     ptPad = pt[i, index[:maxTrackLength]].flatten()
@@ -265,7 +264,8 @@ def rawBinData(z, pt, eta, pv, binSize, per):
                     ptPad[len(valuesInBin):] = np.nan
                     etaPad [:len(valuesInBin)] = eta[i, index].flatten()
                     etaPad[len(valuesInBin):] = np.nan
-                if pv[i] < binValues[j] and pv[i] > binValues[j-1]:
+
+                if pv[i] < binValues[j+1] and pv[i] > binValues[j]:
                     hardVertexProb[i*j] = 1
                     pvData[i*j] = pv[i]
                 else:
@@ -276,7 +276,8 @@ def rawBinData(z, pt, eta, pv, binSize, per):
                 ptData[i, j] = ptPad
                 etaData[i, j] = etaPad
             else:
-                averageZ = np.nan
+                hardVertexProb[i*j] = 0
+                pvData[i*j] = np.nan
                 zPad[:] = np.nan
                 ptPad[:] = np.nan
                 etaPad[:] = np.nan
