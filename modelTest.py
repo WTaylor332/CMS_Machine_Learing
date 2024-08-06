@@ -93,11 +93,19 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     return model, history, modelName, lossFunc
 
+def reshapeRawBin(z, pt, eta,):
+    zData = z.reshape(z.shape[0]*z.shape[1], z.shape[2])
+    ptData = pt.reshape(z.shape[0]*z.shape[1], z.shape[2])
+    etaData = eta.reshape(z.shape[0]*z.shape[1], z.shape[2])
+
+    return zData, ptData, etaData
 
 def rawModelSplit(z, pt, eta, pv):
     print(z[0,0])
     print(pt[0,0])
     print(eta[0,0])
+    if len(z.shape) > 2:
+        z, pt, eta = reshapeRawBin(z, pt, eta)
     # scaling z
     columnZ = z.reshape(z.shape[0]*z.shape[1], 1)
     scaler = StandardScaler().fit(columnZ)
@@ -679,25 +687,29 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-nameData = 'TTbar'
-rawD = np.load('TTbarRaw5.npz')
-binD = np.load('TTbarBin4.npz')
-
-# nameData = 'QCD'
-# rawD = np.load('QCD_Pt-15To3000.npz')
-# binD = np.load('QCD_Pt-15To3000_Bin.npz')
-
-# nameData = 'Merged'
-# rawD = np.load('Merged_deacys_Raw.npz')
-# binD = np.load('Merged_decays_Bin.npz')
+# nameData = 'TTbar'
+# rawD = np.load('TTbarRaw5.npz')
+# binD = np.load('TTbarBin4.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
 # binD = np.load('WJetsToLNu_Bin.npz')
 
-# print(nameData)
+# nameData = 'QCD'
+# rawD = np.load('QCD_Pt-15To3000.npz')
+# binD = np.load('QCD_Pt-15To3000_Bin.npz')
+
+nameData = 'Merged'
+rawD = np.load('Merged_deacys_Raw.npz')
+binD = np.load('Merged_decays_Bin.npz')
+# raw binned 
+rawBinD = np.load('Merged_Raw_1_bin_size.npz')
+
+print(nameData)
 
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
+zRaw, ptRaw, etaRaw = rawBinD['z'], rawBinD['pt'], rawBinD['eta']
+
 ptBin, trackBin = binD['ptB'], binD['tB']
 trackLength = rawD['tl']
 print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
@@ -720,7 +732,8 @@ clock = int(time.time())
 
 # print()
 MASK_NO = -9999.99
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+print(xTrain.shape)
 # print(xTrain.shape)
 # model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 # testing(model, history, xTest, yTest, name)
@@ -729,7 +742,7 @@ MASK_NO = -9999.99
 # Loaded model test and comparison to other models
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 # print(xTest[0,0,:])
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
@@ -739,7 +752,7 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 
 name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.keras'
 train = 'Merged_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.log'
-print(name[:-11])
+# print(name[:-11])
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 testLoadedModel(name, train, xTest, yTest)
 
