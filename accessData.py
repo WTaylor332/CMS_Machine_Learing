@@ -206,9 +206,6 @@ def merge():
 
 
 def percentageHardVertex(z, pv, bins=30):
-    print(z.dtype)
-    print(z[0])
-    print(pv.dtype)
     hardVertexProb = np.zeros((z.shape[0], bins))
     vertexBinned = np.zeros((z.shape[0], bins))
     binValues = np.linspace(-15, 15, bins)
@@ -241,7 +238,7 @@ def percentageHardVertex(z, pv, bins=30):
 # zRaw, ptRaw, etaRaw, trackLength, mv = rawPaddedData(eventZ, eventPT, eventEta)
 # np.savez('TTbarRaw5', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
 
-rawD = np.load('TTbarRaw5.npz')
+# rawD = np.load('TTbarRaw5.npz')
 # zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
 # t = rawD['tl']
 # m = rawD['maxValue']
@@ -259,7 +256,7 @@ rawD = np.load('TTbarRaw5.npz')
 
 # zMerge, ptMerge, etaMerge, pvMerge, trackLength = merge()
 # np.savez('Merged_deacys_Raw', z=zMerge, pt=ptMerge, eta=etaMerge, pv=np.array(pvMerge), tl=trackLength)
-# mergeData = np.load('Merged_deacys_Raw.npz')
+mergeData = np.load('Merged_deacys_Raw.npz')
 # z, pt, eta = mergeData['z'], mergeData['pt'], mergeData['eta']
 # print()
 # print(z.shape, pt.shape, eta.shape)
@@ -274,7 +271,7 @@ rawD = np.load('TTbarRaw5.npz')
 # print(q['tB'].shape)
 
 # adding probability of hard vertext to mixed data
-b = 30
-vertProb, vertBin = percentageHardVertex(rawD['z'], rawD['pv'], b)
-np.savez(f'TTbar_Hard_Vertex_Probaility_{b}_bins', prob=vertProb, bins=vertBin)
+b = 15
+vertProb, vertBin = percentageHardVertex(mergeData['z'], mergeData['pv'], b)
+np.savez(f'Hard_Vertex_Probability_{b}_bins', prob=vertProb, bins=vertBin)
 
