@@ -5,6 +5,7 @@ from sklearn.preprocessing import StandardScaler
 import random
 from tqdm import tqdm
 
+import matplotlib.pyplot as plt
 
 def loadData(dataFile):
     f = uproot.open(dataFile+':L1TrackNtuple/eventTree')
@@ -93,7 +94,6 @@ def rawPaddedData(eventZ, eventPT, eventEta):
     eventEtaData = eventEtaData[:, :maxTLength]
     print(eventZData.shape, eventPTData.shape, eventEtaData.shape)
     return eventZData, eventPTData, eventEtaData, trackLength, maxTLength
-
 
 # binning
 def histogramData(z, pt):
@@ -205,7 +205,29 @@ def merge():
     return zMerge, ptMerge, etaMerge, pvMerge, trackLength
 
 
+def distributionTrack(z, bins):
+    binValues = np.linspace(-15, 15, bins)
+    numTrackBin = np.zeros((z.shape[0], bins))
+    for i in tqdm(range(z.shape[0])):
+        for j in range(1, bins):
+            rangeBin = z[i, (z[i]<binValues[j]) & (z[i]>binValues[j-1])]
+            numTrackBin[i,j] = len(rangeBin)
+    averageTrackEvent = np.mean(numTrackBin, axis=1)
+    averageTrackBin = np.mean(numTrackBin, axis=0)
+    print(np.amax(numTrackBin, axis=0))
+    print(averageTrackBin)
+    fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
+    ax[0].hist(np.sort(z.flatten()), bins=30)
+    ax[0].minorticks_on()
+    ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
+    ax[1].hist(np.sort(z.flatten()), bins=15)
+    ax[1].minorticks_on()
+    ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
+    plt.savefig('Track_distribution_for_each_bin.png', dpi=1000)
+
+
 def percentageHardVertex(z, pv, bins=30):
+    print(bins)
     hardVertexProb = np.zeros((z.shape[0], bins))
     vertexBinned = np.zeros((z.shape[0], bins))
     binValues = np.linspace(-15, 15, bins)
@@ -227,6 +249,54 @@ def percentageHardVertex(z, pv, bins=30):
     print(vertexBinned[:2])
 
     return hardVertexProb, vertexBinned
+
+
+def rawBinData(z, pt, eta, binSize):
+    maxTrackLength = 100
+    binValues = np.arange(-15, 16, binSize)
+    print(binValues)
+    zData = np.zeros((z.shape[0], len(binValues), maxTrackLength))
+    ptData = np.zeros((z.shape[0], len(binValues), maxTrackLength))
+    etaData = np.zeros((z.shape[0], len(binValues), maxTrackLength))
+    for i in tqdm(range(z.shape[0])):
+        for j in range(len(binValues)):
+            print(j)
+            zPad = np.zeros(maxTrackLength)
+            ptPad = np.zeros(maxTrackLength)
+            etaPad = np.zeros(maxTrackLength)
+            valuesInBin = z[i, (z[i]<binValues[j]) & (z[i]>binValues[j-1])]
+            if len(valuesInBin) > 0:
+                index = np.argwhere((z[i]<binValues[j]) & (z[i]>binValues[j-1]))
+                print(index)
+                if len(valuesInBin) > maxTrackLength:
+                    zPad = valuesInBin[:maxTrackLength]
+                    print(pt[i, index])
+                    ptPad = pt[i, index].flatten()
+                    etaPad = eta[i, index].flatten()
+                else:
+                    zPad[:len(valuesInBin)] = valuesInBin
+                    zPad[len(valuesInBin):] = np.nan
+                    ptPad[:len(valuesInBin)] = pt[i, index].flatten()
+                    ptPad[len(valuesInBin):] = np.nan
+                    etaPad [:len(valuesInBin)] = eta[i, index].flatten()
+                    etaPad[len(valuesInBin):] = np.nan
+                zData[i, j] = zPad
+                ptData[i, j] = ptPad
+                etaData[i, j] = etaPad
+            else:
+                zPad[:] = np.nan
+                ptPad[:] = np.nan
+                etaPad[:] = np.nan
+                zData[i, j] = zPad
+                ptData[i, j] = ptPad
+                etaData[i, j] = etaPad
+    print(zData.shape, ptData.shape, etaData.shape)
+    print(zData[0,4:10])
+
+    return zData, ptData, etaData
+
+
+
 
 # -------------------------------------------------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------MAIN----------------------------------------------------------------------
@@ -271,7 +341,14 @@ mergeData = np.load('Merged_deacys_Raw.npz')
 # print(q['tB'].shape)
 
 # adding probability of hard vertext to mixed data
-b = 15
-vertProb, vertBin = percentageHardVertex(mergeData['z'], mergeData['pv'], b)
-np.savez(f'Hard_Vertex_Probability_{b}_bins', prob=vertProb, bins=vertBin)
+b = 30
+# vertProb, vertBin = percentageHardVertex(mergeData['z'], mergeData['pv'], b)
+# np.savez(f'Hard_Vertex_Probability_{b}_bins', prob=vertProb, bins=vertBin)
+
+# distributionTrack(mergeData['z'], bins=b)
+
+print()
+binS = 1
+zData, ptData, etaData = rawBinData(mergeData['z'], mergeData['pt'], mergeData['eta'], binS)
+np.savez(f'Merged_Raw_{b}_bins', z=zData, pt=ptData, eta=etaData)
 
