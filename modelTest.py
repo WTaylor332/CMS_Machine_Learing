@@ -12,7 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from model_types import convModel as cnn, pureCNN as pcnn, rnn, wavenet, multiLayerPerceptron as mlp
 from customFunction import welsch, learningRate, power_decay, piecewise_constant_fn, OneCycleLr
 
-print("Num GPUs availabel: ", len(tf.config.list_physical_devices('GPU')))
+# print("Num GPUs availabel: ", len(tf.config.list_physical_devices('GPU')))
 
 class haltCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
@@ -53,8 +53,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
     epochNo = 500
     bSize = 256
 
-    # op = keras.optimizers.Adam()
-    op = keras.optimizers.Adadelta()
+    op = keras.optimizers.Adadm()
     lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
     # lossFunc = keras.losses.Huber()
     # lossFunc = keras.losses.MeanAbsoluteError()
@@ -315,7 +314,7 @@ def testing(model, hist, xTest, yTest, name):
 
     ax[1].axis('equal')
     extent = np.array([[min(yTest), max(yTest)], [min(yPredicted), max(yPredicted)]])
-    heatmap = ax[1].hist2d(yTrain, yPredTrain, bins=20, cmap='hot_r', range=extent)
+    heatmap = ax[1].hist2d(yTest, yPredicted, bins=20, cmap='hot_r', range=extent)
     fig.colorbar(heatmap[3], ax=ax[1])
     ax[1].plot([-15,15], [-15,15], color='black')
     ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
@@ -463,19 +462,18 @@ def loadWeights(name, x):
     return model
 
 
-def trainLoadedModel(name, xTrain, yTrain, xValid, yValid):
+def trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid):
     if name[-2:] == 'h5':
-        mod = loadWeights(name, xTrain)
+        modelLoaded = loadWeights(name, xTrain)
         weights = name
-        print(mod)
-        model = 'Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1722116156.keras'
+        model = name[:-11]+'.keras'
     else:
         weights = name[:-6] + '.weights.h5'
         model = name
         modelLoaded = loadModel(model)
         print(weights)
     
-    train = 'training_Bin_model_2inputs_wavenet_adam_huber_loss_WJets_1722116156.log'
+    print(model)
     hist = pd.read_csv(train, sep=',', engine='python')
     epochs = len(hist['loss'])
     print(epochs)
@@ -681,28 +679,27 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+nameData = 'TTbar'
+rawD = np.load('TTbarRaw5.npz')
+binD = np.load('TTbarBin4.npz')
 
 # nameData = 'QCD'
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
-nameData = 'Merged'
-rawD = np.load('Merged_deacys_Raw.npz')
-binD = np.load('Merged_decays_Bin.npz')
-# vert = np.load('Hard_Vertex_Probability_30_bins.npz')
+# nameData = 'Merged'
+# rawD = np.load('Merged_deacys_Raw.npz')
+# binD = np.load('Merged_decays_Bin.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
 # binD = np.load('WJetsToLNu_Bin.npz')
 
-print(nameData)
+# print(nameData)
 
 zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
-# trackLength = rawD['tl']
+trackLength = rawD['tl']
 print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
 clock = int(time.time())
@@ -711,7 +708,7 @@ clock = int(time.time())
 # plt.plot()
 # plt.savefig("TTbarTrackDistribution.png")
 
-print()
+# print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
@@ -732,7 +729,7 @@ MASK_NO = -9999.99
 # Loaded model test and comparison to other models
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 # print(xTest[0,0,:])
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
@@ -740,11 +737,11 @@ MASK_NO = -9999.99
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-name = 'Merged_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722594932.keras'
-train = 'Merged_training_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722594932.log'
-# print(name[:-16])
-# trainLoadedModel(name, xTrain, yTrain, xValid, yValid)
-# testLoadedModel(name, train, xTest, yTest)
+name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.keras'
+train = 'Merged_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.log'
+print(name[:-11])
+# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+testLoadedModel(name, train, xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
