@@ -206,7 +206,7 @@ def merge():
 
 
 def distributionTrack(z, bins):
-    binValues = np.linspace(-15, 15, bins)
+    binValues = np.linspace(-15, 15+30/bins, bins)
     numTrackBin = np.zeros((z.shape[0], bins))
     for i in tqdm(range(z.shape[0])):
         for j in range(1, bins):
@@ -217,7 +217,8 @@ def distributionTrack(z, bins):
     print(np.amax(numTrackBin, axis=0))
     print(averageTrackBin)
     print(np.median(numTrackBin.flatten()))
-    print('99.999th percentile: ', np.percentile(numTrackBin.flatten(), 99.999))
+    per = 99.9
+    print(f'{per}th percentile: ', np.percentile(numTrackBin.flatten(), per))
     # fig, ax = plt.subplots(2, 2, figsize=(12,6), sharey=True)
     # ax[0, 0].hist(np.sort(z.flatten()), bins=30)
     # ax[0, 0].minorticks_on()
@@ -232,40 +233,18 @@ def distributionTrack(z, bins):
     # ax[1, 1].minorticks_on()
     # ax[1, 1].grid(which='both', alpha=0.7, c='#DDDDDD')
     # plt.savefig('Track_distribution_for_each_bin.png', dpi=1000)
+    return np.percentile(numTrackBin.flatten(), per)
 
 
-def percentageHardVertex(z, pv, bins=30):
-    print(bins)
-    hardVertexProb = np.zeros((z.shape[0], bins))
-    vertexBinned = np.zeros((z.shape[0], bins))
-    binValues = np.linspace(-15, 15, bins)
-    for i in tqdm(range(z.shape[0])):
-        for j in range(1, bins):
-            rangeBin = z[i, (z[i]<binValues[j]) & (z[i]>binValues[j-1])]
-            if len(rangeBin) > 0:
-                averageZ = np.nanmean(rangeBin)
-            else:
-                averageZ = 0
-            if pv[i] < binValues[j] and pv[i] > binValues[j-1]:
-                hardVertexProb[i, j] = 1
-                vertexBinned[i, j] = pv[i]
-            else:
-                hardVertexProb[i, j] = 0
-                vertexBinned[i, j] = averageZ
-
-    print(hardVertexProb[:2])
-    print(vertexBinned[:2])
-
-    return hardVertexProb, vertexBinned
-
-
-def rawBinData(z, pt, eta, binSize):
-    maxTrackLength = 40
+def rawBinData(z, pt, eta, pv, binSize, per):
+    maxTrackLength = per
     binValues = np.arange(-15, 15+binSize, binSize)
     print(binValues)
     zData = np.zeros((z.shape[0], len(binValues), maxTrackLength))
     ptData = np.zeros((z.shape[0], len(binValues), maxTrackLength))
     etaData = np.zeros((z.shape[0], len(binValues), maxTrackLength))
+    pvData = np.zeros(z.shape[0]*len(binValues))
+    hardVertexProb = np.zeros(z.shape[0]*len(binValues))
     for i in tqdm(range(z.shape[0])):
         for j in range(len(binValues)):
             zPad = np.zeros(maxTrackLength)
@@ -274,6 +253,7 @@ def rawBinData(z, pt, eta, binSize):
             valuesInBin = z[i, (z[i]<binValues[j]) & (z[i]>binValues[j-1])]
             if len(valuesInBin) > 0:
                 index = np.argwhere((z[i]<binValues[j]) & (z[i]>binValues[j-1]))
+                averageZ = np.nanmean(valuesInBin)
                 if len(valuesInBin) > maxTrackLength:
                     zPad = valuesInBin[:maxTrackLength]
                     ptPad = pt[i, index[:maxTrackLength]].flatten()
@@ -285,10 +265,18 @@ def rawBinData(z, pt, eta, binSize):
                     ptPad[len(valuesInBin):] = np.nan
                     etaPad [:len(valuesInBin)] = eta[i, index].flatten()
                     etaPad[len(valuesInBin):] = np.nan
+                if pv[i] < binValues[j] and pv[i] > binValues[j-1]:
+                    hardVertexProb[i*j] = 1
+                    pvData[i*j] = pv[i]
+                else:
+                    hardVertexProb[i*j] = 0
+                    pvData[i*j] = np.nan
+                
                 zData[i, j] = zPad
                 ptData[i, j] = ptPad
                 etaData[i, j] = etaPad
             else:
+                averageZ = np.nan
                 zPad[:] = np.nan
                 ptPad[:] = np.nan
                 etaPad[:] = np.nan
@@ -331,7 +319,7 @@ def rawBinData(z, pt, eta, binSize):
 
 # zMerge, ptMerge, etaMerge, pvMerge, trackLength = merge()
 # np.savez('Merged_deacys_Raw', z=zMerge, pt=ptMerge, eta=etaMerge, pv=np.array(pvMerge), tl=trackLength)
-mergeData = np.load('Merged_deacys_Raw.npz')
+rawD = np.load('Merged_deacys_Raw.npz')
 # z, pt, eta = mergeData['z'], mergeData['pt'], mergeData['eta']
 # print()
 # print(z.shape, pt.shape, eta.shape)
@@ -350,10 +338,10 @@ b = 30
 # vertProb, vertBin = percentageHardVertex(mergeData['z'], mergeData['pv'], b)
 # np.savez(f'Hard_Vertex_Probability_{b}_bins', prob=vertProb, bins=vertBin)
 
-distributionTrack(mergeData['z'], bins=b)
+percentile = distributionTrack(rawD['z'], bins=b)
 
 print()
-binS = 1
-# zData, ptData, etaData = rawBinData(mergeData['z'], mergeData['pt'], mergeData['eta'], binS)
-# np.savez(f'Merged_Raw_{b}_bins', z=zData, pt=ptData, eta=etaData)
+binS = 30/b
+zData, ptData, etaData = rawBinData(rawD['z'], rawD['pt'], rawD['eta'], rawD['pv'], binS, int(percentile))
+np.savez(f'TTBar_Raw_{int(binS)}_bin_size', z=zData, pt=ptData, eta=etaData)
 
