@@ -100,12 +100,14 @@ def reshapeRawBin(z, pt, eta,):
 
     return zData, ptData, etaData
 
-def rawModelSplit(z, pt, eta, pv):
+def rawModelSplit(z, pt, eta, pv, prob=0):
     print(z[0,0])
     print(pt[0,0])
     print(eta[0,0])
     if len(z.shape) > 2:
         z, pt, eta = reshapeRawBin(z, pt, eta)
+        if prob == 0:
+            pv = pv[~np.isnan(pv)]
     # scaling z
     columnZ = z.reshape(z.shape[0]*z.shape[1], 1)
     scaler = StandardScaler().fit(columnZ)
@@ -149,7 +151,10 @@ def rawModelSplit(z, pt, eta, pv):
     # xTest, xValid, xTrain = allJag[:t], allJag[t:v], allJag[v:]
 
     # desired values
-    yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
+    if prob == 0:
+        yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
+    else:
+        yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
 
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
@@ -687,9 +692,10 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+nameData = 'TTbar'
+rawD = np.load('TTbarRaw5.npz')
+binD = np.load('TTbarBin4.npz')
+rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -699,11 +705,11 @@ def testLoadedModel(model, train, xTest, yTest):
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
-nameData = 'Merged'
-rawD = np.load('Merged_deacys_Raw.npz')
-binD = np.load('Merged_decays_Bin.npz')
-# raw binned 
-rawBinD = np.load('Merged_Raw_1_bin_size.npz')
+# nameData = 'Merged'
+# rawD = np.load('Merged_deacys_Raw.npz')
+# binD = np.load('Merged_decays_Bin.npz')
+# # raw binned 
+# rawBinD = np.load('Merged_Raw_1_bin_size.npz')
 
 print(nameData)
 
@@ -734,7 +740,6 @@ clock = int(time.time())
 MASK_NO = -9999.99
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
 print(xTrain.shape)
-# print(xTrain.shape)
 # model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 # testing(model, history, xTest, yTest, name)
 
@@ -754,7 +759,7 @@ name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.keras
 train = 'Merged_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.log'
 # print(name[:-11])
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
+# testLoadedModel(name, train, xTest, yTest)
 
 # trainLoadedModel(models[1], training[1], xTrain, yTrain, xValid, yValid)
 # testLoadedModel(models[1], training[1], xTest, yTest)
