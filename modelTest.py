@@ -7,8 +7,10 @@ print()
 import tensorflow as tf 
 from tensorflow import keras
 print()
+import seaborn as sn
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
+print()
 from model_types import convModel as cnn, pureCNN as pcnn, rnn, wavenet, multiLayerPerceptron as mlp
 from customFunction import welsch, learningRate, power_decay, piecewise_constant_fn, OneCycleLr
 
@@ -101,12 +103,13 @@ def reshapeRawBin(z, pt, eta,):
 
     return zData, ptData, etaData
 
+
 def rawModelSplit(z, pt, eta, pv, prob=None):
     if len(z.shape) > 2:
         z, pt, eta = reshapeRawBin(z, pt, eta)
         print(z.shape, pt.shape, eta.shape, pv.shape)
 
-        if prob == None:
+        if prob is None:
             print(np.argwhere(np.isnan(pv)))
             print(len((np.argwhere(np.isnan(pv)))))
             indexNan = np.argwhere(np.isnan(pv))
@@ -161,10 +164,11 @@ def rawModelSplit(z, pt, eta, pv, prob=None):
     # xTest, xValid, xTrain = allJag[:t], allJag[t:v], allJag[v:]
 
     # desired values
-    if prob is not None:
-        yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
-    else:
+    if prob is None:
         yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
+    else:
+        yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
+        
 
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
@@ -175,7 +179,8 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
     # creating model
     op = keras.optimizers.Adam()
-    lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
+    # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
+    lossFunc = keras.losses.BinaryCrossentropy(from_logits=True)
     # lossFunc = welsch
     # lossFunc = keras.losses.MeanAbsoluteError()
 
@@ -199,7 +204,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     batchNo = 512
     history = model.fit(xTrain, yTrain, epochs=epochNum, batch_size=batchNo,\
                         validation_data=(xValid, yValid),\
-                        callbacks=[checkpointCallback, lr, csvLogger, stopTraining, earlyStop])
+                        callbacks=[checkpointCallback, lr, csvLogger, earlyStop])
 
     checkpointFilename = os.path.join(modelDirectory, weights)
     check = os.path.isdir(modelDirectory)
@@ -365,6 +370,40 @@ def testing(model, hist, xTest, yTest, name):
     plt.savefig(f"{name[:start[0]]}_Learning_rate_{name[start[0]+1:]}.png")
     print('learning rate plot made')
 
+    # % values that predicted the correct bin
+    # indexPred = np.array([np.argmax(event) for event in yPredicted])
+    # count = 0
+    # pvNotinBin = 0
+    # print(indexPred.shape)
+    # print(indexPred[:5])
+    # for i in tqdm(range(len(yTest[1]))):
+    #     if 1 in yTest[1][i]:
+    #         if indexPred[i] == np.argmax(yTest[1][i]):
+    #             count += 1
+    #     else:
+    #         print(i, 'pv not in bin')
+    #         pvNotinBin += 1
+    # print()
+    # print('Percentage of correct predicted bin: ', round(count*100/len(yPredicted), 5))
+
+    # # confunstion matrix
+    # print()
+    # plt.clf()
+    # plt.figure(figsize=(30,20))
+    # yTestLabels = np.array([np.argmax(i) for i in yTest[1]])
+    # yClassPredLabels = np.array([np.argmax(i) for i in yPredicted])
+    # print(yTestLabels.shape)
+    # print(yClassPredLabels.shape)
+    # cm = tf.math.confusion_matrix(labels=yTestLabels, predictions=yClassPredLabels)
+    # sn.heatmap(cm, annot=True, fmt='d')
+    # plt.xlabel('Predicted')
+    # plt.ylabel('True')
+    # if nameData != name[:start[0]]:
+    #     plt.savefig(f"{nameData}_cm_probability_{name}.png", dpi=1000)
+    # else:
+    #     plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
+    # print('cm plot made')
+
 
 def comparison(models, train, xTest, yTest):
     print()
@@ -503,7 +542,7 @@ def trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid):
 
     time.sleep(5)
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger(train, separator=',', append=True)
     stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
@@ -513,7 +552,7 @@ def trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid):
 
     history = modelLoaded.fit(xTrain, yTrain, epochs=epochNo,\
                         validation_data=(xValid, yValid),\
-                        callbacks=[lr, checkpointCallback, csvLogger, stopTraining, earlyStop])
+                        callbacks=[lr, checkpointCallback, csvLogger, earlyStop])
     
     modelDirectory = "models"
     checkpointFilename = os.path.join(modelDirectory, weights)
@@ -532,6 +571,7 @@ def testLoadedModel(model, train, xTest, yTest):
     if model[-2:] == 'h5':
         print(model)
         modelLoaded = loadWeights(model, xTest)
+        model = model[:-11]
     else:
         modelLoaded = loadModel(model)
     hist = pd.read_csv(train, sep=',', engine='python')
@@ -697,6 +737,40 @@ def testLoadedModel(model, train, xTest, yTest):
     else:
         print('No learning rate stored for each epoch')
 
+    # % values that predicted the correct bin
+    # indexPred = np.array([np.argmax(event) for event in yPredicted])
+    # count = 0
+    # pvNotinBin = 0
+    # print(indexPred.shape)
+    # print(indexPred[:5])
+    # for i in tqdm(range(len(yTest[1]))):
+    #     if 1 in yTest[1][i]:
+    #         if indexPred[i] == np.argmax(yTest[1][i]):
+    #             count += 1
+    #     else:
+    #         print(i, 'pv not in bin')
+    #         pvNotinBin += 1
+    # print()
+    # print('Percentage of correct predicted bin: ', round(count*100/len(yPredicted), 5))
+
+    # # confunstion matrix
+    # print()
+    # plt.clf()
+    # plt.figure(figsize=(30,20))
+    # yTestLabels = np.array([np.argmax(i) for i in yTest[1]])
+    # yClassPredLabels = np.array([np.argmax(i) for i in yPredicted])
+    # print(yTestLabels.shape)
+    # print(yClassPredLabels.shape)
+    # cm = tf.math.confusion_matrix(labels=yTestLabels, predictions=yClassPredLabels)
+    # sn.heatmap(cm, annot=True, fmt='d')
+    # plt.xlabel('Predicted')
+    # plt.ylabel('True')
+    # if nameData != name[:start[0]]:
+    #     plt.savefig(f"{nameData}_cm_probability_{name}.png", dpi=1000)
+    # else:
+    #     plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
+    # print('cm plot made')
+
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------- MAIN -----------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -705,7 +779,7 @@ def testLoadedModel(model, train, xTest, yTest):
 nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
-rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
+rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -726,8 +800,6 @@ print(nameData)
 # zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 # trackLength = rawD['tl']
 zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-print(np.sum(probability))
-print(probability.shape)
 # ptBin, trackBin = binD['ptB'], binD['tB']
 print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
@@ -749,7 +821,7 @@ clock = int(time.time())
 
 # print()
 MASK_NO = -9999.99
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
 print(xTrain.shape)
 model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 testing(model, history, xTest, yTest, name)
@@ -780,16 +852,10 @@ train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722966
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
 
 # Comparing various models
-# modelsCompare = ['Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415564.keras',\
-#                  'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722418918.keras',\
-#                  'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.keras',\
-#                  'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415353.keras',\
-#                  'Merged_Bin_model_2inputs_conv_adam_huber_loss_1722417342.keras']
-# trainingCompare = ['training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415564.log',\
-#                    'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722418918.log',\
-#                    'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722419621.log',\
-#                    'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722415353.log',\
-#                    'training_Merged_Bin_model_2inputs_conv_adam_huber_loss_1722417342.log']
+modelsCompare = ['',\
+                 '']
+trainingCompare = ['',\
+                   '']
 
 # endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
 # print(modelsCompare[0][:endStart[2]])
@@ -820,7 +886,6 @@ train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722966
 #         print(i)
 #         hist = pd.read_csv(trainingCompare[i], sep=',', engine='python')
 #         loss = hist['loss']
-#         val_loss = hist['val_loss']
 #         epochs = range(1, len(loss) + 1)
 #         print(epochs)
 
