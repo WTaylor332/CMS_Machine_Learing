@@ -415,18 +415,18 @@ def rnn(form, op, lossFunc, maskNo):
     # ])
 
     # raw bin data
-    model = keras.models.Sequential([
-         keras.layers.Masking(mask_value=maskNo, input_shape=form),
-         keras.layers.GRU(20, return_sequences=True),
-         keras.layers.GRU(20),
-         keras.layers.Dense(1)
-     ])
     # model = keras.models.Sequential([
     #      keras.layers.Masking(mask_value=maskNo, input_shape=form),
     #      keras.layers.GRU(20, return_sequences=True),
     #      keras.layers.GRU(20),
-    #      keras.layers.Dense(1, activation='softmax')
+    #      keras.layers.Dense(1)
     #  ])
+    model = keras.models.Sequential([
+         keras.layers.Masking(mask_value=maskNo, input_shape=form),
+         keras.layers.GRU(20, return_sequences=True),
+         keras.layers.GRU(20),
+         keras.layers.Dense(1, activation='softmax')
+     ])
 
     model.compile(optimizer=op, loss=lossFunc)
     model.summary()

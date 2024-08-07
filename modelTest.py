@@ -93,6 +93,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
     return model, history, modelName, lossFunc
 
+
 def reshapeRawBin(z, pt, eta,):
     zData = z.reshape(z.shape[0]*z.shape[1], z.shape[2])
     ptData = pt.reshape(z.shape[0]*z.shape[1], z.shape[2])
@@ -100,14 +101,23 @@ def reshapeRawBin(z, pt, eta,):
 
     return zData, ptData, etaData
 
-def rawModelSplit(z, pt, eta, pv, prob=0):
-    print(z[0,0])
-    print(pt[0,0])
-    print(eta[0,0])
+def rawModelSplit(z, pt, eta, pv, prob=None):
     if len(z.shape) > 2:
         z, pt, eta = reshapeRawBin(z, pt, eta)
-        if prob == 0:
+        print(z.shape, pt.shape, eta.shape, pv.shape)
+
+        if prob == None:
+            print(np.argwhere(np.isnan(pv)))
+            print(len((np.argwhere(np.isnan(pv)))))
+            indexNan = np.argwhere(np.isnan(pv))
+            z = np.delete(z, indexNan, 0)
+            pt = np.delete(pt, indexNan, 0)
+            eta = np.delete(eta, indexNan, 0)
+            pv = np.delete(pv, indexNan, 0)
             pv = pv[~np.isnan(pv)]
+            print(z.shape, pt.shape, eta.shape, pv.shape)
+
+
     # scaling z
     columnZ = z.reshape(z.shape[0]*z.shape[1], 1)
     scaler = StandardScaler().fit(columnZ)
@@ -151,10 +161,10 @@ def rawModelSplit(z, pt, eta, pv, prob=0):
     # xTest, xValid, xTrain = allJag[:t], allJag[t:v], allJag[v:]
 
     # desired values
-    if prob == 0:
-        yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
-    else:
+    if prob is not None:
         yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
+    else:
+        yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
 
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
@@ -174,7 +184,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     # saving the model and best weights
     weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
     modelDirectory = "models"
-    modelName = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_{t}".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    modelName = weights[:-11]
     start =[i for i, letter in enumerate(modelName) if letter == '_']
     print(modelName)
     print()
@@ -185,8 +195,8 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
-    epochNum = 100
-    batchNo = 256
+    epochNum = 500
+    batchNo = 512
     history = model.fit(xTrain, yTrain, epochs=epochNum, batch_size=batchNo,\
                         validation_data=(xValid, yValid),\
                         callbacks=[checkpointCallback, lr, csvLogger, stopTraining, earlyStop])
@@ -693,8 +703,8 @@ def testLoadedModel(model, train, xTest, yTest):
 
 # loading numpy arrays of data
 nameData = 'TTbar'
-rawD = np.load('TTbarRaw5.npz')
-binD = np.load('TTbarBin4.npz')
+# rawD = np.load('TTbarRaw5.npz')
+# binD = np.load('TTbarBin4.npz')
 rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
 
 # nameData = 'WJets'
@@ -713,11 +723,12 @@ rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
 
 print(nameData)
 
-zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
-zRaw, ptRaw, etaRaw = rawBinD['z'], rawBinD['pt'], rawBinD['eta']
-
-ptBin, trackBin = binD['ptB'], binD['tB']
-trackLength = rawD['tl']
+# zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
+# trackLength = rawD['tl']
+zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
+print(np.sum(probability))
+print(probability.shape)
+# ptBin, trackBin = binD['ptB'], binD['tB']
 print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
 clock = int(time.time())
@@ -738,10 +749,10 @@ clock = int(time.time())
 
 # print()
 MASK_NO = -9999.99
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten())
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 print(xTrain.shape)
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xTest, yTest, name)
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
@@ -755,8 +766,8 @@ print(xTrain.shape)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.keras'
-train = 'Merged_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.log'
+name = 'TTbar_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722966820.keras'
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722966820.log'
 # print(name[:-11])
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
