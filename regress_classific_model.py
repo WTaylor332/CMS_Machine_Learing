@@ -12,36 +12,36 @@ import seaborn as sn
 from sklearn.preprocessing import StandardScaler
 from customFunction import welsch, learningRate, power_decay, piecewise_constant_fn, OneCycleLr
 
-# def cnn(form, op, lossFunc, bins):
-#     # conv model with regression and classification combines
-#     inp = keras.Input(shape=form)
-#     conv1 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(inp)
-#     pool1 = keras.layers.MaxPool2D(pool_size=(1,4))(conv1)
+def cnn(form, op, lossFunc, bins):
+    # conv model with regression and classification combines
+    inp = keras.Input(shape=form)
+    conv1 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(inp)
+    pool1 = keras.layers.MaxPool2D(pool_size=(1,4))(conv1)
 
-#     conv2 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(pool1)
-#     pool2 = keras.layers.MaxPool2D(pool_size=(1,4))(conv2)
+    conv2 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(pool1)
+    pool2 = keras.layers.MaxPool2D(pool_size=(1,4))(conv2)
 
-#     conv3 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(pool2)
-#     pool3 = keras.layers.MaxPool2D(pool_size=(1,2))(conv3)
+    conv3 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(pool2)
+    pool3 = keras.layers.MaxPool2D(pool_size=(1,2))(conv3)
 
-#     flatten =  keras.layers.Flatten()(pool3)
-#     hidden1 = keras.layers.Dense(6, activation="relu")(flatten)
-#     hidden2 = keras.layers.Dense(6, activation="relu")(hidden1)
-#     hidden3 = keras.layers.Dense(6, activation="relu")(hidden2)
-#     hidden4 = keras.layers.Dense(6, activation="relu")(hidden3)
-#     hidden5 = keras.layers.Dense(6, activation="relu")(hidden4)
-#     hidden6 = keras.layers.Dense(6, activation="relu")(hidden5)
-#     hidden7 = keras.layers.Dense(6, activation="relu")(hidden6)
-#     hidden8 = keras.layers.Dense(6, activation="relu")(hidden7)
-#     hidden9 = keras.layers.Dense(6, activation="relu")(hidden8)
-#     hidden10 = keras.layers.Dense(6, activation="relu")(hidden9)
+    flatten =  keras.layers.Flatten()(pool3)
+    hidden1 = keras.layers.Dense(6, activation="relu")(flatten)
+    hidden2 = keras.layers.Dense(6, activation="relu")(hidden1)
+    hidden3 = keras.layers.Dense(6, activation="relu")(hidden2)
+    hidden4 = keras.layers.Dense(6, activation="relu")(hidden3)
+    hidden5 = keras.layers.Dense(6, activation="relu")(hidden4)
+    hidden6 = keras.layers.Dense(6, activation="relu")(hidden5)
+    hidden7 = keras.layers.Dense(6, activation="relu")(hidden6)
+    hidden8 = keras.layers.Dense(6, activation="relu")(hidden7)
+    hidden9 = keras.layers.Dense(6, activation="relu")(hidden8)
+    hidden10 = keras.layers.Dense(6, activation="relu")(hidden9)
 
-#     outReg = keras.layers.Dense(1)(hidden10)
-#     outClass = keras.layers.Dense(bins, activation='softmax')(hidden10)
+    outReg = keras.layers.Dense(1)(hidden10)
+    outClass = keras.layers.Dense(bins, activation='softmax')(hidden10)
 
-#     model = keras.Model(inputs=inp, outputs=[outReg, outClass])
-#     model.compile(optimizer=op, loss=lossFunc)
-#     return model, 'conv'
+    model = keras.Model(inputs=inp, outputs=[outReg, outClass])
+    model.compile(optimizer=op, loss=lossFunc)
+    return model, 'conv'
 
 
 def rnn(form, op, lossFunc, maskNo, bins):
@@ -57,10 +57,37 @@ def rnn(form, op, lossFunc, maskNo, bins):
     model.compile(optimizer=op, loss=lossFunc)
     return model, 'rnn'
 
+def srnn(form, op, lossFunc, maskNo):
+    inp = keras.Input(shape=form)
+    mask = keras.layers.Masking(mask_value=maskNo)(inp)
+    gru1 = keras.layers.SimpleRNN(20, return_sequences=True, activation='tanh')(mask)
+    gru2 = keras.layers.SimpleRNN(20, activation='tanh')(gru1)
+
+    outReg = keras.layers.Dense(1)(gru2)
+    outClass = keras.layers.Dense(1)(gru2)
+
+    model = keras.Model(inputs=inp, outputs=[outReg, outClass])
+    model.compile(optimizer=op, loss=lossFunc)
+    return model, 'srnn'
+
+def combinedRegClassRNN(form, op, loss, maskNo):
+    inp = keras.Input(shape=form)
+    mask = keras.layers.Masking(mask_value=maskNo)(inp)
+    gru1 = keras.layers.GRU(20, return_sequences=True, activation='tanh')(mask)
+    gru2 = keras.layers.GRU(20, activation='tanh')(gru1)
+
+    outReg = keras.layers.Dense(1)(gru2)
+    outClass = keras.layers.Dense(1)(gru2)
+
+    model = keras.Model(inputs=inp, outputs=[outReg, outClass])
+    model.compile(optimizer=op, loss=loss)
+    return model, 'rnn'
+
 
 def loadRNN(form , op, lossFunc, maskNo, bins):
     
-    model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555.keras')
+    modelLoad = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555.keras')
+
     inp = keras.Input(shape=form)
     mask = keras.layers.Masking(mask_value=maskNo, trainable=False)(inp)
     gru1 = keras.layers.GRU(20, return_sequences=True, activation='tanh', trainable=False)(mask)
@@ -72,13 +99,18 @@ def loadRNN(form , op, lossFunc, maskNo, bins):
     gru4 = keras.layers.GRU(20, activation='tanh')(gru3)
     outClass = keras.layers.Dense(bins, activation='softmax')(gru4)
 
-    model.get_layer(inp).set_weights(model.layers[0].get_weights())
-    model.get_layer(mask).set_weights(model.layers[1].get_weights())
-    model.get_layer(gru1).set_weights(model.layers[2].get_weights())
-    model.get_layer(gru2).set_weights(model.layers[3].get_weights())
-    model.get_layer(outReg).set_weights(model.layers[4].get_weights())
+    print(
+    len(modelLoad.layers[2].get_weights()), '\n',
+    len(modelLoad.layers[3].get_weights()), '\n',
+    len(modelLoad.layers[4].get_weights())
+    )
+    gru1.add_weights(modelLoad.layers[2].get_weights())
+    gru2.add_weights(modelLoad.layers[3].get_weights())
+    outReg.add_weights(modelLoad.layers[4].get_weights())
 
     model = keras.Model(inputs=inp, outputs=[outReg, outClass])
+
+    print('\n\n\n\n')
     model.compile(optimizer=op, loss=lossFunc)
 
     return model, 'rnn'
@@ -217,8 +249,8 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     # creating model
     op = keras.optimizers.Adam()
     lossFunc = [keras.losses.Huber(delta=0.1, name='modified01_huber_loss'), keras.losses.CategoricalCrossentropy()] 
-    # model, typeM = rnn(form, op, lossFunc, MASK_NO, bins=yTrain[1].shape[1])
-    model, typeM = loadRNN(form, op, lossFunc, MASK_NO, bins=yTrain[1].shape[1])
+    model, typeM = srnn(form, op, lossFunc, MASK_NO, bins=yTrain[1].shape[1])
+    # model, typeM = loadRNN(form, op, lossFunc, MASK_NO, bins=yTrain[1].shape[1])
     model.summary()
     
     # saving the model and best weights
@@ -298,11 +330,11 @@ def testing(model, xTest, yTest, name):
     print('min loss:', min(loss))
     print('At epoch number:',np.argmin(loss)+1)
     print()
-    print('Min reg val loss:', min(hist[hist.columns[-3]]))
-    print('At epoch number:',np.argmin(hist[hist.columns[-3]])+1)
-    print()
-    print('Min class val loss:', min(hist[hist.columns[-2]]))
+    print('Min reg val loss:', min(hist[hist.columns[-2]]))
     print('At epoch number:',np.argmin(hist[hist.columns[-2]])+1)
+    print()
+    print('Min class val loss:', min(hist[hist.columns[-3]]))
+    print('At epoch number:',np.argmin(hist[hist.columns[-3]])+1)
     print()
 
     # plotting % of predictions vs difference
@@ -486,6 +518,10 @@ nameData = 'Merged'
 rawD = np.load('Merged_deacys_Raw.npz')
 binD = np.load('Merged_decays_Bin.npz')
 vert = np.load('Hard_Vertex_Probability_30_bins.npz')
+# vert = np.load('Hard_Vertex_Probability_15_bins.npz')
+
+# raw binned 
+rawBinD = np.load('Merged_Raw_1_bin_size.npz')
 
 # nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
@@ -495,7 +531,7 @@ vert = np.load('Hard_Vertex_Probability_30_bins.npz')
 
 print(nameData)
 
-zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
+zRaw, ptRaw, etaRaw, pvRaw = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawD['pv']
 ptBin, trackBin = binD['ptB'], binD['tB']
 probability, vertBin = vert['prob'], vert['bins']
 
@@ -508,8 +544,6 @@ probability, vertBin = vert['prob'], vert['bins']
 # print(probability[21964], pvRaw[21964])
 # print(probability[26059], pvRaw[26059])
 
-
-
 clock = int(time.time())
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, track=trackBin, vertBin=vertBin, prob=probability, pv=pvRaw.flatten())
@@ -517,8 +551,8 @@ clock = int(time.time())
 # testing(model, xTest, yTest, name)
 
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
-model, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, xTest, yTest, name)
+# model, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, xTest, yTest, name)
 
 # model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722864526.keras')
 # config = model.get_config()
@@ -526,5 +560,5 @@ testing(model, xTest, yTest, name)
 # print(config['layers'])
 # print(config.keys())
 name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722864526'
-
-# testing(model, xTest, yTest, name)
+model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722864526.keras')
+testing(model, xTest, yTest, name)
