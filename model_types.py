@@ -334,12 +334,6 @@ def pureCNN(form, op, lossFunc):
 
 
 def rnn(form, op, lossFunc, maskNo):
-    # model = keras.models.Sequential([
-    #     keras.Input(shape=form),
-    #     keras.layers.GRU(100, return_sequences=True, activation='relu'),
-    #     keras.layers.GRU(50, activation='relu'),
-    #     keras.layers.Dense(1)
-    # ])
 
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
@@ -358,14 +352,6 @@ def rnn(form, op, lossFunc, maskNo):
     #     keras.layers.Dense(1)
     # ])
 
-    # model = keras.models.Sequential([
-    #     keras.Input(shape=form),
-    #     keras.layers.Masking(mask_value=0),
-    #     keras.layers.GRU(20, return_sequences=True, activation='relu'),
-    #     keras.layers.GRU(20, activation='relu'),
-    #     keras.layers.Dense(1)
-    # ])
-
     # LSTM Masking
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
@@ -374,21 +360,6 @@ def rnn(form, op, lossFunc, maskNo):
     #     keras.layers.LSTM(20, activation='relu'),
     #     keras.layers.Dense(1)
     # ])
-
-    # model = keras.models.Sequential([
-    #     keras.Input(shape=form),
-    #     keras.layers.Masking(mask_value=maskNo),
-    #     keras.layers.GRU(20, return_sequences=True, activation='tanh'),
-    #     keras.layers.GRU(20, activation='tanh'),
-    #     keras.layers.Dense(1)
-    # ])
-
-    # model = keras.models.Sequential([
-    #      keras.layers.Masking(mask_value=maskNo, input_shape=form),
-    #      keras.layers.GRU(20, return_sequences=True),
-    #      keras.layers.GRU(20),
-    #      keras.layers.Dense(1)
-    #  ])
     
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
@@ -431,7 +402,7 @@ def rnn(form, op, lossFunc, maskNo):
          keras.layers.Masking(mask_value=maskNo, input_shape=form),
          keras.layers.GRU(20, return_sequences=True),
          keras.layers.GRU(20),
-         keras.layers.Dense(1) #, activation='softmax')
+         keras.layers.Dense(1, activation='softmax')
      ])
 
     model.compile(optimizer=op, loss=lossFunc)
