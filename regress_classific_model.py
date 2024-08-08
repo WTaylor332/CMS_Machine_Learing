@@ -57,6 +57,7 @@ def rnn(form, op, lossFunc, maskNo, bins):
     model.compile(optimizer=op, loss=lossFunc)
     return model, 'rnn'
 
+
 def srnn(form, op, lossFunc, maskNo):
     inp = keras.Input(shape=form)
     mask = keras.layers.Masking(mask_value=maskNo)(inp)
@@ -70,23 +71,26 @@ def srnn(form, op, lossFunc, maskNo):
     model.compile(optimizer=op, loss=lossFunc)
     return model, 'srnn'
 
-def combinedRegClassRNN(form, op, loss, maskNo):
+
+def combRNN(form, op, loss, maskNo):
     inp = keras.Input(shape=form)
     mask = keras.layers.Masking(mask_value=maskNo)(inp)
     gru1 = keras.layers.GRU(20, return_sequences=True, activation='tanh')(mask)
     gru2 = keras.layers.GRU(20, activation='tanh')(gru1)
+    gru3 = keras.layers.GRU(20, return_sequences=True, activation='tanh')(gru1).set_weights(gru2)
 
     outReg = keras.layers.Dense(1)(gru2)
-    outClass = keras.layers.Dense(1)(gru2)
+
+
+    outClass = keras.layers.Dense(1)(gru3)
 
     model = keras.Model(inputs=inp, outputs=[outReg, outClass])
     model.compile(optimizer=op, loss=loss)
     return model, 'rnn'
 
-
-def loadRNN(form , op, lossFunc, maskNo, bins):
+def loadRNN(form , op, lossFunc, maskNo):
     
-    modelLoad = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722855555.keras')
+    modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723122852.keras')
 
     inp = keras.Input(shape=form)
     mask = keras.layers.Masking(mask_value=maskNo, trainable=False)(inp)
@@ -95,9 +99,9 @@ def loadRNN(form , op, lossFunc, maskNo, bins):
 
     outReg = keras.layers.Dense(1, trainable=False)(gru2)
 
-    gru3 = keras.layers.GRU(20, return_sequences=True, activation='tanh')(gru1)
+    gru3 = keras.layers.GRU(20, return_sequences=True, activation='tanh', trainable=False)(gru1)
     gru4 = keras.layers.GRU(20, activation='tanh')(gru3)
-    outClass = keras.layers.Dense(bins, activation='softmax')(gru4)
+    outClass = keras.layers.Dense(1, activation='signmoid')(gru4)
 
     print(
     len(modelLoad.layers[2].get_weights()), '\n',
@@ -108,9 +112,9 @@ def loadRNN(form , op, lossFunc, maskNo, bins):
     gru2.add_weights(modelLoad.layers[3].get_weights())
     outReg.add_weights(modelLoad.layers[4].get_weights())
 
-    model = keras.Model(inputs=inp, outputs=[outReg, outClass])
+    gru3.add_weights(modelLoad.layers[3].get_weights())
 
-    print('\n\n\n\n')
+    model = keras.Model(inputs=inp, outputs=[outReg, outClass])
     model.compile(optimizer=op, loss=lossFunc)
 
     return model, 'rnn'
@@ -208,7 +212,19 @@ def binModel(xTrain, yTrain, xValid, yValid):
     return model, modelName
 
 
+def reshapeRawBin(z, pt, eta,):
+    zData = z.reshape(z.shape[0]*z.shape[1], z.shape[2])
+    ptData = pt.reshape(z.shape[0]*z.shape[1], z.shape[2])
+    etaData = eta.reshape(z.shape[0]*z.shape[1], z.shape[2])
+
+    return zData, ptData, etaData
+
+
 def rawModelSplit(z, pt, eta, pv, prob):
+
+    if len(z.shape) > 2:
+        z, pt, eta = reshapeRawBin(z, pt, eta)
+        print(z.shape, pt.shape, eta.shape, pv.shape)
 
     # scaling z
     columnZ = z.reshape(z.shape[0]*z.shape[1], 1)
@@ -221,6 +237,7 @@ def rawModelSplit(z, pt, eta, pv, prob):
     eta = np.nan_to_num(eta, nan=MASK_NO)
 
     rawDataAll = np.stack((z,pt,eta), axis=1)
+    rawDataAll = rawDataAll.swapaxes(1,2)
     print(rawDataAll.shape)
 
     # splitting data into test, validation and training data
@@ -228,7 +245,6 @@ def rawModelSplit(z, pt, eta, pv, prob):
     v = len(pv)//5
 
     # padded data split
-    rawDataAll = rawDataAll.swapaxes(1,2)
     xTest, xValid, xTrain = rawDataAll[:t], rawDataAll[t:v], rawDataAll[v:]
 
     # desired values
@@ -248,9 +264,10 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
     # creating model
     op = keras.optimizers.Adam()
-    lossFunc = [keras.losses.Huber(delta=0.1, name='modified01_huber_loss'), keras.losses.CategoricalCrossentropy()] 
-    model, typeM = srnn(form, op, lossFunc, MASK_NO, bins=yTrain[1].shape[1])
-    # model, typeM = loadRNN(form, op, lossFunc, MASK_NO, bins=yTrain[1].shape[1])
+    l1 = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
+    l2 = keras.losses.BinaryCrossentropy(from_logits=True)
+    lossFunc = [l1, l2] 
+    model, typeM = combRNN(form, op, lossFunc, MASK_NO)
     model.summary()
     
     # saving the model and best weights
@@ -263,12 +280,12 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_dense_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_dense_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_dense_loss', factor=0.5, patience=5, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_dense_loss', patience=500)
 
-    epochNum = 500
-    batchNo = 512
+    epochNum = 20
+    batchNo = 32768
     history = model.fit(xTrain, yTrain, epochs=epochNum, batch_size=batchNo,\
                         validation_data=(xValid, yValid),\
                         callbacks=[checkpointCallback, lr, csvLogger, earlyStop])
@@ -514,26 +531,27 @@ MASK_NO = -9999.99
 
 # loading numpy arrays of data
 
-nameData = 'Merged'
-rawD = np.load('Merged_deacys_Raw.npz')
-binD = np.load('Merged_decays_Bin.npz')
-vert = np.load('Hard_Vertex_Probability_30_bins.npz')
+# nameData = 'Merged'
+# rawD = np.load('Merged_deacys_Raw.npz')
+# binD = np.load('Merged_decays_Bin.npz')
+# vert = np.load('Hard_Vertex_Probability_30_bins.npz')
 # vert = np.load('Hard_Vertex_Probability_15_bins.npz')
 
 # raw binned 
-rawBinD = np.load('Merged_Raw_1_bin_size.npz')
+# rawBinD = np.load('Merged_Raw_1_bin_size.npz')
 
-# nameData = 'TTbar'
+nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 # vert = np.load('TTbar_Hard_Vertex_Probability_30_bins.npz')
+rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
 
 
 print(nameData)
 
-zRaw, ptRaw, etaRaw, pvRaw = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawD['pv']
-ptBin, trackBin = binD['ptB'], binD['tB']
-probability, vertBin = vert['prob'], vert['bins']
+zRaw, ptRaw, etaRaw, pvRaw = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv']
+# ptBin, trackBin = binD['ptB'], binD['tB']
+probability = rawBinD['prob']
 
 # print(probability[2861], pvRaw[2861])
 # print(probability[4615], pvRaw[4615])
@@ -551,14 +569,14 @@ clock = int(time.time())
 # testing(model, xTest, yTest, name)
 
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
-# model, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, xTest, yTest, name)
+model, name = rawModel(xTrain, yTrain, xValid, yValid)
+testing(model, xTest, yTest, name)
 
 # model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722864526.keras')
 # config = model.get_config()
 # weights = model.get_weights()
 # print(config['layers'])
 # print(config.keys())
-name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722864526'
-model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722864526.keras')
-testing(model, xTest, yTest, name)
+# name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722864526'
+# model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722864526.keras')
+# testing(model, xTest, yTest, name)
