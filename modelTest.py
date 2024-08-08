@@ -186,6 +186,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     # lossFunc = keras.losses.MeanAbsoluteError()
 
     model, typeM = rnn(form, op, lossFunc, MASK_NO)
+    model.summary()
     
     # saving the model and best weights
     weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
@@ -380,32 +381,36 @@ def testing(model, hist, xTest, yTest, name):
     # print('learning rate plot made')
 
     # % values that predicted the correct bin
-    indexPred = np.argwhere(yPredicted == 1).flatten()
-    indexTest = np.argwhere(yTest == 1).flatten()
+    indexPred = np.argwhere(np.round(yPredicted).flatten() == 1).flatten()
+    indexTest = np.argwhere(yTest.flatten() == 1).flatten()
     count = 0
     print(indexTest.shape)
     print(indexTest[:5])
     print(indexPred.shape)
     print(indexPred[:5])
+    print(np.round(yPredicted[:10]))
     print(yTest[:10])
     print(yTest.shape)
     print(yPredicted[:10])
     print(yPredicted.shape)
-    for i in tqdm(range(len(indexTest))):
-        if indexTest[i] in indexPred:
+    if len(indexTest) < len(indexPred):
+        length = len(indexTest)
+    else:
+        length = len(indexPred)
+    for i in tqdm(range(length)):
+        if indexPred[i] in indexTest:
             count += 1
     print()
-    print('Percentage of correct predicted bin: ', round(count*100/len(yTest), 5))
+    print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
 
-    # confunstion matrix
+    # # confunstion matrix
     print()
     plt.clf()
     plt.figure(figsize=(30,20))
-    yTestLabels = np.argwhere(yTest == 1).flatten()
-    yClassPredLabels = np.argwhere(yPredicted == 1).flatten()
-    print(yTestLabels.shape)
+    yClassPredLabels = np.round(yPredicted)
+    print(yTest.shape)
     print(yClassPredLabels.shape)
-    cm = tf.math.confusion_matrix(labels=yTestLabels, predictions=yClassPredLabels)
+    cm = tf.math.confusion_matrix(labels=yTest, predictions=yClassPredLabels)
     sn.heatmap(cm, annot=True, fmt='d')
     plt.xlabel('Predicted')
     plt.ylabel('True')
@@ -414,7 +419,7 @@ def testing(model, hist, xTest, yTest, name):
     else:
         plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
     print('cm plot made')
-
+    
 
 def comparison(models, train, xTest, yTest):
     print()
@@ -598,8 +603,6 @@ def testLoadedModel(model, train, xTest, yTest):
         name = model[:start[0]]
     print(name)
 
-    # name = model[:-16] #+ f'TTbar_test_data_{clock}'
-    # plot of epochs against training and validation loss
     loss = hist['loss']
     val_loss = hist['val_loss']
     epochs = range(1, len(loss) + 1)
@@ -609,18 +612,19 @@ def testLoadedModel(model, train, xTest, yTest):
     print('min loss:', min(loss))
     print('At epoch number:',np.argmin(loss)+1)
 
-    plt.clf()
-    plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
-    plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
-    minX = np.argmin(val_loss) + 1
-    minY = np.min(val_loss)
-    plt.scatter(minX, minY, color='green', label='minimum', s=6)
-    plt.xlabel('Epoch number')
-    plt.ylabel('Loss') 
-    plt.title('Training and Validation Loss')
-    plt.legend()
-    plt.savefig(f"{name}_Train_valid_loss_{model[start[0]+1:]}.png",dpi=1200)
-    print('Train valid plot made')
+    # plot of epochs against training and validation loss
+    # plt.clf()
+    # plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
+    # plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
+    # minX = np.argmin(val_loss) + 1
+    # minY = np.min(val_loss)
+    # plt.scatter(minX, minY, color='green', label='minimum', s=6)
+    # plt.xlabel('Epoch number')
+    # plt.ylabel('Loss') 
+    # plt.title('Training and Validation Loss')
+    # plt.legend()
+    # plt.savefig(f"{name}_Train_valid_loss_{model[start[0]+1:]}.png",dpi=1200)
+    # print('Train valid plot made')
     
     print()
     yPredicted = modelLoaded.predict(xTest).flatten()
@@ -628,6 +632,15 @@ def testLoadedModel(model, train, xTest, yTest):
     diff = abs(yPredicted.flatten() - yTest.flatten())
     print(max(diff), min(diff))
     print(np.std(diff), np.mean(diff))
+
+    # plotting histogram of difference
+    plt.clf()
+    b = 100
+    sn.histplot(diff, kde=True, bins=b, color='red', kde_kws=dict(linewidth=0.5), line_kws=dict(color='red', lw=0.5))
+    plt.title('Error of Predicted values historgram')
+    plt.xlabel('Error')
+    plt.savefig(f"{name}_Hist_loss_{model[start[0]+1:]}.png", dpi=1000)
+    print('Hist plot made')
 
     # plotting % of predictions vs loss
     # print()
@@ -751,40 +764,45 @@ def testLoadedModel(model, train, xTest, yTest):
         print('No learning rate stored for each epoch')
 
     # % values that predicted the correct bin
-    indexPred = np.argwhere(yPredicted.flatten() == 1).flatten()
-    indexTest = np.argwhere(yTest.flatten() == 1).flatten()
-    count = 0
-    print(indexTest.shape)
-    print(indexTest[:5])
-    print(indexPred.shape)
-    print(indexPred[:5])
-    print(yTest[:10])
-    print(yTest.shape)
-    print(yPredicted[:10])
-    print(yPredicted.shape)
-    for i in tqdm(range(len(indexTest))):
-        if indexTest[i] in indexPred:
-            count += 1
-    print()
-    print('Percentage of correct predicted bin: ', round(count*100/len(yTest), 5))
+    # indexPred = np.argwhere(np.round(yPredicted).flatten() == 1).flatten()
+    # indexTest = np.argwhere(yTest.flatten() == 1).flatten()
+    # count = 0
+    # print(indexTest.shape)
+    # print(indexTest[:5])
+    # print(indexPred.shape)
+    # print(indexPred[:5])
+    # print(np.round(yPredicted[:10]))
+    # print(yTest[:10])
+    # print(yTest.shape)
+    # print(yPredicted[:10])
+    # print(yPredicted.shape)
+    # if len(indexTest) < len(indexPred):
+    #     length = len(indexTest)
+    # else:
+    #     length = len(indexPred)
+    # for i in tqdm(range(length)):
+    #     if indexPred[i] in indexTest:
+    #         count += 1
+    # print()
+    # print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
 
-    # # confunstion matrix
-    print()
-    plt.clf()
-    plt.figure(figsize=(30,20))
-    yTestLabels = np.argwhere(yTest.flatten() == 1).flatten()
-    yClassPredLabels = np.argwhere(yPredicted.flatten() == 1).flatten()
-    print(yTestLabels.shape)
-    print(yClassPredLabels.shape)
-    cm = tf.math.confusion_matrix(labels=yTestLabels, predictions=yClassPredLabels)
-    sn.heatmap(cm, annot=True, fmt='d')
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    if nameData != name[:start[0]]:
-        plt.savefig(f"{nameData}_cm_probability_{name}.png", dpi=1000)
-    else:
-        plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
-    print('cm plot made')
+    # # # confunstion matrix
+    # print()
+    # plt.clf()
+    # plt.figure(figsize=(30,20))
+    # yClassPredLabels = np.round(yPredicted)
+    # print(yTest.shape)
+    # print(yClassPredLabels.shape)
+    # cm = tf.math.confusion_matrix(labels=yTest, predictions=yClassPredLabels)
+    # sn.heatmap(cm, annot=True, fmt='d')
+    # plt.xlabel('Predicted')
+    # plt.ylabel('True')
+    # if nameData != name[:start[0]]:
+    #     plt.savefig(f"{nameData}_cm_probability_{name}.png", dpi=1000)
+    # else:
+    #     plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
+    # print('cm plot made')
+
 
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------- MAIN -----------------------------------------------------------------------------------------------------
@@ -794,7 +812,7 @@ def testLoadedModel(model, train, xTest, yTest):
 nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
-rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
+rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -835,10 +853,10 @@ clock = int(time.time())
 
 # print()
 MASK_NO = -9999.99
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 print(xTrain.shape)
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xTest, yTest, name)
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
@@ -854,10 +872,10 @@ testing(model, history, xTest, yTest, name)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723042581.keras'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723042581.log'
+name = 'TTbar_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723035415.keras'
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723035415.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-# testLoadedModel(name, train, xTest, yTest)
+testLoadedModel(name, train, xTest, yTest)
 
 # name = 'TTbar_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723034581.weights.h5'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723034581.log'
@@ -869,8 +887,9 @@ testing(model, history, xTest, yTest, name)
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
-# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723046620.keras'
-# train ='TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723046620.log'
+# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723122852.keras'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723122852.log'
+# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
