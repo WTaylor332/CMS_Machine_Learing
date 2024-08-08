@@ -180,8 +180,8 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
     # creating model
     op = keras.optimizers.Adam()
-    lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
-    # lossFunc = keras.losses.BinaryCrossentropy(from_logits=True)
+    # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
+    lossFunc = keras.losses.BinaryCrossentropy() #from_logits=True)
     # lossFunc = welsch
     # lossFunc = keras.losses.MeanAbsoluteError()
 
@@ -201,8 +201,8 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
-    epochNum = 500
-    batchNo = 2048
+    epochNum = 20
+    batchNo = 32768
     history = model.fit(xTrain, yTrain, epochs=epochNum, batch_size=batchNo,\
                         validation_data=(xValid, yValid),\
                         callbacks=[checkpointCallback, lr, csvLogger, earlyStop])
@@ -230,29 +230,37 @@ def testing(model, hist, xTest, yTest, name):
     print(np.std(diff), np.mean(diff))
     start =[i for i, letter in enumerate(name) if letter == '_']
 
-    # # plot of epochs against training and validation loss
-    # print()
-    # loss = hist.history['loss']
-    # val_loss = hist.history['val_loss']
-    # epochs = range(1, len(loss) + 1)
+    # plot of epochs against training and validation loss
+    print()
+    loss = hist.history['loss']
+    val_loss = hist.history['val_loss']
+    epochs = range(1, len(loss) + 1)
 
+    plt.clf()
+    plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
+    plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
+    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+    minX = np.argmin(val_loss) + 1
+    minY = np.min(val_loss)
+    plt.scatter(minX, minY, color='green', label='minimum '+str(round(minY, 5)), s=6)
+    plt.xlabel('Epoch number')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.savefig(f"{name[:start[0]]}_Train_valid_loss_{name[start[0]+1:]}.png", dpi=1200)
+    print('min val loss:', min(val_loss))
+    print('At epoch number:',np.argmin(val_loss)+1)
+    print('min loss:', min(loss))
+    print('At epoch number:',np.argmin(loss)+1)
+
+    # plotting histogram of difference
     # plt.clf()
-    # plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
-    # plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
-    # plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
-    # plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
-    # minX = np.argmin(val_loss) + 1
-    # minY = np.min(val_loss)
-    # plt.scatter(minX, minY, color='green', label='minimum '+str(round(minY, 5)), s=6)
-    # plt.xlabel('Epoch number')
-    # plt.ylabel('Loss')
-    # plt.title('Training and Validation Loss')
-    # plt.legend()
-    # plt.savefig(f"{name[:start[0]]}_Train_valid_loss_{name[start[0]+1:]}.png", dpi=1200)
-    # print('min val loss:', min(val_loss))
-    # print('At epoch number:',np.argmin(val_loss)+1)
-    # print('min loss:', min(loss))
-    # print('At epoch number:',np.argmin(loss)+1)
+    # b = 100
+    # sn.displot(diff, hist=True, kde=True, bins=b, color='blue', hist_kws={'edgecolor':'black'}, kde_kws={'linewidth': 3})
+    # plt.title('Error of Predicted values historgram')
+    # plt.xlabel('Error')
+    # plt.savefig(f"{name[:start[0]]}_Hist_loss_{name[start[0]+1:]}.png")
 
     # # plotting % of predictions vs difference
     # plt.clf()
@@ -372,27 +380,29 @@ def testing(model, hist, xTest, yTest, name):
     # print('learning rate plot made')
 
     # % values that predicted the correct bin
-    indexPred = np.array([np.argmax(event) for event in yPredicted])
+    indexPred = np.argwhere(yPredicted == 1).flatten()
+    indexTest = np.argwhere(yTest == 1).flatten()
     count = 0
-    pvNotinBin = 0
+    print(indexTest.shape)
+    print(indexTest[:5])
     print(indexPred.shape)
     print(indexPred[:5])
-    for i in tqdm(range(len(yTest[1]))):
-        if 1 in yTest[1][i]:
-            if indexPred[i] == np.argmax(yTest[1][i]):
-                count += 1
-        else:
-            print(i, 'pv not in bin')
-            pvNotinBin += 1
+    print(yTest[:10])
+    print(yTest.shape)
+    print(yPredicted[:10])
+    print(yPredicted.shape)
+    for i in tqdm(range(len(indexTest))):
+        if indexTest[i] in indexPred:
+            count += 1
     print()
-    print('Percentage of correct predicted bin: ', round(count*100/len(yPredicted), 5))
+    print('Percentage of correct predicted bin: ', round(count*100/len(yTest), 5))
 
     # confunstion matrix
     print()
     plt.clf()
     plt.figure(figsize=(30,20))
-    yTestLabels = np.array([np.argmax(i) for i in yTest[1]])
-    yClassPredLabels = np.array([np.argmax(i) for i in yPredicted])
+    yTestLabels = np.argwhere(yTest == 1).flatten()
+    yClassPredLabels = np.argwhere(yPredicted == 1).flatten()
     print(yTestLabels.shape)
     print(yClassPredLabels.shape)
     cm = tf.math.confusion_matrix(labels=yTestLabels, predictions=yClassPredLabels)
@@ -784,7 +794,7 @@ def testLoadedModel(model, train, xTest, yTest):
 nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
-rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
+rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -825,18 +835,18 @@ clock = int(time.time())
 
 # print()
 MASK_NO = -9999.99
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
-# print(xTrain.shape)
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xTest, yTest, name)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+print(xTrain.shape)
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
-print(yTest[:48])
-print(np.argwhere(yTest[:48] == 1))
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+# print(yTest[:48])
+# print(np.argwhere(yTest[:48] == 1))
 # print(xTest[0,0,:])
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
@@ -859,9 +869,9 @@ print(np.argwhere(yTest[:48] == 1))
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
-name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723046620.keras'
-train ='TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723046620.log'
-testLoadedModel(name, train, xTest, yTest)
+# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723046620.keras'
+# train ='TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723046620.log'
+# testLoadedModel(name, train, xTest, yTest)
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
