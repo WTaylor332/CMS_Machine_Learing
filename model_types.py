@@ -406,7 +406,6 @@ def rnn(form, op, lossFunc, maskNo):
     #  ])
 
     model.compile(optimizer=op, loss=lossFunc)
-    model.summary()
     return model, 'rnn'
     
 

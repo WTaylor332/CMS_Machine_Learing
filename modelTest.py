@@ -167,8 +167,8 @@ def rawModelSplit(z, pt, eta, pv, prob=None):
     if prob is None:
         yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
     else:
+        print('probability')
         yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
-        print('probabaility')
         
 
     return xTrain, yTrain, xValid, yValid, xTest, yTest
@@ -518,7 +518,7 @@ def loadWeights(name, x):
     print()
     print(form)
     print(name)
-    model, typeM = rnn(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.Huber(delta=0.1), maskNo=MASK_NO)
+    model, typeM = rnn(form, op=keras.optimizers.Adam(), lossFunc=keras.losses.BinaryCrossentropy(from_logits=True), maskNo=MASK_NO)
     print()
     model.load_weights(name)
     model.summary()
@@ -549,7 +549,7 @@ def trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid):
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
     epochNo = 500 - epochs
-    batchS = 512
+    batchS = 8192
     print('\n'+str(epochNo)+'\n')
 
     history = modelLoaded.fit(xTrain, yTrain, epochs=epochNo, batch_size=batchS,\
@@ -741,16 +741,17 @@ def testLoadedModel(model, train, xTest, yTest):
         print('No learning rate stored for each epoch')
 
     # % values that predicted the correct bin
-    indexPred = np.argwhere(yPredicted == 1).flatten()
-    indexTest = np.argwhere(yTest == 1).flatten()
+    indexPred = np.argwhere(yPredicted.flatten() == 1).flatten()
+    indexTest = np.argwhere(yTest.flatten() == 1).flatten()
     count = 0
-    print(yPredicted[:5])
-    print(yPredicted.shape)
-    print(yTest.shape)
     print(indexTest.shape)
     print(indexTest[:5])
     print(indexPred.shape)
     print(indexPred[:5])
+    print(yTest[:10])
+    print(yTest.shape)
+    print(yPredicted[:10])
+    print(yPredicted.shape)
     for i in tqdm(range(len(indexTest))):
         if indexTest[i] in indexPred:
             count += 1
@@ -834,6 +835,8 @@ MASK_NO = -9999.99
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+print(yTest[:48])
+print(np.argwhere(yTest[:48] == 1))
 # print(xTest[0,0,:])
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
@@ -851,14 +854,14 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
-name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723022734.weights.h5'
-train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723022734.log'
+# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723022734.weights.h5'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723022734.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
-
-# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723046620.keras'
-# train ='TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723046620.log'
 # testLoadedModel(name, train, xTest, yTest)
+
+name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723046620.keras'
+train ='TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723046620.log'
+testLoadedModel(name, train, xTest, yTest)
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
