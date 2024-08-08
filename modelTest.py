@@ -168,6 +168,7 @@ def rawModelSplit(z, pt, eta, pv, prob=None):
         yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
     else:
         yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
+        print('probabaility')
         
 
     return xTrain, yTrain, xValid, yValid, xTest, yTest
@@ -179,8 +180,8 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
     # creating model
     op = keras.optimizers.Adam()
-    # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
-    lossFunc = keras.losses.BinaryCrossentropy(from_logits=True)
+    lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
+    # lossFunc = keras.losses.BinaryCrossentropy(from_logits=True)
     # lossFunc = welsch
     # lossFunc = keras.losses.MeanAbsoluteError()
 
@@ -200,8 +201,8 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
-    epochNum = 100
-    batchNo = 16192
+    epochNum = 500
+    batchNo = 2048
     history = model.fit(xTrain, yTrain, epochs=epochNum, batch_size=batchNo,\
                         validation_data=(xValid, yValid),\
                         callbacks=[checkpointCallback, lr, csvLogger, earlyStop])
@@ -740,27 +741,28 @@ def testLoadedModel(model, train, xTest, yTest):
         print('No learning rate stored for each epoch')
 
     # % values that predicted the correct bin
-    indexPred = np.array([np.argmax(event) for event in yPredicted])
+    indexPred = np.argwhere(yPredicted == 1).flatten()
+    indexTest = np.argwhere(yTest == 1).flatten()
     count = 0
-    pvNotinBin = 0
+    print(yPredicted[:5])
+    print(yPredicted.shape)
+    print(yTest.shape)
+    print(indexTest.shape)
+    print(indexTest[:5])
     print(indexPred.shape)
     print(indexPred[:5])
-    for i in tqdm(range(len(yTest))):
-        if 1 in yTest[i]:
-            if indexPred[i] == np.argmax(yTest[i]):
-                count += 1
-        else:
-            print(i, 'pv not in bin')
-            pvNotinBin += 1
+    for i in tqdm(range(len(indexTest))):
+        if indexTest[i] in indexPred:
+            count += 1
     print()
-    print('Percentage of correct predicted bin: ', round(count*100/len(yPredicted), 5))
+    print('Percentage of correct predicted bin: ', round(count*100/len(yTest), 5))
 
     # # confunstion matrix
     print()
     plt.clf()
     plt.figure(figsize=(30,20))
-    yTestLabels = np.array([np.argmax(i) for i in yTest])
-    yClassPredLabels = np.array([np.argmax(i) for i in yPredicted])
+    yTestLabels = np.argwhere(yTest.flatten() == 1).flatten()
+    yClassPredLabels = np.argwhere(yPredicted.flatten() == 1).flatten()
     print(yTestLabels.shape)
     print(yClassPredLabels.shape)
     cm = tf.math.confusion_matrix(labels=yTestLabels, predictions=yClassPredLabels)
@@ -781,7 +783,7 @@ def testLoadedModel(model, train, xTest, yTest):
 nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
-rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
+rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -822,7 +824,7 @@ clock = int(time.time())
 
 # print()
 MASK_NO = -9999.99
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 # print(xTrain.shape)
 # model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 # testing(model, history, xTest, yTest, name)
@@ -841,8 +843,6 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 
 # name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723042581.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723042581.log'
-# mod = loadModel(name)
-# print(name[:-11])
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
