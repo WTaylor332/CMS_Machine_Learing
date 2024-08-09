@@ -248,7 +248,6 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
         if len(joinedValues) % 2 != 0:
             joinedValues = joinedValues[:-3]
         binValues = joinedValues
-    print(binValues)
     zData = np.zeros((z.shape[0], noBins, maxTrackLength))
     ptData = np.zeros((z.shape[0], noBins, maxTrackLength))
     etaData = np.zeros((z.shape[0], noBins, maxTrackLength))
@@ -258,7 +257,6 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
     count = 0
     countPV = 0
     for i in tqdm(range(z.shape[0])):
-        print('pv', pv[i])
         whichBin = 0
         for j in range(len(binValues)):
             zPad = np.zeros(maxTrackLength)
@@ -289,48 +287,33 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
                 ptData[i, whichBin] = ptPad
                 etaData[i, whichBin] = etaPad
             
-            # eqIndex = i*noBins+whichBin
             if pv[i] < binValues[j] and pv[i] > binValues[j-1]:
-                print()
-                print(j)
-                print(i, whichBin)
-                print(i, whichBin-2)
                 oddEven = j % 2
-                print('odd even', oddEven)
-                print('diff', abs(pv[i] - binValues[j]), abs(pv[i] - binValues[j-2]))
                 if (pv[i] - binValues[j]) < 0 and (pv[i] - binValues[j-2]) > 0:
                     if abs(pv[i] - binValues[j]) > abs(pv[i] - binValues[j-2]):
-                        print('if2')
-                        print(pv[i])
-                        print(binValues[j-1], binValues[j])
                         hardVertexProb[i, whichBin] = 1
                         pvData[i, whichBin] = pv[i]
                         count += 1
                     else:
-                        print(j)
-                        print('else2')
-                        print(pv[i])
-                        print(binValues[j-1], binValues[j])
-                        hardVertexProb[i, whichBin+1] = 1
-                        pvData[i, whichBin+1] = pv[i]
-                        count += 1
-            # else:
-            #     pvData[i, whichBin] = np.nan
-            #     # hardVertexProb[i, whichBin] = 0
+                        if i  > 2488 and i < 2492:
+                            print(pv[i])
+                            print(whichBin)
+                            print(j)
+                            print((pv[i] - binValues[j]), (pv[i] - binValues[j-2]))
+                        if whichBin < 29:
+                            hardVertexProb[i, whichBin+1] = 1
+                            pvData[i, whichBin+1] = pv[i]
+                            count += 1
+                        else:
+                            hardVertexProb[i, whichBin] = 1
+                            pvData[i, whichBin] = pv[i]
+                            count += 1
                 
             whichBin = j // 2 
         
         if pv[i] > binValues[-1] or pv[i] < binValues[0]:
             countPV += 1
-        # if i > 2:
-        #     print(countPV)
-        #     print(count)
-        #     print(zData.shape, ptData.shape, etaData.shape, pvData.shape, hardVertexProb.shape)
-        #     print(pvData[:i])
-        #     print(np.argwhere(hardVertexProb == 1))
-        #     print(hardVertexProb[:i])
-        #     import sys
-        #     sys.exit()
+
     pvData = pvData.flatten()
     hardVertexProb = hardVertexProb.flatten()
     print(countPV)
