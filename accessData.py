@@ -214,9 +214,7 @@ def distributionTrack(z, bins):
             numTrackBin[i,j] = len(rangeBin)
     averageTrackEvent = np.mean(numTrackBin, axis=1)
     averageTrackBin = np.mean(numTrackBin, axis=0)
-    print(np.amax(numTrackBin, axis=0))
     print(averageTrackBin)
-    print(np.median(numTrackBin.flatten()))
     per = 99.9
     print(f'{per}th percentile: ', np.percentile(numTrackBin.flatten(), per))
     # fig, ax = plt.subplots(2, 2, figsize=(12,6), sharey=True)
@@ -239,33 +237,29 @@ def distributionTrack(z, bins):
 def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
     maxTrackLength = per
     binValues = np.arange(-15, 15+lap, binSize-lap)
+    noBins = int((30 / binSize * (binSize*lap))-1)
     if lap != 0:
         offsetValues = np.arange(-15+binSize, 15+binSize, binSize-lap)
-        print(binValues)
-        print(binValues.shape)
-        print(offsetValues)
-        print(offsetValues.shape)
         binValues = binValues[binValues<=15+lap]
         offsetValues = offsetValues[offsetValues<=15+lap]
         joinedValues = np.zeros((len(binValues)+len(offsetValues)))
-        print(joinedValues.shape)
         joinedValues[0::2] = binValues
         joinedValues[1::2] = offsetValues
         if len(joinedValues) % 2 != 0:
-            joinedValues = joinedValues[:-1]
+            joinedValues = joinedValues[:-3]
         binValues = joinedValues
     print(binValues)
-    print(binValues.shape)
-
-    zData = np.zeros((z.shape[0], len(binValues), maxTrackLength))
-    ptData = np.zeros((z.shape[0], len(binValues), maxTrackLength))
-    etaData = np.zeros((z.shape[0], len(binValues), maxTrackLength))
-    pvData = np.zeros(z.shape[0]*len(binValues))
-    hardVertexProb = np.zeros(z.shape[0]*len(binValues))
+    zData = np.zeros((z.shape[0], noBins, maxTrackLength))
+    ptData = np.zeros((z.shape[0], noBins, maxTrackLength))
+    etaData = np.zeros((z.shape[0], noBins, maxTrackLength))
+    pvData = np.zeros((z.shape[0], noBins), dtype=float)
+    pvData[pvData == 0] = np.nan
+    hardVertexProb = np.zeros((z.shape[0], noBins))
     count = 0
     countPV = 0
     for i in tqdm(range(z.shape[0])):
-
+        print('pv', pv[i])
+        whichBin = 0
         for j in range(len(binValues)):
             zPad = np.zeros(maxTrackLength)
             ptPad = np.zeros(maxTrackLength)
@@ -284,29 +278,61 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
                     ptPad[len(valuesInBin):] = np.nan
                     etaPad [:len(valuesInBin)] = eta[i, index].flatten()
                     etaPad[len(valuesInBin):] = np.nan
-                zData[i, j] = zPad
-                ptData[i, j] = ptPad
-                etaData[i, j] = etaPad
+                zData[i, whichBin] = zPad
+                ptData[i, whichBin] = ptPad
+                etaData[i, whichBin] = etaPad
             else:
                 zPad[:] = np.nan
                 ptPad[:] = np.nan
                 etaPad[:] = np.nan
-                zData[i, j] = zPad
-                ptData[i, j] = ptPad
-                etaData[i, j] = etaPad
+                zData[i, whichBin] = zPad
+                ptData[i, whichBin] = ptPad
+                etaData[i, whichBin] = etaPad
             
-            eqIndex = i*len(binValues)+j
+            # eqIndex = i*noBins+whichBin
             if pv[i] < binValues[j] and pv[i] > binValues[j-1]:
-                if abs(pv[i] - binValues[j]) >= lap/2:
-                    hardVertexProb[eqIndex] = 1
-                    pvData[eqIndex] = pv[i]
-                    count += 1
-            else:
-                pvData[eqIndex] = np.nan
+                print()
+                print(j)
+                print(i, whichBin)
+                print(i, whichBin-2)
+                oddEven = j % 2
+                print('odd even', oddEven)
+                print('diff', abs(pv[i] - binValues[j]), abs(pv[i] - binValues[j-2]))
+                if (pv[i] - binValues[j]) < 0 and (pv[i] - binValues[j-2]) > 0:
+                    if abs(pv[i] - binValues[j]) > abs(pv[i] - binValues[j-2]):
+                        print('if2')
+                        print(pv[i])
+                        print(binValues[j-1], binValues[j])
+                        hardVertexProb[i, whichBin] = 1
+                        pvData[i, whichBin] = pv[i]
+                        count += 1
+                    else:
+                        print(j)
+                        print('else2')
+                        print(pv[i])
+                        print(binValues[j-1], binValues[j])
+                        hardVertexProb[i, whichBin+1] = 1
+                        pvData[i, whichBin+1] = pv[i]
+                        count += 1
+            # else:
+            #     pvData[i, whichBin] = np.nan
+            #     # hardVertexProb[i, whichBin] = 0
+                
+            whichBin = j // 2 
         
-        if pv[i] > 15 or pv[i] < -15:
+        if pv[i] > binValues[-1] or pv[i] < binValues[0]:
             countPV += 1
-    
+        # if i > 2:
+        #     print(countPV)
+        #     print(count)
+        #     print(zData.shape, ptData.shape, etaData.shape, pvData.shape, hardVertexProb.shape)
+        #     print(pvData[:i])
+        #     print(np.argwhere(hardVertexProb == 1))
+        #     print(hardVertexProb[:i])
+        #     import sys
+        #     sys.exit()
+    pvData = pvData.flatten()
+    hardVertexProb = hardVertexProb.flatten()
     print(countPV)
     print(count)
     print(zData.shape, ptData.shape, etaData.shape, pvData.shape, hardVertexProb.shape)
@@ -362,14 +388,16 @@ nameData = 'TTbar'
 
 # adding probability of hard vertex to mixed data
 b = 15
-overlap = 0.5
 
-percentile = distributionTrack(rawD['z'], bins=b)
+# percentile = distributionTrack(rawD['z'], bins=b)
 
 print()
 binS = 30/b
+overlap = binS/2
 print(nameData, binS)
-zData, ptData, etaData, pvData, probability = rawBinData(rawD['z'], rawD['pt'], rawD['eta'], rawD['pv'], binS, int(percentile), lap=overlap)
+print(rawD['pv'][:5])
+# print(rawD['z'][0])
+zData, ptData, etaData, pvData, probability = rawBinData(rawD['z'], rawD['pt'], rawD['eta'], rawD['pv'], binS, int(85), lap=overlap)
 print(np.sum(probability))
 print(probability.shape)
 print(pvData.shape)
