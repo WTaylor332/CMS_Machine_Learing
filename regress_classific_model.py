@@ -12,37 +12,6 @@ import seaborn as sn
 from sklearn.preprocessing import StandardScaler
 from customFunction import welsch, learningRate, power_decay, piecewise_constant_fn, OneCycleLr
 
-def cnn(form, op, lossFunc, bins):
-    # conv model with regression and classification combines
-    inp = keras.Input(shape=form)
-    conv1 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(inp)
-    pool1 = keras.layers.MaxPool2D(pool_size=(1,4))(conv1)
-
-    conv2 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(pool1)
-    pool2 = keras.layers.MaxPool2D(pool_size=(1,4))(conv2)
-
-    conv3 = keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu')(pool2)
-    pool3 = keras.layers.MaxPool2D(pool_size=(1,2))(conv3)
-
-    flatten =  keras.layers.Flatten()(pool3)
-    hidden1 = keras.layers.Dense(6, activation="relu")(flatten)
-    hidden2 = keras.layers.Dense(6, activation="relu")(hidden1)
-    hidden3 = keras.layers.Dense(6, activation="relu")(hidden2)
-    hidden4 = keras.layers.Dense(6, activation="relu")(hidden3)
-    hidden5 = keras.layers.Dense(6, activation="relu")(hidden4)
-    hidden6 = keras.layers.Dense(6, activation="relu")(hidden5)
-    hidden7 = keras.layers.Dense(6, activation="relu")(hidden6)
-    hidden8 = keras.layers.Dense(6, activation="relu")(hidden7)
-    hidden9 = keras.layers.Dense(6, activation="relu")(hidden8)
-    hidden10 = keras.layers.Dense(6, activation="relu")(hidden9)
-
-    outReg = keras.layers.Dense(1)(hidden10)
-    outClass = keras.layers.Dense(bins, activation='softmax')(hidden10)
-
-    model = keras.Model(inputs=inp, outputs=[outReg, outClass])
-    model.compile(optimizer=op, loss=lossFunc)
-    return model, 'conv'
-
 
 def rnn(form, op, lossFunc, maskNo, bins):
     inp = keras.Input(shape=form)
