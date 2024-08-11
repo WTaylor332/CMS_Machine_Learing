@@ -880,9 +880,9 @@ testing(model, history, xTest, yTest, name)
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
-name = ''
-train = ''
-trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+name = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins1_1723231418.keras'
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins1_1723231363.log'
+# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 testLoadedModel(name, train, xTest, yTest)
 
 # name = 'TTbar_Raw_model_3inputs_rnn_adam_huber_loss_1723136877.keras'
