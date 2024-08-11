@@ -300,7 +300,7 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
                             print(whichBin)
                             print(j)
                             print((pv[i] - binValues[j]), (pv[i] - binValues[j-2]))
-                        if whichBin < 29:
+                        if whichBin < noBins - 1:
                             hardVertexProb[i, whichBin+1] = 1
                             pvData[i, whichBin+1] = pv[i]
                             count += 1

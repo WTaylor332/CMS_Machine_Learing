@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 K = keras.backend
 
-def welsch(y_true: tf.Tensor, y_pred: tf.Tensor, c=1.2):
+def welsch(y_true: tf.Tensor, y_pred: tf.Tensor, c=1):
     loss =  1 - tf.math.exp(-0.5 * ((y_true - y_pred)/c)**2)
     return loss
 

@@ -857,10 +857,10 @@ clock = int(time.time())
 
 # print()
 
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 # print(xTrain.shape)
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xTest, yTest, name)
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
@@ -881,10 +881,17 @@ testing(model, history, xTest, yTest, name)
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
+<<<<<<< HEAD
 # name = ''
 # train = ''
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
+=======
+name = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins1_1723231418.keras'
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins1_1723231363.log'
+# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+testLoadedModel(name, train, xTest, yTest)
+>>>>>>> origin/main
 
 # name = 'TTbar_Raw_model_3inputs_rnn_adam_huber_loss_1723136877.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_huber_loss_1723136877.log'

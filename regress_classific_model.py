@@ -50,44 +50,78 @@ def combRNN(form, op, loss, maskNo):
 
     outReg = keras.layers.Dense(1)(gru2)
 
-
+    gru4 = keras.layers.GRU(20, activation='tanh')(gru3)
     outClass = keras.layers.Dense(1)(gru3)
 
     model = keras.Model(inputs=inp, outputs=[outReg, outClass])
     model.compile(optimizer=op, loss=loss)
     return model, 'rnn'
 
+
 def loadRNN(form , op, lossFunc, maskNo):
     
-    modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723122852.keras')
+    modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_1723135768.keras')
 
     inp = keras.Input(shape=form)
     mask = keras.layers.Masking(mask_value=maskNo, trainable=False)(inp)
-    gru1 = keras.layers.GRU(20, return_sequences=True, activation='tanh', trainable=False)(mask)
-    gru2 = keras.layers.GRU(20, activation='tanh', trainable=False)(gru1)
+    rnn1 = keras.layers.GRU(20, return_sequences=True, activation='tanh', trainable=False)(mask)
+    rnn2 = keras.layers.GRU(20, activation='tanh', trainable=False)(rnn1)
 
-    outReg = keras.layers.Dense(1, trainable=False)(gru2)
+    outReg = keras.layers.Dense(1, trainable=False)(rnn2)
 
-    gru3 = keras.layers.GRU(20, return_sequences=True, activation='tanh', trainable=False)(gru1)
-    gru4 = keras.layers.GRU(20, activation='tanh')(gru3)
-    outClass = keras.layers.Dense(1, activation='signmoid')(gru4)
-
-    print(
-    len(modelLoad.layers[2].get_weights()), '\n',
-    len(modelLoad.layers[3].get_weights()), '\n',
-    len(modelLoad.layers[4].get_weights())
-    )
-    gru1.add_weights(modelLoad.layers[2].get_weights())
-    gru2.add_weights(modelLoad.layers[3].get_weights())
-    outReg.add_weights(modelLoad.layers[4].get_weights())
-
-    gru3.add_weights(modelLoad.layers[3].get_weights())
+    rnn3 = keras.layers.GRU(20, return_sequences=True, activation='tanh', trainable=False)(rnn1)#.setWeights(rnn2)
+    rnn4 = keras.layers.GRU(20, activation='tanh')(rnn3)
+    outClass = keras.layers.Dense(1, activation='sigmoid')(rnn4)
 
     model = keras.Model(inputs=inp, outputs=[outReg, outClass])
+    print(
+    len(modelLoad.layers[1].get_weights()), '\n',
+    len(modelLoad.layers[2].get_weights()), '\n',
+    len(modelLoad.layers[3].get_weights()), '\n',
+    )
+    model.layers[1].set_weights(modelLoad.layers[0].get_weights())
+    model.layers[2].set_weights(modelLoad.layers[1].get_weights())
+    model.layers[3].set_weights(modelLoad.layers[2].get_weights())
+    model.layers[6].set_weights(modelLoad.layers[3].get_weights())
+    model.layers[4].set_weights(modelLoad.layers[2].get_weights())
+
+    # model.load_weights('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_1723135768.weights.h5')
     model.compile(optimizer=op, loss=lossFunc)
 
-    return model, 'rnn'
+    return model, 'loaded_rnn'
 
+def probToPvRNN(form , op, lossFunc, maskNo):
+    
+    modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723130617.keras')
+
+    inp = keras.Input(shape=form)
+    mask = keras.layers.Masking(mask_value=maskNo, trainable=False)(inp)
+    rnn1 = keras.layers.SimpleRNN(20, return_sequences=True, activation='tanh', trainable=False)(mask)
+    rnn2 = keras.layers.SimpleRNN(20, activation='tanh', trainable=False)(rnn1)
+
+    rnn3 = keras.layers.SimpleRNN(20, return_sequences=True, activation='tanh', trainable=False)(rnn1)
+    rnn4 = keras.layers.SimpleRNN(20, activation='tanh')(rnn3)
+
+    outReg = keras.layers.Dense(1)(rnn4)
+    outClass = keras.layers.Dense(1, activation='sigmoid', trainable=False)(rnn2)
+
+    model = keras.Model(inputs=inp, outputs=[outReg, outClass])
+    print(
+    len(modelLoad.layers[1].get_weights()), '\n',
+    len(modelLoad.layers[2].get_weights()), '\n',
+    len(modelLoad.layers[3].get_weights()), '\n',
+    )
+    model.summary()
+
+    model.layers[1].set_weights(modelLoad.layers[0].get_weights())
+    model.layers[2].set_weights(modelLoad.layers[1].get_weights())
+    model.layers[3].set_weights(modelLoad.layers[2].get_weights())
+    model.layers[7].set_weights(modelLoad.layers[3].get_weights())
+    model.layers[4].set_weights(modelLoad.layers[2].get_weights())
+
+    model.compile(optimizer=op, loss=lossFunc)
+
+    return model, 'loaded_rnn'
 
 def binModelSplit(pt, track, vertBin, prob, pv):
     # scaling 
@@ -233,10 +267,12 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
     # creating model
     op = keras.optimizers.Adam()
-    l1 = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
-    l2 = keras.losses.BinaryCrossentropy(from_logits=True)
+    # l1 = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
+    l1 = keras.losses.MeanAbsoluteError()
+    l2 = keras.losses.BinaryCrossentropy()
     lossFunc = [l1, l2] 
-    model, typeM = combRNN(form, op, lossFunc, MASK_NO)
+    # model, typeM = loadRNN(form, op, lossFunc, MASK_NO)
+    model, typeM = probToPvRNN(form, op, lossFunc, MASK_NO)
     model.summary()
     
     # saving the model and best weights
@@ -249,12 +285,12 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_dense_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_dense_loss', factor=0.5, patience=5, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_dense_loss', factor=0.5, patience=20, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_dense_loss', patience=500)
 
-    epochNum = 20
-    batchNo = 32768
+    epochNum = 500
+    batchNo = 64000
     history = model.fit(xTrain, yTrain, epochs=epochNum, batch_size=batchNo,\
                         validation_data=(xValid, yValid),\
                         callbacks=[checkpointCallback, lr, csvLogger, earlyStop])
@@ -453,18 +489,21 @@ def testing(model, xTest, yTest, name):
     print('learning rate plot made')
 
     # % values that predicted the correct bin
-    indexPred = np.array([np.argmax(event) for event in yClassPred])
+    indexPred = np.argwhere(np.round(yClassPred).flatten() == 1).flatten()
+    indexTest = np.argwhere(yTest[1].flatten() == 1).flatten()
     count = 0
-    pvNotinBin = 0
     print(indexPred.shape)
     print(indexPred[:5])
-    for i in tqdm(range(len(yTest[1]))):
-        if 1 in yTest[1][i]:
-            if indexPred[i] == np.argmax(yTest[1][i]):
-                count += 1
-        else:
-            print(i, 'pv not in bin')
-            pvNotinBin += 1
+    print(indexTest.shape)
+    print(indexTest[:5])
+    if len(indexTest) < len(indexPred):
+        length = len(indexTest)
+    else:
+        length = len(indexPred)
+    for i in tqdm(range(length)):
+        if indexPred[i] in indexTest:
+            count += 1
+
     print()
     print('Percentage of correct predicted bin: ', round(count*100/len(yClassPred), 5))
 
@@ -488,7 +527,7 @@ def testing(model, xTest, yTest, name):
 
 
 def loadModel(name):
-    loadedModel = tf.keras.models.load_model(name)
+    loadedModel = keras.models.load_model(name)
     loadedModel.summary()
     return loadedModel
 
@@ -513,7 +552,7 @@ nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 # vert = np.load('TTbar_Hard_Vertex_Probability_30_bins.npz')
-rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
+rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
 
 
 print(nameData)
