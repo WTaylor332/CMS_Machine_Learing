@@ -184,13 +184,13 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     # lossFunc = keras.losses.Huber()
     lossFunc = keras.losses.BinaryCrossentropy() #from_logits=True)
     # lossFunc = welsch
-    # lossFunc = keras.losses.MeanSquaredError()
+    # lossFunc = keras.losses.MeanAbsoluteError()
 
     model, typeM = rnn(form, op, lossFunc, MASK_NO)
     model.summary()
     
     # saving the model and best weights
-    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_overlap_bins05_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
+    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_overlap_bins1_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=clock)
     modelDirectory = "models"
     modelName = weights[:-11]
     start =[i for i, letter in enumerate(modelName) if letter == '_']
@@ -231,28 +231,28 @@ def testing(model, hist, xTest, yTest, name):
     start =[i for i, letter in enumerate(name) if letter == '_']
 
     # plot of epochs against training and validation loss
-    # print()
-    # loss = hist.history['loss']
-    # val_loss = hist.history['val_loss']
-    # epochs = range(1, len(loss) + 1)
+    print()
+    loss = hist.history['loss']
+    val_loss = hist.history['val_loss']
+    epochs = range(1, len(loss) + 1)
 
-    # plt.clf()
-    # plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
-    # plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
-    # plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
-    # plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
-    # minX = np.argmin(val_loss) + 1
-    # minY = np.min(val_loss)
-    # plt.scatter(minX, minY, color='green', label='minimum '+str(round(minY, 5)), s=6)
-    # plt.xlabel('Epoch number')
-    # plt.ylabel('Loss')
-    # plt.title('Training and Validation Loss')
-    # plt.legend()
-    # plt.savefig(f"{name[:start[0]]}_Train_valid_loss_{name[start[0]+1:]}.png", dpi=1200)
-    # print('min val loss:', min(val_loss))
-    # print('At epoch number:',np.argmin(val_loss)+1)
-    # print('min loss:', min(loss))
-    # print('At epoch number:',np.argmin(loss)+1)
+    plt.clf()
+    plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
+    plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
+    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+    minX = np.argmin(val_loss) + 1
+    minY = np.min(val_loss)
+    plt.scatter(minX, minY, color='green', label='minimum '+str(round(minY, 5)), s=6)
+    plt.xlabel('Epoch number')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.savefig(f"{name[:start[0]]}_Train_valid_loss_{name[start[0]+1:]}.png", dpi=1200)
+    print('min val loss:', min(val_loss))
+    print('At epoch number:',np.argmin(val_loss)+1)
+    print('min loss:', min(loss))
+    print('At epoch number:',np.argmin(loss)+1)
 
     # # plotting histogram of difference
     # plt.clf()
@@ -366,18 +366,18 @@ def testing(model, hist, xTest, yTest, name):
     # plt.savefig(f'{name[:start[0]]}_True_vs_predicted_map_{name[start[0]+1:]}.png')
     # print('map plot made')
 
-    # # plotting learning rate against epochs
-    # print()
-    # lr = hist.history['lr']
-    # plt.clf()
-    # plt.plot(epochs, lr, color='b', linewidth=0.7)
-    # plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
-    # plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
-    # plt.xlabel('Epoch number')
-    # plt.ylabel('Learning Rate')
-    # plt.title('Learning Rate against epochs')
-    # plt.savefig(f"{name[:start[0]]}_Learning_rate_{name[start[0]+1:]}.png")
-    # print('learning rate plot made')
+    # plotting learning rate against epochs
+    print()
+    lr = hist.history['lr']
+    plt.clf()
+    plt.plot(epochs, lr, color='b', linewidth=0.7)
+    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+    plt.xlabel('Epoch number')
+    plt.ylabel('Learning Rate')
+    plt.title('Learning Rate against epochs')
+    plt.savefig(f"{name[:start[0]]}_Learning_rate_{name[start[0]+1:]}.png")
+    print('learning rate plot made')
 
     # % values that predicted the correct bin
     indexPred = np.argwhere(np.round(yPredicted).flatten() == 1).flatten()
@@ -807,7 +807,7 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 MASK_NO = -9999.99
-BATCH_SIZE = 64000
+BATCH_SIZE = 512
 EPOCHS = 500
 
 # loading numpy arrays of data
@@ -815,7 +815,8 @@ nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
-rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_0.5.npz')
+rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
+# rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_pv_far_from_boundary_1.0.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -880,18 +881,18 @@ testing(model, history, xTest, yTest, name)
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
-name = ''
-train = ''
-trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
+# name = ''
+# train = ''
+# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+# testLoadedModel(name, train, xTest, yTest)
 
 # name = 'TTbar_Raw_model_3inputs_rnn_adam_huber_loss_1723136877.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_huber_loss_1723136877.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
-name = 'TTbar_Raw_model_3inputs_rnn_adam_welsch_1723137004.keras'
-train = 'TTbar_training_Raw_model_3inputs_rnn_adam_welsch_1723137004.log'
+# name = 'TTbar_Raw_model_3inputs_rnn_adam_welsch_1723137004.keras'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_welsch_1723137004.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
