@@ -182,9 +182,9 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     op = keras.optimizers.Adam()
     # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
     # lossFunc = keras.losses.Huber()
-    # lossFunc = keras.losses.BinaryCrossentropy() #from_logits=True)
+    lossFunc = keras.losses.BinaryCrossentropy() #from_logits=True)
     # lossFunc = welsch
-    lossFunc = keras.losses.MeanAbsoluteError()
+    # lossFunc = keras.losses.MeanAbsoluteError()
 
     model, typeM = rnn(form, op, lossFunc, MASK_NO)
     model.summary()
@@ -808,7 +808,7 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 MASK_NO = -9999.99
-BATCH_SIZE = 10000
+BATCH_SIZE = 100000
 EPOCHS = 500
 
 # loading numpy arrays of data
@@ -816,8 +816,8 @@ nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
-rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
-# rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_pv_far_from_boundary_1.0.npz')
+# rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
+rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_pv_far_from_boundary_1.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -861,11 +861,11 @@ clock = int(time.time())
 
 print()
 # print(zRaw[:3])
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
 # print(xTest[:3])
 # print(xTrain.shape)
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xTest, yTest, name)
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
