@@ -255,7 +255,7 @@ def testing(model, hist, xTest, yTest, name):
     # plotting histogram of difference
     plt.clf()
     b = 100
-    sn.displot(diff, hist=True, kde=True, bins=b, color='blue', hist_kws={'edgecolor':'black'})
+    sn.displot(diff, hist=True, kde=True, bins=b, color='blue')
     plt.title('Error of Predicted values historgram')
     plt.xlabel('Error')
     plt.savefig(f"{name[:start[0]]}_Hist_loss_{name[start[0]+1:]}.png")
@@ -561,7 +561,7 @@ def trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid):
     stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
-    epochNo = 500 - epochs
+    epochNo = 1000 - epochs
     print('\n'+str(epochNo)+'\n')
 
     history = modelLoaded.fit(xTrain, yTrain, epochs=epochNo, batch_size=BATCH_SIZE,\
@@ -816,8 +816,8 @@ nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
-rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
-# rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_pv_far_from_boundary_1.npz')
+# rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
+rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_pv_far_from_boundary_1.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -840,6 +840,11 @@ print(nameData)
 zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
 # ptBin, trackBin = binD['ptB'], binD['tB']
 print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
+print(np.argwhere(probability == 1))
+print(len(np.argwhere(probability == 1)))
+print(pvRaw.shape)
+print(np.argwhere(pvRaw[~np.isnan(pvRaw)]))
+print(len(np.argwhere(pvRaw[~np.isnan(pvRaw)])))
 
 
 clock = int(time.time())
@@ -859,7 +864,7 @@ clock = int(time.time())
 
 print()
 # print(zRaw[:3])
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
 # print(xTest[:3])
 # print(xTrain.shape)
 # model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
@@ -889,10 +894,10 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
-name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins1_1723231516.weights.h5'
-train = 'TTbar_training_Raw_model_3inputs_rnn_adam_huber_loss_1723136877.log'
-trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
+# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins1_1723231516.weights.h5'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_huber_loss_1723136877.log'
+# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+# testLoadedModel(name, train, xTest, yTest)
 
 # name = 'TTbar_Raw_model_3inputs_rnn_adam_welsch_1723137004.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_welsch_1723137004.log'
