@@ -376,12 +376,12 @@ def rnn(form, op, lossFunc, maskNo):
     #      keras.layers.GRU(20),
     #      keras.layers.Dense(1)
     #  ])
-    model = keras.models.Sequential([
-         keras.layers.Masking(mask_value=maskNo, input_shape=form),
-         keras.layers.SimpleRNN(20, return_sequences=True),
-         keras.layers.SimpleRNN(20),
-         keras.layers.Dense(1, activation='sigmoid')
-     ])
+    # model = keras.models.Sequential([
+    #      keras.layers.Masking(mask_value=maskNo, input_shape=form),
+    #      keras.layers.SimpleRNN(20, return_sequences=True),
+    #      keras.layers.SimpleRNN(20),
+    #      keras.layers.Dense(1, activation='sigmoid')
+    #  ])
     # model = keras.models.Sequential([
     #      keras.layers.Masking(mask_value=maskNo, input_shape=form),
     #      keras.layers.SimpleRNN(12, return_sequences=True),
@@ -389,13 +389,13 @@ def rnn(form, op, lossFunc, maskNo):
     #      keras.layers.SimpleRNN(12),
     #      keras.layers.Dense(1, activation='sigmoid')
     #  ])
-    # model = keras.models.Sequential([
-    #      keras.layers.Masking(mask_value=maskNo, input_shape=form),
-    #      keras.layers.SimpleRNN(15, return_sequences=True),
-    #      keras.layers.SimpleRNN(15, return_sequences=True),
-    #      keras.layers.SimpleRNN(15),
-    #      keras.layers.Dense(1, activation='sigmoid')
-    #  ])
+    model = keras.models.Sequential([
+         keras.layers.Masking(mask_value=maskNo, input_shape=form),
+         keras.layers.SimpleRNN(15, return_sequences=True),
+         keras.layers.SimpleRNN(15, return_sequences=True),
+         keras.layers.SimpleRNN(15),
+         keras.layers.Dense(1)# activation='sigmoid')
+     ])
     # model = keras.models.Sequential([
     #      keras.layers.Masking(mask_value=maskNo, input_shape=form),
     #      keras.layers.GRU(20, return_sequences=True),

@@ -907,20 +907,20 @@ print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
 print()
 # print(zRaw[:3])
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 # print(xTest[:3])
 # print(xTrain.shape)
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xTest, yTest, name)
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xTest, yTest, name)
 
 
 # prediting the pv given probability
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
-probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723130617.keras'
-xTrainFocus, yTrainFocus, xValidFocus, yValidFocus, xTestFocus, yTestFocus = binToTestGivenProb(zRaw, ptRaw, etaRaw, pvRaw.flatten(), probModel, xTrain, xValid, xTest)
-regModel = 'TTbar_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723035097.keras'
-train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723035097.log'
-testLoadedModel(model=regModel, train=train, xTest=xTestFocus, yTest=yTestFocus)
+# probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723130617.keras'
+# xTrainFocus, yTrainFocus, xValidFocus, yValidFocus, xTestFocus, yTestFocus = binToTestGivenProb(zRaw, ptRaw, etaRaw, pvRaw.flatten(), probModel, xTrain, xValid, xTest)
+# regModel = 'TTbar_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723035097.keras'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723035097.log'
+# testLoadedModel(model=regModel, train=train, xTest=xTestFocus, yTest=yTestFocus)
 
 
 # Loaded model test and comparison to other models
@@ -933,8 +933,8 @@ testLoadedModel(model=regModel, train=train, xTest=xTestFocus, yTest=yTestFocus)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_pv_1723452046.weights.h5'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_pv_1723452046.log'
+# name = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_1723476211.keras'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_1723476211.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
