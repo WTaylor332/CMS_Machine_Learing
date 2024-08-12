@@ -209,7 +209,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     form = (xTrain.shape[1], xTrain.shape[2])
 
     # creating model
-    op = keras.optimizers.Adam(learning_rate=0.0005)
+    op = keras.optimizers.Adam(learning_rate=0.001)
     # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
     # lossFunc = keras.losses.Huber()
     # lossFunc = keras.losses.BinaryCrossentropy() #from_logits=True)
@@ -220,7 +220,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     model.summary()
     
     # saving the model and best weights
-    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_overlap_bins_size2_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=CLOCK)
+    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_overlap_bins_size2_pv_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=CLOCK)
     modelDirectory = "models"
     modelName = weights[:-11]
     start =[i for i, letter in enumerate(modelName) if letter == '_']
@@ -410,46 +410,46 @@ def testing(model, hist, xTest, yTest, name):
     print('learning rate plot made')
 
     # # % values that predicted the correct bin
-    yPredicted = yPredicted.reshape(xTest.shape[0]//zRaw.shape[1], zRaw.shape[1])
-    indexPred = np.argmax(yPredicted, axis=1).flatten()
-    indexTest = np.argwhere(yTest.flatten() == 1).flatten()
-    count = 0
-    print(indexTest.shape)
-    print(indexTest[:5])
-    print(indexPred.shape)
-    print(indexPred[:5])
-    print(np.round(yPredicted[:10]))
-    print(yTest[:10])
-    print(yTest.shape)
-    print(yPredicted[:10])
-    print(yPredicted.shape)
-    if len(indexTest) < len(indexPred):
-        length = len(indexTest)
-    else:
-        length = len(indexPred)
-    for i in tqdm(range(length)):
-        if indexPred[i] in indexTest:
-            count += 1
-    print()
-    print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
+    # yPredicted = yPredicted.reshape(xTest.shape[0]//zRaw.shape[1], zRaw.shape[1])
+    # indexPred = np.argmax(yPredicted, axis=1).flatten()
+    # indexTest = np.argwhere(yTest.flatten() == 1).flatten()
+    # count = 0
+    # print(indexTest.shape)
+    # print(indexTest[:5])
+    # print(indexPred.shape)
+    # print(indexPred[:5])
+    # print(np.round(yPredicted[:10]))
+    # print(yTest[:10])
+    # print(yTest.shape)
+    # print(yPredicted[:10])
+    # print(yPredicted.shape)
+    # if len(indexTest) < len(indexPred):
+    #     length = len(indexTest)
+    # else:
+    #     length = len(indexPred)
+    # for i in tqdm(range(length)):
+    #     if indexPred[i] in indexTest:
+    #         count += 1
+    # print()
+    # print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
 
-    # confunstion matrix
-    print()
-    plt.clf()
-    plt.figure(figsize=(30,20))
-    plt.rcParams.update({'font.size': 30})
-    yClassPredLabels = np.round(yPredicted)
-    print(yTest.shape)
-    print(yClassPredLabels.shape)
-    cm = tf.math.confusion_matrix(labels=yTest, predictions=yClassPredLabels)
-    sn.heatmap(cm, annot=True, fmt='d')
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    if nameData != name[:start[0]]:
-        plt.savefig(f"{nameData}_cm_probability_{name}.png", dpi=1000)
-    else:
-        plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
-    print('cm plot made')
+    # # confunstion matrix
+    # print()
+    # plt.clf()
+    # plt.figure(figsize=(30,20))
+    # plt.rcParams.update({'font.size': 30})
+    # yClassPredLabels = np.round(yPredicted)
+    # print(yTest.shape)
+    # print(yClassPredLabels.shape)
+    # cm = tf.math.confusion_matrix(labels=yTest, predictions=yClassPredLabels)
+    # sn.heatmap(cm, annot=True, fmt='d')
+    # plt.xlabel('Predicted')
+    # plt.ylabel('True')
+    # if nameData != name[:start[0]]:
+    #     plt.savefig(f"{nameData}_cm_probability_{name}.png", dpi=1000)
+    # else:
+    #     plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
+    # print('cm plot made')
     
 
 def comparison(models, train, xTest, yTest):
@@ -805,12 +805,13 @@ def testLoadedModel(model, train, xTest, yTest):
     yPredicted = yPredicted.reshape(xTest.shape[0]//zRaw.shape[1], zRaw.shape[1])
     indexPred = np.argmax(yPredicted, axis=1).flatten()
     indexTest = np.argwhere(yTest.flatten() == 1).flatten()
+    indexTest = indexTest//zRaw.shape[1] + indexTest%zRaw.shape[1]
     count = 0
     print(indexTest.shape)
     print(indexTest[:5])
     print(indexPred.shape)
     print(indexPred[:5])
-    print(np.round(yPredicted[:10]))
+    print(np.max(yPredicted[:10]))
     print(yTest[:10])
     print(yTest.shape)
     print(yPredicted[:10])
@@ -849,7 +850,7 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 MASK_NO = -9999.99
-BATCH_SIZE = 4096
+BATCH_SIZE = 32768
 EPOCHS = 500
 CLOCK = int(time.time())
 
@@ -942,15 +943,15 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
-# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723470769.keras'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723470769.log'
+name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723470769.keras'
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723470769.log'
+trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+testLoadedModel(name, train, xTest, yTest)
+
+# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723466613.weights.h5'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723466613.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
-
-name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723466613.weights.h5'
-train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723466613.log'
-# # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
 
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
