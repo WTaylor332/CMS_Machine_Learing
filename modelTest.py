@@ -285,12 +285,12 @@ def testing(model, hist, xTest, yTest, name):
     print('At epoch number:',np.argmin(loss)+1)
 
     # plotting histogram of difference
-    plt.clf()
-    b = 100
-    sn.displot(diff, hist=True, kde=True, bins=b, color='blue')
-    plt.title('Error of Predicted values historgram')
-    plt.xlabel('Error')
-    plt.savefig(f"{name[:start[0]]}_Hist_loss_{name[start[0]+1:]}.png")
+    # plt.clf()
+    # b = 100
+    # sn.displot(diff, hist=True, kde=True, bins=b, color='blue')
+    # plt.title('Error of Predicted values historgram')
+    # plt.xlabel('Error')
+    # plt.savefig(f"{name[:start[0]]}_Hist_loss_{name[start[0]+1:]}.png")
 
     # plotting % of predictions vs difference
     plt.clf()
@@ -907,11 +907,11 @@ print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
 print()
 # print(zRaw[:3])
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 # print(xTest[:3])
 # print(xTrain.shape)
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xTest, yTest, name)
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xTest, yTest, name)
 
 
 # prediting the pv given probability
@@ -943,10 +943,10 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
-name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723470769.keras'
-train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723470769.log'
-trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
+# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723470769.keras'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723470769.log'
+# # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+# testLoadedModel(name, train, xTest, yTest)
 
 # name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723466613.weights.h5'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_size2_pv_1723466613.log'
