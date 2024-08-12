@@ -99,24 +99,24 @@ def binModel(xTrain, yTrain, xValid, yValid):
 def binToTestGivenProb(z, pt, eta, pv, modelName, xTrain, xValid, xTest):
     model = loadModel(modelName)
     trainPredProb = model.predict(xTrain).flatten()
-    print('train prediict done')
+    print('train predict done')
     validPredProb = model.predict(xValid).flatten()
-    print('valid prediict done')
+    print('valid predict done')
     testPredProb = model.predict(xTest).flatten()
-    print('test prediict done')
-    allPred = np.zeros(z.shape[0]*z.shape[1])
-    indexPred = np.argwhere(np.round(np.concatenate((trainPredProb, validPredProb, testPredProb))).flatten() == 1).flatten() # hcange to take highest prob in each bin
+    print('test predict done')
+    allPred = np.zeros(z.shape[0], z.shape[1])
+    indexPred = np.argmax(np.concatenate((trainPredProb, validPredProb, testPredProb)).reshape(z.shape[0], z.shape[1]), axis=1).flatten() # hcange to take highest prob in each bin
     print()
     print(len(indexPred))
     print(len(yTrain) + len(yValid) + len(yTest))
     print()
-    allPred[indexPred] = 1
-    zFocus, ptFocus, etaFocus = reshapeRawBin(z, pt, eta)
-    print(zFocus.shape, ptFocus.shape, etaFocus.shape)
-    zFocus = zFocus[indexPred]
-    ptFocus = ptFocus[indexPred]
-    etaFocus = etaFocus[indexPred]
-    pvFocus = pv[indexPred]
+    for i in range(allPred.shape[0]):
+        allPred[i, indexPred[i]] = 1
+    
+    zFocus = z[:, indexPred]
+    ptFocus = pt[:, indexPred]
+    etaFocus = eta[:, indexPred]
+    pvFocus = pv[:, indexPred]
     
     print(zFocus.shape, ptFocus.shape, etaFocus.shape, pvFocus.shape)
 
@@ -907,20 +907,20 @@ print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
 print()
 # print(zRaw[:3])
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
 # print(xTest[:3])
 # print(xTrain.shape)
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xTest, yTest, name)
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xTest, yTest, name)
 
 
 # prediting the pv given probability
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
-# probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723130617.keras'
-# xTrainFocus, yTrainFocus, xValidFocus, yValidFocus, xTestFocus, yTestFocus = binToTestGivenProb(zRaw, ptRaw, etaRaw, pvRaw.flatten(), probModel, xTrain, xValid, xTest)
-# regModel = 'TTbar_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723035097.keras'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723035097.log'
-# testLoadedModel(model=regModel, train=train, xTest=xTestFocus, yTest=yTestFocus)
+probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723130617.keras'
+xTrainFocus, yTrainFocus, xValidFocus, yValidFocus, xTestFocus, yTestFocus = binToTestGivenProb(zRaw, ptRaw, etaRaw, pvRaw.flatten(), probModel, xTrain, xValid, xTest)
+regModel = 'TTbar_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723035097.keras'
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723035097.log'
+testLoadedModel(model=regModel, train=train, xTest=xTestFocus, yTest=yTestFocus)
 
 
 # Loaded model test and comparison to other models
