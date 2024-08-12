@@ -110,14 +110,12 @@ def rawModelSplit(z, pt, eta, pv, prob=None):
         print(z.shape, pt.shape, eta.shape, pv.shape)
 
         if prob is None:
-            # print(np.argwhere(np.isnan(pv)))
-            # print(len((np.argwhere(np.isnan(pv)))))
-            # indexNan = np.argwhere(np.isnan(pv))
-            # z = np.delete(z, indexNan, 0)
-            # pt = np.delete(pt, indexNan, 0)
-            # eta = np.delete(eta, indexNan, 0)
-            # pv = np.delete(pv, indexNan, 0)
-            # pv = pv[~np.isnan(pv)]
+            indexNan = np.argwhere(np.isnan(pv))
+            z = np.delete(z, indexNan, 0)
+            pt = np.delete(pt, indexNan, 0)
+            eta = np.delete(eta, indexNan, 0)
+            pv = np.delete(pv, indexNan, 0)
+            pv = pv[~np.isnan(pv)]
             print(z.shape, pt.shape, eta.shape, pv.shape)
 
 
@@ -182,9 +180,9 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     op = keras.optimizers.Adam()
     # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
     # lossFunc = keras.losses.Huber()
-    lossFunc = keras.losses.BinaryCrossentropy() #from_logits=True)
+    # lossFunc = keras.losses.BinaryCrossentropy() #from_logits=True)
     # lossFunc = welsch
-    # lossFunc = keras.losses.MeanAbsoluteError()
+    lossFunc = keras.losses.MeanAbsoluteError()
 
     model, typeM = rnn(form, op, lossFunc, MASK_NO)
     model.summary()
@@ -257,7 +255,7 @@ def testing(model, hist, xTest, yTest, name):
     # plotting histogram of difference
     plt.clf()
     b = 100
-    sn.displot(diff, hist=True, kde=True, bins=b, color='blue', hist_kws={'edgecolor':'black'}, kde_kws={'linewidth': 3})
+    sn.displot(diff, hist=True, kde=True, bins=b, color='blue', hist_kws={'edgecolor':'black'})
     plt.title('Error of Predicted values historgram')
     plt.xlabel('Error')
     plt.savefig(f"{name[:start[0]]}_Hist_loss_{name[start[0]+1:]}.png")
@@ -406,6 +404,7 @@ def testing(model, hist, xTest, yTest, name):
     # print()
     # plt.clf()
     # plt.figure(figsize=(30,20))
+    # plt.rcParams.update({'font.size': 30})
     # yClassPredLabels = np.round(yPredicted)
     # print(yTest.shape)
     # print(yClassPredLabels.shape)
@@ -555,14 +554,14 @@ def trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid):
     epochs = len(hist['loss'])
     print(epochs)
 
-    time.sleep(5)
+    time.sleep(3)
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger(train, separator=',', append=True)
     stopTraining = haltCallback()
     earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
-    epochNo = 1000 - epochs
+    epochNo = 500 - epochs
     print('\n'+str(epochNo)+'\n')
 
     history = modelLoaded.fit(xTrain, yTrain, epochs=epochNo, batch_size=BATCH_SIZE,\
@@ -589,6 +588,7 @@ def testLoadedModel(model, train, xTest, yTest):
         model = model[:-11]
     else:
         modelLoaded = loadModel(model)
+        model = model[:6]
     hist = pd.read_csv(train, sep=',', engine='python')
     print(hist.columns)
     start =[i for i, letter in enumerate(model) if letter == '_']
@@ -816,8 +816,8 @@ nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
-# rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
-rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_pv_far_from_boundary_1.npz')
+rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
+# rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_pv_far_from_boundary_1.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -841,8 +841,6 @@ zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['
 # ptBin, trackBin = binD['ptB'], binD['tB']
 print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
-for i in range(zRaw.shape[1]):
-    print(zRaw[0, i])
 
 clock = int(time.time())
 
@@ -864,8 +862,8 @@ print()
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
 # print(xTest[:3])
 # print(xTrain.shape)
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xTest, yTest, name)
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xTest, yTest, name)
 
 
 # Loaded model test and comparison to other models
@@ -881,20 +879,20 @@ testing(model, history, xTest, yTest, name)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
+# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_pv_1723452046.weights.h5'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins_pv_1723452046.log'
+# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+# testLoadedModel(name, train, xTest, yTest)
+
+# name = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_pv_1723453162.keras'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_pv_1723453162.log'
+# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+# testLoadedModel(name, train, xTest, yTest)
+
 name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins1_1723231516.weights.h5'
-train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins1_1723231516.log'
-# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-# testLoadedModel(name, train, xTest, yTest)
-
-# name = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins1_1723231418.keras'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins1_1723231363.log'
-# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-# testLoadedModel(name, train, xTest, yTest)
-
-# name = 'TTbar_Raw_model_3inputs_rnn_adam_huber_loss_1723136877.keras'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_huber_loss_1723136877.log'
-# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-# testLoadedModel(name, train, xTest, yTest)
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_huber_loss_1723136877.log'
+trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+testLoadedModel(name, train, xTest, yTest)
 
 # name = 'TTbar_Raw_model_3inputs_rnn_adam_welsch_1723137004.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_welsch_1723137004.log'
