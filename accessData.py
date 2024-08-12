@@ -237,8 +237,9 @@ def distributionTrack(z, bins):
 def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
     maxTrackLength = per
     binValues = np.arange(-15, 15+lap, binSize-lap)
-    noBins = int((30 / binSize * (binSize*lap))-1)
+    noBins = int(30//binSize)
     if lap != 0:
+        noBins = int((30 / binSize * (binSize*lap))-1)
         offsetValues = np.arange(-15+binSize, 15+binSize, binSize-lap)
         binValues = binValues[binValues<=15+lap]
         offsetValues = offsetValues[offsetValues<=15+lap]
@@ -263,6 +264,9 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
             ptPad = np.zeros(maxTrackLength)
             etaPad = np.zeros(maxTrackLength)
             valuesInBin = z[i, (z[i]<binValues[j]) & (z[i]>binValues[j-1])]
+            print()
+            print(valuesInBin)
+            print(len(valuesInBin))
             if len(valuesInBin) > 0:
                 index = np.argwhere((z[i]<binValues[j]) & (z[i]>binValues[j-1]))
                 if len(valuesInBin) > maxTrackLength:
@@ -310,6 +314,12 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
                             count += 1
                 
             whichBin = j // 2 
+        
+        if i > 1:
+            import sys
+            sys.exit()
+            break
+            
         
         if pv[i] > binValues[-1] or pv[i] < binValues[0]:
             countPV += 1
@@ -380,6 +390,8 @@ overlap = binS/2
 print(nameData, binS)
 print(rawD['pv'][:5])
 # print(rawD['z'][0])
+for x in range(rawD['z'].shape[1]):
+    print(rawD['z'][0, x]) 
 zData, ptData, etaData, pvData, probability = rawBinData(rawD['z'], rawD['pt'], rawD['eta'], rawD['pv'], binS, int(85), lap=overlap)
 print(np.sum(probability))
 print(probability.shape)

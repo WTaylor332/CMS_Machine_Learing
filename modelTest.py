@@ -788,6 +788,7 @@ def testLoadedModel(model, train, xTest, yTest):
     print()
     plt.clf()
     plt.figure(figsize=(30,20))
+    plt.rcParams.update({'font.size': 30})
     yClassPredLabels = np.round(yPredicted)
     print(yTest.shape)
     print(yClassPredLabels.shape)
@@ -796,9 +797,9 @@ def testLoadedModel(model, train, xTest, yTest):
     plt.xlabel('Predicted')
     plt.ylabel('True')
     if nameData != name[:start[0]]:
-        plt.savefig(f"{nameData}_cm_probability_{name}.png", dpi=1000)
+        plt.savefig(f"{nameData}_cm_probability_{model}.png", dpi=1000)
     else:
-        plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
+        plt.savefig(f'{nameData}_cm_probability_{model[start[0]+1:]}.png')
     print('cm plot made')
 
 
@@ -840,6 +841,9 @@ zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['
 # ptBin, trackBin = binD['ptB'], binD['tB']
 print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
+for i in range(zRaw.shape[1]):
+    print(zRaw[0, i])
+
 clock = int(time.time())
 
 # plt.hist(trackLength, bins=100, color='red')
@@ -857,7 +861,7 @@ clock = int(time.time())
 
 print()
 # print(zRaw[:3])
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
 # print(xTest[:3])
 # print(xTrain.shape)
 # model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
@@ -880,7 +884,7 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins1_1723231516.weights.h5'
 train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_overlap_bins1_1723231516.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
+# testLoadedModel(name, train, xTest, yTest)
 
 # name = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins1_1723231418.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins1_1723231363.log'
