@@ -257,6 +257,8 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
     hardVertexProb = np.zeros((z.shape[0], noBins))
     count = 0
     countPV = 0
+    countElse = 0
+
     for i in tqdm(range(z.shape[0])):
         whichBin = 0
         for j in range(len(binValues)):
@@ -264,9 +266,6 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
             ptPad = np.zeros(maxTrackLength)
             etaPad = np.zeros(maxTrackLength)
             valuesInBin = z[i, (z[i]<binValues[j]) & (z[i]>binValues[j-1])]
-            print()
-            print(valuesInBin)
-            print(len(valuesInBin))
             if len(valuesInBin) > 0:
                 index = np.argwhere((z[i]<binValues[j]) & (z[i]>binValues[j-1]))
                 if len(valuesInBin) > maxTrackLength:
@@ -283,27 +282,21 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
                 zData[i, whichBin] = zPad
                 ptData[i, whichBin] = ptPad
                 etaData[i, whichBin] = etaPad
-            else:
+            elif len(valuesInBin) == 0 and binValues[j-1]-binValues[j]!=1:
+                countElse += 1
                 zPad[:] = np.nan
                 ptPad[:] = np.nan
                 etaPad[:] = np.nan
                 zData[i, whichBin] = zPad
                 ptData[i, whichBin] = ptPad
                 etaData[i, whichBin] = etaPad
-            
             if pv[i] < binValues[j] and pv[i] > binValues[j-1]:
-                oddEven = j % 2
                 if (pv[i] - binValues[j]) < 0 and (pv[i] - binValues[j-2]) > 0:
                     if abs(pv[i] - binValues[j]) > abs(pv[i] - binValues[j-2]):
                         hardVertexProb[i, whichBin] = 1
                         pvData[i, whichBin] = pv[i]
                         count += 1
                     else:
-                        if i  > 2488 and i < 2492:
-                            print(pv[i])
-                            print(whichBin)
-                            print(j)
-                            print((pv[i] - binValues[j]), (pv[i] - binValues[j-2]))
                         if whichBin < noBins - 1:
                             hardVertexProb[i, whichBin+1] = 1
                             pvData[i, whichBin+1] = pv[i]
@@ -313,19 +306,13 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
                             pvData[i, whichBin] = pv[i]
                             count += 1
                 
-            whichBin = j // 2 
-        
-        if i > 1:
-            import sys
-            sys.exit()
-            break
-            
-        
+            whichBin = j // 2
         if pv[i] > binValues[-1] or pv[i] < binValues[0]:
             countPV += 1
 
     pvData = pvData.flatten()
     hardVertexProb = hardVertexProb.flatten()
+    print()
     print(countPV)
     print(count)
     print(zData.shape, ptData.shape, etaData.shape, pvData.shape, hardVertexProb.shape)
@@ -390,13 +377,12 @@ overlap = binS/2
 print(nameData, binS)
 print(rawD['pv'][:5])
 # print(rawD['z'][0])
-for x in range(rawD['z'].shape[1]):
-    print(rawD['z'][0, x]) 
+print(rawD['z'][0]) 
 zData, ptData, etaData, pvData, probability = rawBinData(rawD['z'], rawD['pt'], rawD['eta'], rawD['pv'], binS, int(85), lap=overlap)
 print(np.sum(probability))
 print(probability.shape)
 print(pvData.shape)
 pv = pvData[~np.isnan(pvData)]
 print(pv.shape)
-np.savez(f'{nameData}_Raw_{int(binS)}_bin_size_overlap_pv_far_from_boundary_{overlap}', z=zData, pt=ptData, eta=etaData, pv=pvData, prob=probability)
+np.savez(f'{nameData}_Raw_{int(binS)}_bin_size_overlap_pv_far_from_boundary_{int(overlap)}', z=zData, pt=ptData, eta=etaData, pv=pvData, prob=probability)
 
