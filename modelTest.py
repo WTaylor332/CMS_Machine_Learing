@@ -1091,8 +1091,8 @@ BATCH_SIZE = 4096
 EPOCHS = 500
 CLOCK = int(time.time())
 
-name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.keras'
-x = loadModel(name)
+# name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.keras'
+# x = loadModel(name)
 
 # loading numpy arrays of data
 nameData = 'TTbar'
@@ -1264,7 +1264,7 @@ print(config["layers"][0]["config"])
 # print(hist.columns)
 
 print(xTest.shape)
-# comparison(modelsCompare, trainingCompare, xTest, yTest)
+comparison(modelsCompare, trainingCompare, xTest, yTest)
 
 
 # comparing performance of different bin size
