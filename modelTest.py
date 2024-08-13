@@ -469,7 +469,7 @@ def testing(model, hist, xT, yT, name):
 def comparison(models, train, xTest, yT):
     print()
     endStart =[i for i, letter in enumerate(models[0]) if letter == '_']
-    name = "{start}_comparison_of_model_types_{t}".format(start=models[0][endStart[0]+1:endStart[7]], t=CLOCK)
+    name = "{start}_comparison_of_losses_{t}".format(start=models[0][endStart[0]+1:endStart[7]], t=CLOCK)
     print(name)
     time.sleep(5)
     # Percentage vs difference plot comparsion
@@ -479,18 +479,18 @@ def comparison(models, train, xTest, yT):
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     colours = ['green', 'red', 'blue', 'purple', 'goldenrod']
-    # labels = ['MAE', 'Huber delta=1','MSE', 'Huber delta=0.1', 'Welsch']
+    labels = ['MAE', 'Huber delta=1','MSE', 'Huber delta=0.1']
     # labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
-    labels = ['MLP', 'RNN', 'CNN + MLP']
+    # labels = ['MLP', 'RNN', 'CNN + MLP']
     # labels = ['GRU100 GRU50 D1', 'GRU20 GRU20 D1']
     # labels = ['T150 GRU100 GRU50', 'BiGRU20 GRU20', 'MASK GRU50', 'MASK GRU20 GRU20', 'MASK LSTM20 LSTM20']
     # labels = ['dr(1,2) dr(1,2)', 'dr(1,2)', 'dr(1,3)']
     # labels = ['None', '32', '512', '2048', str(len(xTrain))]
     for i in range(0, len(models)):    
         print()
-        if i == 2:
-            print('\n\n\n\n')
-            xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+        # if i == 2:
+        #     print('\n\n\n\n')
+        #     xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
         if models[i][-2:] == 'h5':
             modelLoaded = loadWeights(models[i], xTest)
         else:
@@ -505,7 +505,7 @@ def comparison(models, train, xTest, yT):
         loss = hist['loss']
 
         yPredicted = modelLoaded.predict(xTest).flatten()
-        diff = abs(yPredicted - yTest.flatten())
+        diff = abs(yPredicted - yT.flatten())
         print(max(diff), min(diff))
         print(np.std(diff), np.mean(diff))
 
@@ -547,15 +547,11 @@ def comparison(models, train, xTest, yT):
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    ax.spines['top'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['right'].set_visible(False)
     ax.set_yscale('log')
     for i in range(len(models)):
-        if i == 2:
-            print('\n\n\n\n')
-            xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+        # if i == 2:
+        #     print('\n\n\n\n')
+        #     xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
         if models[i][-2:] == 'h5':
             modelLoaded = loadWeights(models[i], xTest)
         else:
@@ -564,7 +560,7 @@ def comparison(models, train, xTest, yT):
         val_loss = hist['val_loss']
         loss = hist['loss']
         yPredicted = modelLoaded.predict(xTest).flatten()
-        diff = yPredicted - yTest.flatten()
+        diff = yPredicted - yT.flatten()
         plot = sn.kdeplot(data=diff, label=labels[i], linewidth =0.8, color=colours[i], ax=ax)
     plt.legend()
     plt.title('Distribution of errors')
@@ -582,9 +578,9 @@ def comparison(models, train, xTest, yT):
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
     for i in range(len(models)):
-        if i == 2:
-            print('\n\n\n\n')
-            xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+        # if i == 2:
+        #     print('\n\n\n\n')
+        #     xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 
         if models[i][-2:] == 'h5':
             modelLoaded = loadWeights(models[i], xTest)
@@ -601,7 +597,7 @@ def comparison(models, train, xTest, yT):
 
         print(np.sort(val_loss)[:5])
         yPredicted = modelLoaded.predict(xTest).flatten()
-        diff = yPredicted - yTest.flatten()
+        diff = yPredicted - yT.flatten()
         diff = diff[(diff>-1) & (diff<1)]
         print(max(diff), min(diff))
         print(np.std(diff), np.mean(diff))
@@ -613,8 +609,8 @@ def comparison(models, train, xTest, yT):
     print('KDE plot made')
 
 
-def loadModel(name):
-    loadedModel = tf.keras.models.load_model(name)
+def loadModel(name,loss=None):
+    loadedModel = tf.keras.models.load_model(name, custom_objects=dict(loss=loss))
     loadedModel.summary()
     return loadedModel
 
@@ -1094,9 +1090,11 @@ BATCH_SIZE = 4096
 EPOCHS = 500
 CLOCK = int(time.time())
 
+name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.keras'
+x = loadModel(name)
 
 # loading numpy arrays of data
-nameData = 'TTbar'
+# nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 # rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
@@ -1114,19 +1112,19 @@ nameData = 'TTbar'
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
-# nameData = 'Merged'
-# rawD = np.load('Merged_deacys_Raw.npz')
-# binD = np.load('Merged_decays_Bin.npz')
+nameData = 'Merged'
+rawD = np.load('Merged_deacys_Raw.npz')
+binD = np.load('Merged_decays_Bin.npz')
 # # raw binned 
 # rawBinD = np.load('Merged_Raw_1.0_bin_size_overlap_0.npz')
 
 print(nameData)
 
-# zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
+zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 # trackLength = rawD['tl']
 # zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-# ptBin, trackBin = binD['ptB'], binD['tB']
-# print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
+ptBin, trackBin = binD['ptB'], binD['tB']
+print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 # print(np.argwhere(probability == 1))
 # print(len(np.argwhere(probability == 1)))
 # print(pvRaw.shape)
@@ -1194,17 +1192,17 @@ print()
 # Loaded model test and comparison to other models
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-# name = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_1723476211.keras'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_1723476211.log'
+name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.keras'
+train = 'Merged_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-# testLoadedModel(name, train, xTest, yTest)
+testLoadedModel(name, train, xTest, yTest)
 
 # name = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_pv_1723453162.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_pv_1723453162.log'
@@ -1234,14 +1232,11 @@ print()
 # modelsCompare = ['TTbar_Bin_model_2inputs_conv_adam_mean_absolute_error_1721663273.keras',\
 #                  'TTbar_Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras',\
 #                  'TTbar_Bin_model_2inputs_conv_adam_mean_squared_error_1721663286.keras',\
-#                  'TTbar_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722332746.keras',\
-#                  'TTbar_Bin_model_2inputs_conv_adam_welsch_1722347504.keras']
+#                  'TTbar_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722332746.keras']
 # trainingCompare = ['TTbar_training_Bin_model_2inputs_conv_adam_mean_absolute_error_1721663273.log',\
 #                    'TTbar_training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log',\
 #                    'TTbar_training_Bin_model_2inputs_conv_adam_mean_squared_error_1721663286.log',\
-#                    'TTbar_training_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722332746.log',\
-#                    'TTbar_training_Bin_model_2inputs_conv_adam_welsch_1722347504.log']
-
+#                    'TTbar_training_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722332746.log']
 # modelsCompare = ['TTbar_Bin_model_2inputs_mlp_adam_huber_loss_1722246839.keras',\
 #                  'TTbar_Bin_model_2inputs_rnn_adam_huber_loss_1721749990.keras',\
 #                  'TTbar_Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras']
@@ -1274,21 +1269,21 @@ print()
 
 
 # comparing performance of different bin size
-labels = ['0.5cm bin size', '1cm bin size', '2cm bn size' ]
+# labels = ['0.5cm bin size', '1cm bin size', '2cm bn size' ]
 
-rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
-zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-xTrainZero, yTrainZero, xValidZero, yValidZero, xTestZero, yTestZero = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
+# rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
+# zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
+# xTrainZero, yTrainZero, xValidZero, yValidZero, xTestZero, yTestZero = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 
-rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
-zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-xTrainOne, yTrainOne, xValidOne, yValidOne, xTestOne, yTestOne = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
+# rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
+# zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
+# xTrainOne, yTrainOne, xValidOne, yValidOne, xTestOne, yTestOne = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 
-rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
-zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-xTrainTwo, yTrainTwo, xValidTwo, yValidTwo, xTestTwo, yTestTwo = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
+# rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
+# zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
+# xTrainTwo, yTrainTwo, xValidTwo, yValidTwo, xTestTwo, yTestTwo = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 
-xTestAll = np.concatenate((xTestZero, xTestOne, xTestTwo))
-yTestAll = np.concatenate((yTestZero, yTestOne, yTestTwo))
+# xTestAll = [xTestZero, xTestOne, xTestTwo]
+# yTestAll = [yTestZero, yTestOne, yTestTwo]
 
-binSizeComp(xT=xTestAll, yT=yTestAll, labels=labels)
+# binSizeComp(xT=xTestAll, yT=yTestAll, labels=labels)
