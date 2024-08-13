@@ -611,7 +611,7 @@ def comparison(models, train, xTest, yT):
 
 
 def loadModel(name,loss=None):
-    loadedModel = tf.keras.models.load_model(name, custom_objects=dict(loss=loss))
+    loadedModel = tf.keras.models.load_model(name)
     loadedModel.summary()
     return loadedModel
 
