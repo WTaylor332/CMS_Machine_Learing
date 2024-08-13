@@ -500,10 +500,9 @@ def comparison(models, train, xTest, yTest):
     # labels = ['None', '32', '512', '2048', str(len(xTrain))]
     for i in range(0, len(models)):    
         print()
-        # if i == 3:
-        #     print('\n\n\n\n')
-        #     # xTest = xTest[:, :, :150]
-        #     xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2])
+        if i == 2:
+            print('\n\n\n\n')
+            xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
         if models[i][-2:] == 'h5':
             modelLoaded = loadWeights(models[i], xTest)
         else:
@@ -540,9 +539,9 @@ def comparison(models, train, xTest, yTest):
         percentile = np.zeros(len(sortedDiff)) + per
         tolerance = np.zeros(len(diff)) + tol
         plt.plot(sortedDiff, percent, label=labels[i], linewidth=0.8)
-        plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
+        plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)), s=5)
         if np.sort(diff)[perIndex[0][-1]] < 2:
-            plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+'th percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)))
+            plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+'th percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)), s=5)
         print()
  
     plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
@@ -555,8 +554,13 @@ def comparison(models, train, xTest, yTest):
     plt.savefig(f"{nameData}_Percentage_vs_loss_{name}.png", dpi=1200)
     print('percentage vs difference plot made')
 
+    colours = ['blue', 'orange', 'red']
     plt.clf()
     for i in range(len(models)):
+        if i == 2:
+            print('\n\n\n\n')
+            xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+
         if models[i][-2:] == 'h5':
             modelLoaded = loadWeights(models[i], xTest)
         else:
@@ -576,10 +580,13 @@ def comparison(models, train, xTest, yTest):
         print(max(diff), min(diff))
         print(np.std(diff), np.mean(diff))
 
-        sn.kdeplot(data=diff, labels=labels[i])
-    plt.title('Distribution of erros')
+        plot = sn.kdeplot(data=diff, label=labels[i], linewidth =0.8)
+        plot.fill(color=colours[i], alpha=0.2)
+    plt.title('Distribution of errors')
+    plt.xlabel('Difference between predicted and true PV')
     plt.ylabel('Density')
     plt.savefig(f"{nameData}_Hist_loss_{name}.png", dpi=1200)
+    print('KDE plot made')
 
 
 
@@ -887,9 +894,9 @@ CLOCK = int(time.time())
 
 # loading numpy arrays of data
 nameData = 'TTbar'
-# rawD = np.load('TTbarRaw5.npz')
+rawD = np.load('TTbarRaw5.npz')
 binD = np.load('TTbarBin4.npz')
-rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
+# rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
 # rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
@@ -912,9 +919,9 @@ rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
 
 print(nameData)
 
-# zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
+zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 # trackLength = rawD['tl']
-zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
+# zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
 ptBin, trackBin = binD['ptB'], binD['tB']
 print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 # print(np.argwhere(probability == 1))
@@ -1002,17 +1009,17 @@ trainingCompare = ['TTbar_training_Bin_model_2inputs_mlp_adam_huber_loss_1722246
                    'TTbar_training_Bin_model_2inputs_rnn_adam_huber_loss_1721749990.log',\
                    'TTbar_training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log']
 
-endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
-print(modelsCompare[0][:endStart[2]])
-mod = loadModel(modelsCompare[0])
-config = mod.get_config()
-print(config["layers"][0]["config"])
-mod = loadModel(modelsCompare[1])
-config = mod.get_config()
-print(config["layers"][0]["config"])
-mod = loadModel(modelsCompare[2])
-config = mod.get_config()
-print(config["layers"][0]["config"])
+# endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
+# print(modelsCompare[0][:endStart[2]])
+# mod = loadModel(modelsCompare[0])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
+# mod = loadModel(modelsCompare[1])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
+# mod = loadModel(modelsCompare[2])
+# config = mod.get_config()
+# print(config["layers"][0]["config"])
 
 
 # mod = loadModel('Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras')
