@@ -481,7 +481,7 @@ def testing(model, hist, xTest, yTest, name):
 def comparison(models, train, xTest, yTest):
     print()
     endStart =[i for i, letter in enumerate(models[0]) if letter == '_']
-    name = "{start}_comparison_of_batch_sizes_{t}".format(start=models[0][endStart[0]+1:endStart[7]], t=CLOCK)
+    name = "{start}_comparison_of_model_types_{t}".format(start=models[0][endStart[0]+1:endStart[7]], t=CLOCK)
     print(name)
     time.sleep(5)
     # Percentage vs difference plot comparsion
@@ -493,11 +493,11 @@ def comparison(models, train, xTest, yTest):
     # labels = np.array(['CCPCCPCC ks=8 ps=4', 'CPCPCPC ks=6 ps=4', 'CPCPCPC ks=8 ps=4', 'CPCPCPCPCPC ks=8 ps=2'])
     # labels = ['MAE', 'MSE', 'Huber']
     # labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
-    # labels = ['WAVENET', 'PURE CNN', 'CNN + MLP', 'MLP', 'RNN']
+    labels = ['MLP', 'RNN', 'CNN + MLP']
     # labels = ['GRU100 GRU50 D1', 'GRU20 GRU20 D1']
     # labels = ['T150 GRU100 GRU50', 'BiGRU20 GRU20', 'MASK GRU50', 'MASK GRU20 GRU20', 'MASK LSTM20 LSTM20']
     # labels = ['dr(1,2) dr(1,2)', 'dr(1,2)', 'dr(1,3)']
-    labels = ['None', '32', '512', '2048', str(len(xTrain))]
+    # labels = ['None', '32', '512', '2048', str(len(xTrain))]
     for i in range(0, len(models)):    
         print()
         # if i == 3:
@@ -517,10 +517,7 @@ def comparison(models, train, xTest, yTest):
         val_loss = hist['val_loss']
         loss = hist['loss']
 
-        print(np.sort(val_loss)[:5])
         yPredicted = modelLoaded.predict(xTest).flatten()
-        print(yPredicted.shape)
-        print(yTest.shape)
         diff = abs(yPredicted - yTest.flatten())
         print(max(diff), min(diff))
         print(np.std(diff), np.mean(diff))
@@ -559,24 +556,31 @@ def comparison(models, train, xTest, yTest):
     print('percentage vs difference plot made')
 
     plt.clf()
-    for i in range(len(train)):
+    for i in range(len(models)):
+        if models[i][-2:] == 'h5':
+            modelLoaded = loadWeights(models[i], xTest)
+        else:
+            modelLoaded = loadModel(models[i])
+
+        print()
+        print(models[i])
+        print(xTest.shape)
+
         hist = pd.read_csv(train[i], sep=',', engine='python')
-        loss = hist['loss']
         val_loss = hist['val_loss']
-        epochs = range(1, len(loss) + 1)
-        plt.plot(epochs, val_loss, label='Validation Loss '+labels[i], linewidth=0.7)
-        plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
-        plt.grid(which='minor', color='#EEEEEE', linewidth=0.6)
-        minX = np.argmin(val_loss) + 1
-        minY = np.min(val_loss)
-        plt.scatter(minX, minY, edgecolors='black', linewidths=0.4, label='minimum '+str(round(minY, 5)), s=6)
-    
-    plt.xlabel('Epoch number')
-    plt.ylabel('Validation Loss') 
-    plt.title('Validation Loss')
-    plt.legend()
-    plt.savefig(f"{nameData}_Train_valid_loss_{name}.png", dpi=1200)
-    print('val loss plot made')
+        loss = hist['loss']
+
+        print(np.sort(val_loss)[:5])
+        yPredicted = modelLoaded.predict(xTest).flatten()
+        diff = yPredicted - yTest.flatten()
+        print(max(diff), min(diff))
+        print(np.std(diff), np.mean(diff))
+
+        sn.kdeplot(data=diff, labels=labels[i])
+    plt.title('Distribution of erros')
+    plt.ylabel('Density')
+    plt.savefig(f"{nameData}_Hist_loss_{name}.png", dpi=1200)
+
 
 
 def loadModel(name):
@@ -884,7 +888,7 @@ CLOCK = int(time.time())
 # loading numpy arrays of data
 nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
-# binD = np.load('TTbarBin4.npz')
+binD = np.load('TTbarBin4.npz')
 rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
 # rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
@@ -911,7 +915,7 @@ print(nameData)
 # zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 # trackLength = rawD['tl']
 zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-# ptBin, trackBin = binD['ptB'], binD['tB']
+ptBin, trackBin = binD['ptB'], binD['tB']
 print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 # print(np.argwhere(probability == 1))
 # print(len(np.argwhere(probability == 1)))
@@ -935,11 +939,11 @@ print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 
 print()
 # print(zRaw[:3])
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
 # print(xTest[:3])
 # print(xTrain.shape)
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xTest, yTest, name)
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xTest, yTest, name)
 
 
 # prediting the pv given probability
@@ -953,7 +957,7 @@ testing(model, history, xTest, yTest, name)
 
 # Loaded model test and comparison to other models
 
-# xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
+xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
@@ -991,28 +995,25 @@ testing(model, history, xTest, yTest, name)
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
 
 # Comparing various models
-# modelsCompare = ['',\
-#                  '']
-# trainingCompare = ['',\
-#                    '']
+modelsCompare = ['TTbar_Bin_model_2inputs_mlp_adam_huber_loss_1722246839.keras',\
+                 'TTbar_Bin_model_2inputs_rnn_adam_huber_loss_1721749990.keras',\
+                 'TTbar_Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras']
+trainingCompare = ['TTbar_training_Bin_model_2inputs_mlp_adam_huber_loss_1722246839.log',\
+                   'TTbar_training_Bin_model_2inputs_rnn_adam_huber_loss_1721749990.log',\
+                   'TTbar_training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log']
 
-# endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
-# print(modelsCompare[0][:endStart[2]])
-# mod = loadModel(modelsCompare[0])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadModel(modelsCompare[1])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadModel(modelsCompare[2])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadWeights(modelsCompare[3], xTrain)
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadModel(modelsCompare[4])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
+endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
+print(modelsCompare[0][:endStart[2]])
+mod = loadModel(modelsCompare[0])
+config = mod.get_config()
+print(config["layers"][0]["config"])
+mod = loadModel(modelsCompare[1])
+config = mod.get_config()
+print(config["layers"][0]["config"])
+mod = loadModel(modelsCompare[2])
+config = mod.get_config()
+print(config["layers"][0]["config"])
+
 
 # mod = loadModel('Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras')
 # config = mod.get_config()
@@ -1021,12 +1022,5 @@ testing(model, history, xTest, yTest, name)
 # hist = pd.read_csv(train, sep=',', engine='python')
 # print(hist.columns)
 
-# for i in range(len(trainingCompare)):
-#         print(i)
-#         hist = pd.read_csv(trainingCompare[i], sep=',', engine='python')
-#         loss = hist['loss']
-#         epochs = range(1, len(loss) + 1)
-#         print(epochs)
-
 # print(xTest.shape)
-# comparison(modelsCompare, trainingCompare, xTest, yTest)
+comparison(modelsCompare, trainingCompare, xTest, yTest)
