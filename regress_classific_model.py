@@ -84,6 +84,26 @@ def loadRNN(form , op, lossFunc, maskNo):
 
     return model, 'pv_to_prob_rnn'
 
+def pvToProbRNN(form , op, lossFunc, maskNo):
+    
+    modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_pv_1723479083.keras')
+
+    inp = keras.Input(shape=form)
+    mask = keras.layers.Masking(mask_value=maskNo, trainable=False)(inp)
+    rnn1 = keras.layers.SimpleRNN(20, return_sequences=True, activation='tanh', trainable=False)(mask)
+    rnn2 = keras.layers.SimpleRNN(20, return_sequences=True, activation='tanh', trainable=False)(rnn1)
+    rnn3 = keras.layers.SimpleRNN(20, activation='tanh')(rnn3)
+    outClass = keras.layers.Dense(1, activation='sigmoid')(rnn3)
+
+    model = keras.Model(inputs=inp, outputs=[outClass])
+    model.layers[1].set_weights(modelLoad.layers[0].get_weights())
+    model.layers[2].set_weights(modelLoad.layers[1].get_weights())
+    model.layers[3].set_weights(modelLoad.layers[2].get_weights())
+
+    model.compile(optimizer=op, loss=lossFunc)
+
+    return model, 'pv_to_prob_rnn'
+
 def probToPvRNN(form , op, lossFunc, maskNo):
     
     modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723130617.keras')
@@ -257,10 +277,11 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     # creating model
     op = keras.optimizers.Adam()
     # l1 = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
-    l1 = keras.losses.MeanAbsoluteError()
-    l2 = keras.losses.BinaryCrossentropy()
-    lossFunc = [l1, l2] 
-    model, typeM = loadRNN(form, op, lossFunc, MASK_NO)
+    # l1 = keras.losses.MeanAbsoluteError()
+    # l2 = keras.losses.BinaryCrossentropy()
+    # lossFunc = [l1, l2] 
+    lossFunc = keras.losses.BinaryCrossentropy()
+    model, typeM = pvToProbRNN(form, op, lossFunc, MASK_NO)
     # model, typeM = probToPvRNN(form, op, lossFunc, MASK_NO)
     model.summary()
     
@@ -481,7 +502,7 @@ def testing(model, xTest, yTest, name):
     yClassPred = yClassPred.reshape(xTest.shape[0]//zRaw.shape[1], zRaw.shape[1])
     indexPred = np.argmax(yClassPred, axis=1).flatten()
     indexPred = np.array([indexPred*i + indexPred*zRaw.shape[1] for i in range(len(indexPred))])
-    indexTest = np.argwhere(yTest.flatten() == 1).flatten()
+    indexTest = np.argwhere(yTest[1].flatten() == 1).flatten()
     # indexTest = indexTest//zRaw.shape[1] + indexTest%zRaw.shape[1]
     count = 0
     print(indexPred.shape)
@@ -502,7 +523,7 @@ def testing(model, xTest, yTest, name):
     print()
     plt.clf()
     plt.figure(figsize=(30,20))
-    plt.rcParams.update({'font.size': 30})
+    plt.rcParams.update({'font.size': 40})
     yTestLabels = np.array([np.argmax(i) for i in yTest[1]])
     yClassPredLabels = np.array([np.argmax(i) for i in yClassPred])
     print(yTestLabels.shape)
@@ -570,14 +591,15 @@ clock = int(time.time())
 # testing(model, xTest, yTest, name)
 
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
-model, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, xTest, yTest, name)
+# model, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, xTest, yTest, name)
 
 # model = loadModel('Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_and_categorical_crossentropy_1722864526.keras')
 # config = model.get_config()
 # weights = model.get_weights()
 # print(config['layers'])
 # print(config.keys())
-# name = 'TTbar_Raw_model_3inputs_pv_to_prob_rnn_adam_modified01_huber_loss_and_binary_crossentropy_1723456516'
-# model = loadModel('TTbar_Raw_model_3inputs_pv_to_prob_rnn_adam_modified01_huber_loss_and_binary_crossentropy_1723456516.keras')
-# testing(model, xTest, yTest, name)
+
+name = 'TTbar_Raw_model_3inputs_pv_to_prob_rnn_adam_mean_absolute_error_and_binary_crossentropy_1723484033'
+model = loadModel('TTbar_Raw_model_3inputs_pv_to_prob_rnn_adam_mean_absolute_error_and_binary_crossentropy_1723484033.keras')
+testing(model, xTest, yTest, name)
