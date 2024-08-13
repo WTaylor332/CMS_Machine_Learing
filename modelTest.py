@@ -96,7 +96,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
     return model, history, modelName, lossFunc
 
 
-def binToTestGivenProb(z, pt, eta, pv, modelName, xTrain, xValid, xTest):
+def findPVGivenProb(z, pt, eta, pv, modelName, xTrain, xValid, xTest):
     model = loadModel(modelName)
     trainPredProb = model.predict(xTrain).flatten()
     print('train predict done')
@@ -104,8 +104,8 @@ def binToTestGivenProb(z, pt, eta, pv, modelName, xTrain, xValid, xTest):
     print('valid predict done')
     testPredProb = model.predict(xTest).flatten()
     print('test predict done')
-    allPred = np.zeros(z.shape[0], z.shape[1])
-    indexPred = np.argmax(np.concatenate((trainPredProb, validPredProb, testPredProb)).reshape(z.shape[0], z.shape[1]), axis=1).flatten() # hcange to take highest prob in each bin
+    allPred = np.zeros((z.shape[0], z.shape[1]))
+    indexPred = np.argmax(np.concatenate((trainPredProb, validPredProb, testPredProb)).reshape(z.shape[0], z.shape[1]), axis=1).flatten() # change to take highest prob in each bin
     print()
     print(len(indexPred))
     print(len(yTrain) + len(yValid) + len(yTest))
@@ -127,6 +127,27 @@ def binToTestGivenProb(z, pt, eta, pv, modelName, xTrain, xValid, xTest):
 
 
     return xTrainFocus, yTrainFocus, xValidFocus, yValidFocus, xTestFocus, yTestFocus
+
+
+def pvToProbRNN(form , op, lossFunc, maskNo):
+
+    modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_pv_1723479083.keras')
+
+    inp = keras.Input(shape=form)
+    mask = keras.layers.Masking(mask_value=maskNo, trainable=False)(inp)
+    rnn1 = keras.layers.SimpleRNN(20, return_sequences=True, activation='tanh', trainable=False)(mask)
+    rnn2 = keras.layers.SimpleRNN(20, return_sequences=True, activation='tanh', trainable=False)(rnn1)
+    rnn3 = keras.layers.SimpleRNN(20, activation='tanh')(rnn2)
+    outClass = keras.layers.Dense(1, activation='sigmoid')(rnn3)
+
+    model = keras.Model(inputs=inp, outputs=[outClass])
+    model.layers[1].set_weights(modelLoad.layers[0].get_weights())
+    model.layers[2].set_weights(modelLoad.layers[1].get_weights())
+    model.layers[3].set_weights(modelLoad.layers[2].get_weights())
+
+    model.compile(optimizer=op, loss=lossFunc)
+
+    return model, 'pv_to_prob_rnn'
 
 
 def reshapeRawBin(z, pt, eta,):
@@ -220,7 +241,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     model.summary()
     
     # saving the model and best weights
-    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_overlap_bins_size2_pv_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=CLOCK)
+    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_overlap_bins_size05_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=CLOCK)
     modelDirectory = "models"
     modelName = weights[:-11]
     start =[i for i, letter in enumerate(modelName) if letter == '_']
@@ -437,7 +458,7 @@ def testing(model, hist, xTest, yTest, name):
     # print()
     # plt.clf()
     # plt.figure(figsize=(30,20))
-    # plt.rcParams.update({'font.size': 30})
+    # plt.rcParams.update({'font.size': 40})
     # yClassPredLabels = np.round(yPredicted)
     # print(yTest.shape)
     # print(yClassPredLabels.shape)
@@ -830,7 +851,7 @@ def testLoadedModel(model, train, xTest, yTest):
     print()
     plt.clf()
     plt.figure(figsize=(30,20))
-    plt.rcParams.update({'font.size': 30})
+    plt.rcParams.update({'font.size': 40})
     yClassPredLabels = np.round(yPredicted)
     print(yTest.shape)
     print(yClassPredLabels.shape)
@@ -850,7 +871,7 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 MASK_NO = -9999.99
-BATCH_SIZE = 32768
+BATCH_SIZE = 512
 EPOCHS = 500
 CLOCK = int(time.time())
 
@@ -859,10 +880,12 @@ CLOCK = int(time.time())
 nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
+rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
+# rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.npz')
-rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_pv_far_from_boundary_1.npz')
+# rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_pv_far_from_boundary_1.npz')
 
 # nameData = 'WJets'
 # rawD = np.load('WJetsToLNu.npz')
@@ -917,7 +940,7 @@ testing(model, history, xTest, yTest, name)
 # prediting the pv given probability
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
 # probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723130617.keras'
-# xTrainFocus, yTrainFocus, xValidFocus, yValidFocus, xTestFocus, yTestFocus = binToTestGivenProb(zRaw, ptRaw, etaRaw, pvRaw.flatten(), probModel, xTrain, xValid, xTest)
+# xTrainFocus, yTrainFocus, xValidFocus, yValidFocus, xTestFocus, yTestFocus = findPVGivenProb(zRaw, ptRaw, etaRaw, pvRaw.flatten(), probModel, xTrain, xValid, xTest)
 # regModel = 'TTbar_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723035097.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1723035097.log'
 # testLoadedModel(model=regModel, train=train, xTest=xTestFocus, yTest=yTestFocus)
