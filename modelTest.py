@@ -469,7 +469,7 @@ def testing(model, hist, xT, yT, name):
 def comparison(models, train, xTest, yT):
     print()
     endStart =[i for i, letter in enumerate(models[0]) if letter == '_']
-    name = "{start}_comparison_of_losses_{t}".format(start=models[0][endStart[0]+1:endStart[7]], t=CLOCK)
+    name = "{start}_comparison_of_rnns_{t}".format(start=models[0][endStart[0]+1:endStart[7]], t=CLOCK)
     print(name)
     time.sleep(5)
     # Percentage vs difference plot comparsion
@@ -479,7 +479,8 @@ def comparison(models, train, xTest, yT):
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     colours = ['green', 'red', 'blue', 'purple', 'goldenrod']
-    labels = ['MAE', 'Huber delta=1','MSE', 'Huber delta=0.1']
+    # labels = ['MAE', 'Huber delta=1','MSE', 'Huber delta=0.1']
+    labels = ['Simple RNN', 'GRU']
     # labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
     # labels = ['MLP', 'RNN', 'CNN + MLP']
     # labels = ['GRU100 GRU50 D1', 'GRU20 GRU20 D1']
@@ -1094,11 +1095,11 @@ name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.keras
 x = loadModel(name)
 
 # loading numpy arrays of data
-# nameData = 'TTbar'
+nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
 # rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
-# rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
+rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.npz')
@@ -1112,18 +1113,18 @@ x = loadModel(name)
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
-nameData = 'Merged'
-rawD = np.load('Merged_deacys_Raw.npz')
-binD = np.load('Merged_decays_Bin.npz')
+# nameData = 'Merged'
+# rawD = np.load('Merged_deacys_Raw.npz')
+# binD = np.load('Merged_decays_Bin.npz')
 # # raw binned 
 # rawBinD = np.load('Merged_Raw_1.0_bin_size_overlap_0.npz')
 
 print(nameData)
 
-zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
+# zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 # trackLength = rawD['tl']
-# zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-ptBin, trackBin = binD['ptB'], binD['tB']
+zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
+# ptBin, trackBin = binD['ptB'], binD['tB']
 print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 # print(np.argwhere(probability == 1))
 # print(len(np.argwhere(probability == 1)))
@@ -1199,10 +1200,10 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.keras'
-train = 'Merged_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.log'
+# name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.keras'
+# train = 'Merged_training_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
+# testLoadedModel(name, train, xTest, yTest)
 
 # name = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_pv_1723453162.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_pv_1723453162.log'
@@ -1237,21 +1238,19 @@ testLoadedModel(name, train, xTest, yTest)
 #                    'TTbar_training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log',\
 #                    'TTbar_training_Bin_model_2inputs_conv_adam_mean_squared_error_1721663286.log',\
 #                    'TTbar_training_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722332746.log']
-# modelsCompare = ['TTbar_Bin_model_2inputs_mlp_adam_huber_loss_1722246839.keras',\
-#                  'TTbar_Bin_model_2inputs_rnn_adam_huber_loss_1721749990.keras',\
-#                  'TTbar_Bin_model_2inputs_conv_adam_huber_loss_1721663295.keras']
-# trainingCompare = ['TTbar_training_Bin_model_2inputs_mlp_adam_huber_loss_1722246839.log',\
-#                    'TTbar_training_Bin_model_2inputs_rnn_adam_huber_loss_1721749990.log',\
-#                    'TTbar_training_Bin_model_2inputs_conv_adam_huber_loss_1721663295.log']
+modelsCompare = ['TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size1_1723539163.keras',\
+                 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_1723135768.keras']
+trainingCompare = ['TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size1_1723539163.log',\
+                   'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_1723135768.log']
 
-# endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
-# print(modelsCompare[0][:endStart[2]])
-# mod = loadModel(modelsCompare[0])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadModel(modelsCompare[1])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
+endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
+print(modelsCompare[0][:endStart[2]])
+mod = loadModel(modelsCompare[0])
+config = mod.get_config()
+print(config["layers"][0]["config"])
+mod = loadModel(modelsCompare[1])
+config = mod.get_config()
+print(config["layers"][0]["config"])
 # mod = loadModel(modelsCompare[2])
 # config = mod.get_config()
 # print(config["layers"][0]["config"])
@@ -1264,7 +1263,7 @@ testLoadedModel(name, train, xTest, yTest)
 # hist = pd.read_csv(train, sep=',', engine='python')
 # print(hist.columns)
 
-# print(xTest.shape)
+print(xTest.shape)
 # comparison(modelsCompare, trainingCompare, xTest, yTest)
 
 
