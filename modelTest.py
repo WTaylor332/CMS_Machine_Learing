@@ -491,7 +491,6 @@ def comparison(models, train, xTest, yTest):
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # labels = np.array(['CCPCCPCC ks=8 ps=4', 'CPCPCPC ks=6 ps=4', 'CPCPCPC ks=8 ps=4', 'CPCPCPCPCPC ks=8 ps=2'])
     # labels = ['MAE', 'MSE', 'Huber']
     # labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
     labels = ['MLP', 'RNN', 'CNN + MLP']
@@ -499,76 +498,11 @@ def comparison(models, train, xTest, yTest):
     # labels = ['T150 GRU100 GRU50', 'BiGRU20 GRU20', 'MASK GRU50', 'MASK GRU20 GRU20', 'MASK LSTM20 LSTM20']
     # labels = ['dr(1,2) dr(1,2)', 'dr(1,2)', 'dr(1,3)']
     # labels = ['None', '32', '512', '2048', str(len(xTrain))]
-    # for i in range(0, len(models)):    
-    #     print()
-    #     if i == 2:
-    #         print('\n\n\n\n')
-    #         xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-    #     if models[i][-2:] == 'h5':
-    #         modelLoaded = loadWeights(models[i], xTest)
-    #     else:
-    #         modelLoaded = loadModel(models[i])
-
-    #     print()
-    #     print(models[i])
-    #     print(xTest.shape)
-
-    #     hist = pd.read_csv(train[i], sep=',', engine='python')
-    #     val_loss = hist['val_loss']
-    #     loss = hist['loss']
-
-    #     yPredicted = modelLoaded.predict(xTest).flatten()
-    #     diff = abs(yPredicted - yTest.flatten())
-    #     print(max(diff), min(diff))
-    #     print(np.std(diff), np.mean(diff))
-
-    #     sortedDiff = np.sort(diff[diff<2])
-    #     percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    #     tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
-    #     per = 90
-    #     tol = 0.15
-    #     tolIndex = np.where(sortedDiff <= tol)
-    #     perIndex = np.where(tolPercent <= per)
-        
-    #     print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    #     print('Value of', per, 'th percentile:', np.sort(diff)[perIndex[0][-1]])
-    #     print('min val loss:', min(val_loss))
-    #     print('At epoch number:',np.argmin(val_loss)+1)
-    #     print('min loss:', min(loss))
-    #     print('At epoch number:',np.argmin(loss)+1)
-
-    #     percentile = np.zeros(len(sortedDiff)) + per
-    #     tolerance = np.zeros(len(diff)) + tol
-    #     plt.plot(sortedDiff, percent, label=labels[i], linewidth=0.8)
-    #     plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)), s=10)
-    #     if np.sort(diff)[perIndex[0][-1]] < 2:
-    #         plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+'th percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)), s=10)
-    #     print()
- 
-    # plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
-    # plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
-    
-    # plt.legend()
-    # plt.xlabel('Difference between predicted and true value')
-    # plt.ylabel('Percentage')
-    # plt.title("Percentage of values vs Difference")
-    # plt.savefig(f"{nameData}_Percentage_vs_loss_{name}.png", dpi=1200)
-    # print('percentage vs difference plot made')
-
-    colours = ['green', 'crimson', 'blue']
-    plt.clf()
-    fig, ax = plt.subplots()
-    ax.minorticks_on()
-    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    ax.spines['top'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    for i in range(len(models)):
+    for i in range(0, len(models)):    
+        print()
         if i == 2:
             print('\n\n\n\n')
             xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-
         if models[i][-2:] == 'h5':
             modelLoaded = loadWeights(models[i], xTest)
         else:
@@ -582,13 +516,69 @@ def comparison(models, train, xTest, yTest):
         val_loss = hist['val_loss']
         loss = hist['loss']
 
-        print(np.sort(val_loss)[:5])
         yPredicted = modelLoaded.predict(xTest).flatten()
-        diff = yPredicted - yTest.flatten()
-        logDiff = np.log(diff)
+        diff = abs(yPredicted - yTest.flatten())
         print(max(diff), min(diff))
         print(np.std(diff), np.mean(diff))
-        plot = sn.kdeplot(data=logDiff, label=labels[i], linewidth =0.8, color=colours[i], ax=ax)
+
+        sortedDiff = np.sort(diff[diff<2])
+        percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
+        tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
+        per = 90
+        tol = 0.15
+        tolIndex = np.where(sortedDiff <= tol)
+        perIndex = np.where(tolPercent <= per)
+        
+        print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
+        print('Value of', per, 'th percentile:', np.sort(diff)[perIndex[0][-1]])
+        print('min val loss:', min(val_loss))
+        print('At epoch number:',np.argmin(val_loss)+1)
+        print('min loss:', min(loss))
+        print('At epoch number:',np.argmin(loss)+1)
+
+        percentile = np.zeros(len(sortedDiff)) + per
+        tolerance = np.zeros(len(diff)) + tol
+        plt.plot(sortedDiff, percent, label=labels[i], linewidth=0.8)
+        plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)), s=10)
+        if np.sort(diff)[perIndex[0][-1]] < 2:
+            plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+'th percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)), s=10)
+        print()
+ 
+    plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
+    plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
+    
+    plt.legend()
+    plt.xlabel('Difference between predicted and true value')
+    plt.ylabel('Percentage')
+    plt.title("Percentage of values vs Difference")
+    plt.savefig(f"{nameData}_Percentage_vs_loss_{name}.png", dpi=1200)
+    print('percentage vs difference plot made')
+
+    colours = ['green', 'crimson', 'blue']
+    plt.clf()
+    fig, ax = plt.subplots()
+    ax.minorticks_on()
+    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    ax.spines['top'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.set_xscale('symlog')
+    for i in range(len(models)):
+        if i == 2:
+            print('\n\n\n\n')
+            xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+        if models[i][-2:] == 'h5':
+            modelLoaded = loadWeights(models[i], xTest)
+        else:
+            modelLoaded = loadModel(models[i])
+        hist = pd.read_csv(train[i], sep=',', engine='python')
+        val_loss = hist['val_loss']
+        loss = hist['loss']
+        yPredicted = modelLoaded.predict(xTest).flatten()
+        diff = yPredicted - yTest.flatten()
+        plot = sn.kdeplot(data=diff, label=labels[i], linewidth =0.8, color=colours[i], ax=ax)
     plt.legend()
     plt.title('Distribution of errors')
     plt.xlabel('Log difference between predicted and true PV')
@@ -600,6 +590,7 @@ def comparison(models, train, xTest, yTest):
     fig, ax = plt.subplots()
     ax.minorticks_on()
     ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     ax.spines['top'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
     ax.spines['left'].set_visible(False)
@@ -625,15 +616,13 @@ def comparison(models, train, xTest, yTest):
         print(np.sort(val_loss)[:5])
         yPredicted = modelLoaded.predict(xTest).flatten()
         diff = yPredicted - yTest.flatten()
-        diff = diff[diff>-2 & diff<2]
-        logDiff = np.log(diff)
+        diff = diff[(diff>-2) & (diff<2)]
         print(max(diff), min(diff))
         print(np.std(diff), np.mean(diff))
-        plot = sn.kdeplot(data=logDiff, label=labels[i], linewidth =0.8, color=colours[i], ax=ax)
+        plot = sn.kdeplot(data=diff, label=labels[i], linewidth =0.8, color=colours[i], ax=ax)
     plt.legend()
     plt.title('Distribution of errors')
     plt.xlabel('Difference between predicted and true PV')
-    plt.ylabel('Density')
     plt.savefig(f"{nameData}_Hist_loss_shortened_{name}.png", dpi=1200)
     print('KDE plot made')
 
