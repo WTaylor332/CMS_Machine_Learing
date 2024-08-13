@@ -131,7 +131,10 @@ def findPVGivenProb(z, pt, eta, pv, modelName, xTrain, xValid, xTest):
 
 def pvToProbRNN(form , op, lossFunc, maskNo):
 
-    modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_pv_1723479083.keras')
+    # modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size1_1723539163.keras') = not overlap
+    # modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_pv_1723539044.keras') # not overlap just bin size of 2
+    # modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_pv_1723538801.keras')
+    modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size05_1723540545.keras') # not overlap
 
     inp = keras.Input(shape=form)
     mask = keras.layers.Masking(mask_value=maskNo, trainable=False)(inp)
@@ -233,15 +236,16 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     op = keras.optimizers.Adam(learning_rate=0.001)
     # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
     # lossFunc = keras.losses.Huber()
-    # lossFunc = keras.losses.BinaryCrossentropy() #from_logits=True)
+    lossFunc = keras.losses.BinaryCrossentropy() #from_logits=True)
     # lossFunc = welsch
     lossFunc = keras.losses.MeanAbsoluteError()
 
     model, typeM = rnn(form, op, lossFunc, MASK_NO)
+    # model, typeM = pvToProbRNN(form, op, lossFunc, MASK_NO)
     model.summary()
     
     # saving the model and best weights
-    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_overlap_bins_size05_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=CLOCK)
+    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_bins_size2_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=CLOCK)
     modelDirectory = "models"
     modelName = weights[:-11]
     start =[i for i, letter in enumerate(modelName) if letter == '_']
@@ -417,20 +421,20 @@ def testing(model, hist, xTest, yTest, name):
     plt.savefig(f'{name[:start[0]]}_True_vs_predicted_map_{name[start[0]+1:]}.png')
     print('map plot made')
 
-    # plotting learning rate against epochs
-    print()
-    lr = hist.history['lr']
-    plt.clf()
-    plt.plot(epochs, lr, color='b', linewidth=0.7)
-    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
-    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
-    plt.xlabel('Epoch number')
-    plt.ylabel('Learning Rate')
-    plt.title('Learning Rate against epochs')
-    plt.savefig(f"{name[:start[0]]}_Learning_rate_{name[start[0]+1:]}.png")
-    print('learning rate plot made')
+    # # plotting learning rate against epochs
+    # print()
+    # lr = hist.history['lr']
+    # plt.clf()
+    # plt.plot(epochs, lr, color='b', linewidth=0.7)
+    # plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    # plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+    # plt.xlabel('Epoch number')
+    # plt.ylabel('Learning Rate')
+    # plt.title('Learning Rate against epochs')
+    # plt.savefig(f"{name[:start[0]]}_Learning_rate_{name[start[0]+1:]}.png")
+    # print('learning rate plot made')
 
-    # # % values that predicted the correct bin
+    # % values that predicted the correct bin
     # yPredicted = yPredicted.reshape(xTest.shape[0]//zRaw.shape[1], zRaw.shape[1])
     # indexPred = np.argmax(yPredicted, axis=1).flatten()
     # indexTest = np.argwhere(yTest.flatten() == 1).flatten()
@@ -871,16 +875,16 @@ def testLoadedModel(model, train, xTest, yTest):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 MASK_NO = -9999.99
-BATCH_SIZE = 512
+BATCH_SIZE = 2048
 EPOCHS = 500
 CLOCK = int(time.time())
 
 
 # loading numpy arrays of data
-nameData = 'TTbar'
+# nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
 # binD = np.load('TTbarBin4.npz')
-rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
+# rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
 # rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
@@ -895,11 +899,11 @@ rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
 # rawD = np.load('QCD_Pt-15To3000.npz')
 # binD = np.load('QCD_Pt-15To3000_Bin.npz')
 
-# nameData = 'Merged'
-# rawD = np.load('Merged_deacys_Raw.npz')
+nameData = 'Merged'
+rawD = np.load('Merged_deacys_Raw.npz')
 # binD = np.load('Merged_decays_Bin.npz')
 # # raw binned 
-# rawBinD = np.load('Merged_Raw_1_bin_size.npz')
+rawBinD = np.load('Merged_Raw_2.0_bin_size_overlap_0.npz')
 
 print(nameData)
 
