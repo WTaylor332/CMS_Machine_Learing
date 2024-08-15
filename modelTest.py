@@ -176,39 +176,26 @@ def reshapeRawBin(z, pt, eta,):
 
 
 def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
-    print(z[0, 7:9])
-    print(pv[:15])
     if len(z.shape) > 2:
         z, pt, eta = reshapeRawBin(z, pt, eta)
+        zVal, ptVal, etaVal = z, pt, eta
+        pvVal = pv
         print(z.shape, pt.shape, eta.shape, pv.shape)
-        print(z[7:9])
         if prob is None:
-            # indexNan = np.argwhere(np.isnan(pv))
-            # z = np.delete(z, indexNan, 0)
-            # pt = np.delete(pt, indexNan, 0)
-            # eta = np.delete(eta, indexNan, 0)
-            # pv = np.delete(pv, indexNan, 0)
+            indexNan = np.argwhere(np.isnan(pv))
+            z = np.delete(z, indexNan, 0)
+            pt = np.delete(pt, indexNan, 0)
+            eta = np.delete(eta, indexNan, 0)
+            pv = np.delete(pv, indexNan, 0)
             pv = np.nan_to_num(pv, nan=MASK_NO)
             print(z.shape, pt.shape, eta.shape, pv.shape)
         if pvPr is not None:
-            # indexNan = np.argwhere(np.isnan(z))
-            print(np.isnan(z).shape)
-            print(np.isnan(z)[7:9])
-            # print(indexNan[7:16])
             pvReshaped = np.zeros((z.shape[0], z.shape[1]))
             pvReshaped[pvReshaped==0] = np.nan
             for i in range(z.shape[0]):
                 numNans = np.count_nonzero(~np.isnan(z[i]))
-                pvReshaped[i, :-numNans] = pvPr[i]
-                # pvReshaped[i, :indexNan[i*2, 1]] = pvPr[i]
-
+                pvReshaped[i, :numNans] = pvPr[i]
             pvReshaped = np.nan_to_num(pvReshaped, nan=MASK_NO)
-
-    print(pvReshaped[7:9])
-    print()
-    print(z[7:9])
-    import sys
-    sys.exit()
 
     # scaling z
     columnZ = z.reshape(z.shape[0]*z.shape[1], 1)
@@ -219,6 +206,15 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     z = np.nan_to_num(z, nan=MASK_NO)
     pt = np.nan_to_num(pt, nan=MASK_NO)
     eta = np.nan_to_num(eta, nan=MASK_NO)
+
+    columnZ = zVal.reshape(zVal.shape[0]*zVal.shape[1], 1)
+    scaler = StandardScaler().fit(columnZ)
+    columnZ = scaler.transform(columnZ)
+    zVal = columnZ.reshape(ptVal.shape[0], ptVal.shape[1])
+
+    zVal = np.nan_to_num(zVal, nan=MASK_NO)
+    ptVal = np.nan_to_num(ptVal, nan=MASK_NO)
+    etaVal = np.nan_to_num(etaVal, nan=MASK_NO)
     
     # getting jagged data
     # print(int(sum(trackLength)))
@@ -234,16 +230,12 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     # allJag = tf.RaggedTensor.from_tensor(allJag, lengths=trackLength)
     # print(allJag.shape)
 
-    # choosing random bin 10 % of the time
-    # randomBin = np.random.randint(np.arange(z.shape[0]), yTest.shape[0])
-    # for i in range(0, yTest.shape[0], yTest.shape[0]//10):
-    #     yTest[i] = pv[randomBin[i]]
-
-
+    print(z.shape, pt.shape, eta.shape, pv.shape)
 
     if pvPr is not None:
         rawDataAll = np.stack((z,pt,eta, pvReshaped), axis=1)
-    # rawDataAll = np.stack((z,pt,eta), axis=1)
+    else:
+        rawDataAll = np.stack((z,pt,eta), axis=1)
     print(rawDataAll.shape)
 
     # splitting data into test, validation and training data
@@ -263,9 +255,19 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     #     print('probability')
     #     yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
     
-    # yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
-
-    yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
+    yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
+    print(xTest.shape, yTest.shape)
+    # choosing random bin 10 % of the time
+    rawBinAll_I = np.stack((zVal, ptVal, etaVal), axis=1)
+    rawBinAll_I = rawBinAll_I.swapaxes(1,2)
+    randomBin = np.random.choice(np.arange(zVal.shape[0]), yTest.shape[0]//10)
+    print(randomBin.shape)
+    for i in range(0, randomBin.shape[0]):
+        yTest[i] = pvVal[randomBin[i]]
+        xTest[i] = rawBinAll_I[randomBin[i]]
+    
+    print(xTest.shape, yTest.shape)
+    # yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
     # yTestReg, yValidReg, yTrainReg = pv[:t], pv[t:v], pv[v:]
     # yTestClass, yValidClass, yTrainClass = prob[:t], prob[t:v], prob[v:]
     # yTrain = [yTrainReg, yTrainClass]
@@ -797,10 +799,10 @@ def testLoadedModel(model, train, xT, yT):
     if model[-2:] == 'h5':
         print(model)
         modelLoaded = loadWeights(model, xT)
-        model = model[:-11] + '_focus'
+        model = model[:-11] + '_random_10percent'
     else:
         modelLoaded = loadModel(model)
-        model = model[:-6] + '_focus'
+        model = model[:-6] + '_random_10percent'
     
     print()
     print(model)
@@ -1222,11 +1224,11 @@ nameData = 'TTbar'
 # rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.25.npz')
 # rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.25_single_pv.npz')
 # rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
-# rawBinD = np.load('TTbar_Raw_1.0_bin_size_overlap_0.npz')
+rawBinD = np.load('TTbar_Raw_1.0_bin_size_overlap_0.npz')
 # rawBinD = np.load('TTbar_Raw_1.0_bin_size_overlap_0.5.npz')
 # rawBinD = np.load('TTbar_Raw_1.0_bin_size_overlap_0.5_single_pv.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
-rawBinD = np.load('TTbar_Raw_2.0_bin_size_overlap_0.npz')
+# rawBinD = np.load('TTbar_Raw_2.0_bin_size_overlap_0.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
 # rawBinD = np.load('TTbar_Raw_2.0_bin_size_overlap_1.0_single_pv.npz')
 
@@ -1278,10 +1280,10 @@ pvPred = rawBinD['pv_pred']
 
 print()
 # print(zRaw[:3])
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=pvPred, prob=probability)
-print(xTrain.shape)
-model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-testing(model, history, xTest, yTest, name)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=pvPred, prob=probability)
+# print(xTrain.shape)
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# testing(model, history, xTest, yTest, name)
 
 
 # prediting the pv given probability
@@ -1323,15 +1325,15 @@ testing(model, history, xTest, yTest, name)
 # Loaded model test and comparison to other models
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
 # print(xTrain[0,0])
 # print(xTrain.shape)
 
-# name = ''
-# train = ''
+name = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.keras'
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
