@@ -215,6 +215,7 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     zVal = np.nan_to_num(zVal, nan=MASK_NO)
     ptVal = np.nan_to_num(ptVal, nan=MASK_NO)
     etaVal = np.nan_to_num(etaVal, nan=MASK_NO)
+    pvVal = np.nan_to_num(pvVal, nan=MASK_NO)
     
     # getting jagged data
     # print(int(sum(trackLength)))
@@ -260,7 +261,7 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     # choosing random bin 10 % of the time
     rawBinAll_I = np.stack((zVal, ptVal, etaVal), axis=1)
     rawBinAll_I = rawBinAll_I.swapaxes(1,2)
-    randomBin = np.random.choice(np.arange(zVal.shape[0]), yTest.shape[0]//10)
+    randomBin = np.random.choice(np.arange(zVal.shape[0]), yTest.shape[0]//10, replace=False)
     print(randomBin.shape)
     for i in range(0, randomBin.shape[0]):
         yTest[i] = pvVal[randomBin[i]]
@@ -1335,7 +1336,7 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 name = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.keras'
 train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-# testLoadedModel(name, train, xTest, yTest)
+testLoadedModel(name, train, xTest, yTest)
 
 # name = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_pv_1723453162.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_pv_1723453162.log'
