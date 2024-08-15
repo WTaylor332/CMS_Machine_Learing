@@ -84,26 +84,6 @@ def loadRNN(form , op, lossFunc, maskNo):
 
     return model, 'pv_to_prob_rnn'
 
-def pvToProbRNN(form , op, lossFunc, maskNo):
-    
-    modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_pv_1723479083.keras')
-
-    inp = keras.Input(shape=form)
-    mask = keras.layers.Masking(mask_value=maskNo, trainable=False)(inp)
-    rnn1 = keras.layers.SimpleRNN(20, return_sequences=True, activation='tanh', trainable=False)(mask)
-    rnn2 = keras.layers.SimpleRNN(20, return_sequences=True, activation='tanh', trainable=False)(rnn1)
-    rnn3 = keras.layers.SimpleRNN(20, activation='tanh')(rnn3)
-    outClass = keras.layers.Dense(1, activation='sigmoid')(rnn3)
-
-    model = keras.Model(inputs=inp, outputs=[outClass])
-    model.layers[1].set_weights(modelLoad.layers[0].get_weights())
-    model.layers[2].set_weights(modelLoad.layers[1].get_weights())
-    model.layers[3].set_weights(modelLoad.layers[2].get_weights())
-
-    model.compile(optimizer=op, loss=lossFunc)
-
-    return model, 'pv_to_prob_rnn'
-
 def probToPvRNN(form , op, lossFunc, maskNo):
     
     modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723130617.keras')
@@ -277,11 +257,10 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     # creating model
     op = keras.optimizers.Adam()
     # l1 = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
-    # l1 = keras.losses.MeanAbsoluteError()
-    # l2 = keras.losses.BinaryCrossentropy()
-    # lossFunc = [l1, l2] 
-    lossFunc = keras.losses.BinaryCrossentropy()
-    model, typeM = pvToProbRNN(form, op, lossFunc, MASK_NO)
+    l1 = keras.losses.MeanAbsoluteError()
+    l2 = keras.losses.BinaryCrossentropy()
+    lossFunc = [l1, l2] 
+    model, typeM = loadRNN(form, op, lossFunc, MASK_NO)
     # model, typeM = probToPvRNN(form, op, lossFunc, MASK_NO)
     model.summary()
     
