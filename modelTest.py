@@ -124,8 +124,9 @@ def findPVGivenProb(z, modelName, xT, yT):
     print(oneDIndex[:50])
     print(indexTest[:50])
 
-    xTestFocus = xT[oneDIndex]
-    yTestFocus = yT[0][oneDIndex]
+    xTestFocus = xT[indexTest]
+    # yTestFocus = yT[0][oneDIndex]
+    yTestFocus = yT[0][indexTest]
     indexNan = np.argwhere(yTestFocus == MASK_NO)
     print(indexNan.shape)
     print(indexNan)
@@ -154,8 +155,8 @@ def findPVGivenProb(z, modelName, xT, yT):
               howFarOff[j+8], howFarOff[j+9],howFarOff[j+10], howFarOff[j+11], howFarOff[j+12], howFarOff[j+13], howFarOff[j+14], howFarOff[j+15])
     print()
 
-    import sys
-    sys.exit()
+    # import sys
+    # sys.exit()
     return xTestFocus, yTestFocus
 
 
@@ -837,10 +838,10 @@ def testLoadedModel(model, train, xT, yT):
     if model[-2:] == 'h5':
         print(model)
         modelLoaded = loadWeights(model, xT)
-        model = model[:-11]
+        model = model[:-11] + '_focus'
     else:
         modelLoaded = loadModel(model)
-        model = model[:-6]
+        model = model[:-6] + '_focus'
     
     print()
     print(model)
