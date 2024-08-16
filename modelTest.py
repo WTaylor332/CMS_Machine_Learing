@@ -145,6 +145,14 @@ def findPVGivenProb(z, modelName, xT, yT):
     print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
 
     print(xTestFocus.shape, yTestFocus.shape)
+
+    howFarOff = np.subtract(indexTest, oneDIndex)
+    print(howFarOff.shape)
+    for j in range(0, howFarOff.shape[0], 16):
+        print(howFarOff[j], howFarOff[j+1], howFarOff[j+2],howFarOff[j+3], howFarOff[j+4], howFarOff[j+5], howFarOff[j+6], howFarOff[j+7], \
+              howFarOff[j+8], howFarOff[j+9],howFarOff[j+10], howFarOff[j+11], howFarOff[j+12], howFarOff[j+13], howFarOff[j+14], howFarOff[j+15])
+    print()
+
     import sys
     sys.exit()
     return xTestFocus, yTestFocus
