@@ -265,7 +265,7 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     # else:
     #     print('probability')
     #     yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
-    yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
+    # yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
     # yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
    
 
@@ -281,11 +281,11 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     # print(np.count_nonzero(yTest==MASK_NO))
     # print(np.round(100 * np.count_nonzero(yTest==MASK_NO)/yTest.shape[0]),5)
 
-    # yTestReg, yValidReg, yTrainReg = pv[:t], pv[t:v], pv[v:]
-    # yTestClass, yValidClass, yTrainClass = prob[:t], prob[t:v], prob[v:]
-    # yTrain = [yTrainReg, yTrainClass]
-    # yValid = [yValidReg, yValidClass]
-    # yTest = [yTestReg, yTestClass]
+    yTestReg, yValidReg, yTrainReg = pv[:t], pv[t:v], pv[v:]
+    yTestClass, yValidClass, yTrainClass = prob[:t], prob[t:v], prob[v:]
+    yTrain = [yTrainReg, yTrainClass]
+    yValid = [yValidReg, yValidClass]
+    yTest = [yTestReg, yTestClass]
         
     print(xTest.shape, yTest.shape, yTest.shape)
     return xTrain, yTrain, xValid, yValid, xTest, yTest
