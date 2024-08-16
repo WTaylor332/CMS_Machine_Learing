@@ -112,9 +112,16 @@ def findPVGivenProb(z, modelName, xT, yT):
     indexPred = np.argmax(testPredProb.reshape(xT.shape[0]//z.shape[1], z.shape[1]), axis=1) # change to take highest prob in each event as the bin with the pv in it
     print()
     print(indexPred.shape)
+    print(indexPred[:30])
     print()
 
     oneDIndex = z.shape[1] * np.arange(indexPred.shape[0]) + indexPred
+    print(oneDIndex.shape)
+    print(oneDIndex[:30])
+
+    import sys
+    sys.exit()
+
     xTestFocus = xT[oneDIndex]
     yTestFocus = yT[0][oneDIndex]
     indexNan = np.argwhere(yTestFocus == MASK_NO)
@@ -1324,9 +1331,9 @@ print()
 # pvPred = rawBinD['pv_pred']
 # print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, prob=probability)
-# print(xTest.shape)
-# probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1723649673.keras'
-# xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
+print(xTest.shape)
+probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1723649673.keras'
+xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
 # regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.log'
 # testLoadedModel(model=regModel, train=train, xT=xTestFocus, yT=yTestFocus)
@@ -1357,10 +1364,10 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # # # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
-name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1723649673.keras'
-train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1723649673.log'
-# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-testLoadedModel(name, train, xTest, yTest)
+# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1723649673.keras'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1723649673.log'
+# # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+# testLoadedModel(name, train, xTest, yTest)
 
 # name = 'TTbar_Raw_model_4inputs_rnn_adam_binary_crossentropy_bins_size1_feeding_pv_1723741383.keras'
 # train = 'TTbar_training_Raw_model_4inputs_rnn_adam_binary_crossentropy_bins_size1_feeding_pv_1723741383.log'
