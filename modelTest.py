@@ -115,12 +115,12 @@ def findPVGivenProb(z, modelName, xT, yT):
     print(indexPred[:30])
     print()
 
-    oneDIndex = z.shape[1] * np.arange(indexPred.shape[0]) + indexPred
+    oneDIndex = (z.shape[1]-1) * np.arange(indexPred.shape[0]) + indexPred
     print(oneDIndex.shape)
     print(oneDIndex[:30])
 
-    import sys
-    sys.exit()
+    # import sys
+    # sys.exit()
 
     xTestFocus = xT[oneDIndex]
     yTestFocus = yT[0][oneDIndex]
@@ -871,126 +871,126 @@ def testLoadedModel(model, train, xT, yT):
     print(np.std(diff), np.mean(diff))
 
     # plotting % of predictions vs loss
-    # print()
-    # plt.clf()
-    # per = 90
-    # tol = 0.15
-    # sortedDiff = np.sort(diff[diff<2])
-    # percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    # percentile = np.zeros(len(sortedDiff)) + per
-    # tolerance = np.zeros(len(diff)) + tol
-    # tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
-    # tolIndex = np.where(sortedDiff <= tol)
-    # perIndex = np.where(tolPercent <= per)
-    # print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    # print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
-    # fig, ax = plt.subplots()
-    # plt.plot(sortedDiff, percent, color="green", linewidth=0.7)
-    # plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
-    # plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
-    # plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
-    # if np.sort(diff)[perIndex[0][-1]] < 2:
-    #     plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)))
-    # ax.minorticks_on()
-    # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # plt.xlabel('Difference between predicted and true value')
-    # plt.ylabel('Percentage')
-    # plt.title("Percentage of values vs Difference")
-    # plt.legend()
-    # plt.savefig(f"{name}_Percentage_vs_loss_{model[start[0]+1:]}.png", dpi=1200)
-    # print('Percentage vs difference plot made')
+    print()
+    plt.clf()
+    per = 90
+    tol = 0.15
+    sortedDiff = np.sort(diff[diff<2])
+    percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
+    percentile = np.zeros(len(sortedDiff)) + per
+    tolerance = np.zeros(len(diff)) + tol
+    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
+    tolIndex = np.where(sortedDiff <= tol)
+    perIndex = np.where(tolPercent <= per)
+    print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
+    print('Value of', per, 'th percentil:', np.sort(diff)[perIndex[0][-1]])
+    fig, ax = plt.subplots()
+    plt.plot(sortedDiff, percent, color="green", linewidth=0.7)
+    plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
+    plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
+    plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
+    if np.sort(diff)[perIndex[0][-1]] < 2:
+        plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)))
+    ax.minorticks_on()
+    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    plt.xlabel('Difference between predicted and true value')
+    plt.ylabel('Percentage')
+    plt.title("Percentage of values vs Difference")
+    plt.legend()
+    plt.savefig(f"{name}_Percentage_vs_loss_{model[start[0]+1:]}.png", dpi=1200)
+    print('Percentage vs difference plot made')
 
-    # # plot of scattered train and validation data
-    # print()
-    # yPredTrain = modelLoaded.predict(xTrain).flatten()
-    # plt.clf()
-    # fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
-    # ax[0].axis('equal')
-    # ax[0].scatter(yTrain.flatten(), yPredTrain.flatten(), marker='^', color='r', edgecolor='k')
-    # line = np.array([-20, 20])
-    # ax[0].plot(line, line, color='black')
-    # ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
-    # ax[0].plot(line, line-max(line)*0.2, '--', c='orange')
-    # ax[0].plot(line, line+max(line)*0.1, '--', c='pink')
-    # ax[0].plot(line, line-max(line)*0.1, '--', c='pink')
-    # ax[0].set_title('Test Set')
-    # ax[0].set_xlabel('True values')
-    # ax[0].set_ylabel('Predicted values')
-    # ax[0].set_ylim(-20,20)
+    # plot of scattered train and validation data
+    print()
+    yPredTrain = modelLoaded.predict(xTrain).flatten()
+    plt.clf()
+    fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
+    ax[0].axis('equal')
+    ax[0].scatter(yTrain.flatten(), yPredTrain.flatten(), marker='^', color='r', edgecolor='k')
+    line = np.array([-20, 20])
+    ax[0].plot(line, line, color='black')
+    ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[0].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[0].set_title('Test Set')
+    ax[0].set_xlabel('True values')
+    ax[0].set_ylabel('Predicted values')
+    ax[0].set_ylim(-20,20)
+    ax[0].set_xlim(-20,20)
+    ax[0].minorticks_on()
+    ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
+
+    ax[1].axis('equal')
+    ax[1].scatter(yT.flatten(), yPredicted.flatten(), marker='^', color='r', edgecolor='k')
+    ax[1].plot(line, line, color='black')
+    ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
+    ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[1].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[1].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[1].set_title('Validation Set')
+    ax[1].set_xlabel('True values')
+    ax[1].set_ylabel('Predicted values')
+    ax[1].set_ylim(-20,20)
+    ax[1].set_xlim(-20,20)
+    ax[1].minorticks_on()
+    ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
+    plt.savefig(f'{name}_True_vs_predicted_scatter_{model[start[0]+1:]}.png', dpi=1000)
+    print('scatter plot made')
+
+    # plot of scattered train and validation data
+    print()
+    plt.clf()
+    fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
+    ax[0].axis('equal')
+    extent = np.array([[min(yTrain), max(yTrain)], [min(yPredTrain), max(yPredTrain)]])
+    heatmap = ax[0].hist2d(yTrain, yPredTrain, bins=40, cmap='Wistia', range=extent)
+    fig.colorbar(heatmap[3], ax=ax[0])
+    line = np.array([-15, 15])
+    ax[0].plot(line, line, color='black')
+    ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[0].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[0].set_title('Test Set')
+    ax[0].set_xlabel('True values')
+    ax[0].set_ylabel('Predicted values')
+    ax[0].set_ylim(-20,20)
     # ax[0].set_xlim(-20,20)
-    # ax[0].minorticks_on()
-    # ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
+    ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
 
-    # ax[1].axis('equal')
-    # ax[1].scatter(yT.flatten(), yPredicted.flatten(), marker='^', color='r', edgecolor='k')
-    # ax[1].plot(line, line, color='black')
-    # ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
-    # ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
-    # ax[1].plot(line, line+max(line)*0.1, '--', c='pink')
-    # ax[1].plot(line, line-max(line)*0.1, '--', c='pink')
-    # ax[1].set_title('Validation Set')
-    # ax[1].set_xlabel('True values')
-    # ax[1].set_ylabel('Predicted values')
-    # ax[1].set_ylim(-20,20)
+    ax[1].axis('equal')
+    extent = np.array([[min(yT), max(yT)], [min(yPredicted), max(yPredicted)]])
+    heatmap = ax[1].hist2d(yTrain, yPredTrain, bins=40, cmap='Wistia', range=extent)
+    fig.colorbar(heatmap[3], ax=ax[1])
+    ax[1].plot([-15,15], [-15,15], color='black')
+    ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
+    ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[1].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[1].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[1].set_title('Validation Set')
+    ax[1].set_xlabel('True values')
+    ax[1].set_ylabel('Predicted values')
+    ax[1].set_ylim(-20,20)
     # ax[1].set_xlim(-20,20)
-    # ax[1].minorticks_on()
-    # ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    # plt.savefig(f'{name}_True_vs_predicted_scatter_{model[start[0]+1:]}.png', dpi=1000)
-    # print('scatter plot made')
+    ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
+    plt.savefig(f'{name}_True_vs_predicted_map_{model[start[0]+1:]}.png')
+    print('map plot made')
 
-    # # plot of scattered train and validation data
-    # print()
-    # plt.clf()
-    # fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
-    # ax[0].axis('equal')
-    # extent = np.array([[min(yTrain), max(yTrain)], [min(yPredTrain), max(yPredTrain)]])
-    # heatmap = ax[0].hist2d(yTrain, yPredTrain, bins=40, cmap='Wistia', range=extent)
-    # fig.colorbar(heatmap[3], ax=ax[0])
-    # line = np.array([-15, 15])
-    # ax[0].plot(line, line, color='black')
-    # ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
-    # ax[0].plot(line, line-max(line)*0.2, '--', c='orange')
-    # ax[0].plot(line, line+max(line)*0.1, '--', c='pink')
-    # ax[0].plot(line, line-max(line)*0.1, '--', c='pink')
-    # ax[0].set_title('Test Set')
-    # ax[0].set_xlabel('True values')
-    # ax[0].set_ylabel('Predicted values')
-    # ax[0].set_ylim(-20,20)
-    # # ax[0].set_xlim(-20,20)
-    # ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
-
-    # ax[1].axis('equal')
-    # extent = np.array([[min(yT), max(yT)], [min(yPredicted), max(yPredicted)]])
-    # heatmap = ax[1].hist2d(yTrain, yPredTrain, bins=40, cmap='Wistia', range=extent)
-    # fig.colorbar(heatmap[3], ax=ax[1])
-    # ax[1].plot([-15,15], [-15,15], color='black')
-    # ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
-    # ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
-    # ax[1].plot(line, line+max(line)*0.1, '--', c='pink')
-    # ax[1].plot(line, line-max(line)*0.1, '--', c='pink')
-    # ax[1].set_title('Validation Set')
-    # ax[1].set_xlabel('True values')
-    # ax[1].set_ylabel('Predicted values')
-    # ax[1].set_ylim(-20,20)
-    # # ax[1].set_xlim(-20,20)
-    # ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    # plt.savefig(f'{name}_True_vs_predicted_map_{model[start[0]+1:]}.png')
-    # print('map plot made')
-
-    # # plotting histogram of difference
-    # fig, ax = plt.subplots()
-    # ax.minorticks_on()
-    # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # ax.set_yscale('log')
-    # diff = yPredicted.flatten() - yT.flatten()
-    # plot = sn.kdeplot(data=diff, linewidth =0.8, ax=ax)
-    # plt.legend()
-    # plt.title('Distribution of errors')
-    # plt.xlabel('Difference between predicted and true PV [cm]')
-    # plt.savefig(f"{nameData}_Hist_loss_{model[start[0]+1:]}.png", dpi=1200)
-    # print('KDE plot made')
+    # plotting histogram of difference
+    fig, ax = plt.subplots()
+    ax.minorticks_on()
+    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    ax.set_yscale('log')
+    diff = yPredicted.flatten() - yT.flatten()
+    plot = sn.kdeplot(data=diff, linewidth =0.8, ax=ax)
+    plt.legend()
+    plt.title('Distribution of errors')
+    plt.xlabel('Difference between predicted and true PV [cm]')
+    plt.savefig(f"{nameData}_Hist_loss_{model[start[0]+1:]}.png", dpi=1200)
+    print('KDE plot made')
 
     # # plotting learning rate against epochs
     # print()
@@ -1009,39 +1009,39 @@ def testLoadedModel(model, train, xT, yT):
     # else:
     #     print('No learning rate stored for each epoch')
 
-    # % values that predicted the correct bin
-    yPredicted = yPredicted.reshape(xT.shape[0]//zRaw.shape[1], zRaw.shape[1])
-    indexPred = np.argmax(yPredicted, axis=1).flatten()
-    indexTest = np.argwhere(yT.flatten() == 1).flatten()
-    print(indexTest[:30])
-    indexTest = indexTest%zRaw.shape[1]
-    print(indexTest[:30])
-    count = 0
-    print(indexTest.shape)
-    print(indexTest[:30])
-    print(indexPred.shape)
-    print(indexPred[:30])
-    print(np.amax(yPredicted[:10], axis=1))
-    print()
-    print(yT[:5])
-    print(yT.shape)
-    print(yPredicted[:5])
-    print(yPredicted.shape)
-    if len(indexTest) < len(indexPred):
-        length = len(indexTest)
-    else:
-        length = len(indexPred)
-    for i in tqdm(range(length)):
-        if indexPred[i] == indexTest[i]:
-            count += 1
-    print()
-    print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
-    print()
-    howFarOff = np.subtract(indexTest, indexPred)
-    print(howFarOff.shape)
-    for j in range(0, howFarOff.shape[0], 8):
-        print(howFarOff[j], howFarOff[j+1], howFarOff[j+2],howFarOff[j+3], howFarOff[j+4], howFarOff[j+5], howFarOff[j+6], howFarOff[j+7])
-    print()
+    # # % values that predicted the correct bin
+    # yPredicted = yPredicted.reshape(xT.shape[0]//zRaw.shape[1], zRaw.shape[1])
+    # indexPred = np.argmax(yPredicted, axis=1).flatten()
+    # indexTest = np.argwhere(yT.flatten() == 1).flatten()
+    # print(indexTest[:30])
+    # indexTest = indexTest%zRaw.shape[1]
+    # print(indexTest[:30])
+    # count = 0
+    # print(indexTest.shape)
+    # print(indexTest[:30])
+    # print(indexPred.shape)
+    # print(indexPred[:30])
+    # print(np.amax(yPredicted[:10], axis=1))
+    # print()
+    # print(yT[:5])
+    # print(yT.shape)
+    # print(yPredicted[:5])
+    # print(yPredicted.shape)
+    # if len(indexTest) < len(indexPred):
+    #     length = len(indexTest)
+    # else:
+    #     length = len(indexPred)
+    # for i in tqdm(range(length)):
+    #     if indexPred[i] == indexTest[i]:
+    #         count += 1
+    # print()
+    # print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
+    # print()
+    # howFarOff = np.subtract(indexTest, indexPred)
+    # print(howFarOff.shape)
+    # for j in range(0, howFarOff.shape[0], 8):
+    #     print(howFarOff[j], howFarOff[j+1], howFarOff[j+2],howFarOff[j+3], howFarOff[j+4], howFarOff[j+5], howFarOff[j+6], howFarOff[j+7])
+    # print()
 
     # # confunstion matrix
     # print()
@@ -1334,9 +1334,9 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 print(xTest.shape)
 probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1723649673.keras'
 xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
-# regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.keras'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.log'
-# testLoadedModel(model=regModel, train=train, xT=xTestFocus, yT=yTestFocus)
+regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.keras'
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.log'
+testLoadedModel(model=regModel, train=train, xT=xTestFocus, yT=yTestFocus)
 
 
 # Loaded model test and comparison to other models
