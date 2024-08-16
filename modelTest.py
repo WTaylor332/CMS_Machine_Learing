@@ -1292,7 +1292,7 @@ print(nameData)
 zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
 # pvPred = rawBinD['pv_pred']
 # ptBin, trackBin = binD['ptB'], binD['tB']
-# print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
+print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 # print(np.argwhere(probability == 1))
 # print(len(np.argwhere(probability == 1)))
 # print(pvRaw.shape)
