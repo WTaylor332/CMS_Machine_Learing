@@ -99,12 +99,12 @@ def binModel(xTrain, yTrain, xValid, yValid):
 
 
 def findPVGivenProb(z, modelName, xT, yT):
-    # model = loadModel(modelName)
-    model = loadWeights(modelName, xT)
+    model = loadModel(modelName)
+    # model = loadWeights(modelName, xT)
 
-    indexTest = np.argwhere(yT != MASK_NO)
+    indexTest = np.argwhere(yT[0] != MASK_NO)
     print(np.sum(indexTest))
-    indexTest = indexTest//zRaw.shape[1] + indexTest%zRaw.shape[1]
+    indexTest = indexTest%zRaw.shape[1]
     testPredProb = model.predict(xT).flatten()
     print('test predict done')
     print(testPredProb.shape)
@@ -112,7 +112,6 @@ def findPVGivenProb(z, modelName, xT, yT):
     indexPred = np.argmax(testPredProb.reshape(xT.shape[0]//z.shape[1], z.shape[1]), axis=1) # change to take highest prob in each event as the bin with the pv in it
     print()
     print(indexPred.shape)
-    print(yT.shape)
     print()
 
     oneDIndex = z.shape[1] * np.arange(indexPred.shape[0]) + indexPred
@@ -122,14 +121,17 @@ def findPVGivenProb(z, modelName, xT, yT):
     print(indexNan.shape)
     print(indexNan)
     print(100*(len(yTestFocus) - len(indexNan))/len(yTestFocus))
-    
+    print()    
+    print(np.count_nonzero(yTest==MASK_NO))
+    print(np.round(100 * np.count_nonzero(yTest==MASK_NO)/yTest[1].shape[0], 5))
 
     if len(indexTest) < len(indexPred):
         length = len(indexTest)
     else:
         length = len(indexPred)
+    count = 0
     for i in tqdm(range(length)):
-        if indexPred[i] in indexTest:
+        if indexPred[i] == indexTest[i]:
             count += 1
     print()
     print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
@@ -182,11 +184,11 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
         pvVal = pv
         print(z.shape, pt.shape, eta.shape, pv.shape)
         if prob is None:
-            indexNan = np.argwhere(np.isnan(pv))
-            z = np.delete(z, indexNan, 0)
-            pt = np.delete(pt, indexNan, 0)
-            eta = np.delete(eta, indexNan, 0)
-            pv = np.delete(pv, indexNan, 0)
+            # indexNan = np.argwhere(np.isnan(pv))
+            # z = np.delete(z, indexNan, 0)
+            # pt = np.delete(pt, indexNan, 0)
+            # eta = np.delete(eta, indexNan, 0)
+            # pv = np.delete(pv, indexNan, 0)
             pv = np.nan_to_num(pv, nan=MASK_NO)
             print(z.shape, pt.shape, eta.shape, pv.shape)
         if pvPr is not None:
@@ -206,6 +208,7 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     z = np.nan_to_num(z, nan=MASK_NO)
     pt = np.nan_to_num(pt, nan=MASK_NO)
     eta = np.nan_to_num(eta, nan=MASK_NO)
+    pv = np.nan_to_num(pv, nan=MASK_NO)
 
     columnZ = zVal.reshape(zVal.shape[0]*zVal.shape[1], 1)
     scaler = StandardScaler().fit(columnZ)
@@ -255,21 +258,21 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     # else:
     #     print('probability')
     #     yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
-    # yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
-    yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
-    print(xTest.shape, yTest.shape)
+    yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
+    # yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
+   
 
     # choosing random bin 10 % of the time
-    rawBinAll_I = np.stack((zVal, ptVal, etaVal), axis=1)
-    rawBinAll_I = rawBinAll_I.swapaxes(1,2)
-    randomBin = np.random.choice(np.arange(zVal.shape[0]), yTest.shape[0]//10, replace=False)
-    print(randomBin.shape)
-    for i in range(0, randomBin.shape[0]):
-        yTest[i] = pvVal[randomBin[i]]
-        xTest[i] = rawBinAll_I[randomBin[i]]    
-    print(xTest.shape, yTest.shape)
-    print(np.count_nonzero(yTest==MASK_NO))
-    print(np.round(100 * np.count_nonzero(yTest==MASK_NO)/yTest.shape[0]),5)
+    # rawBinAll_I = np.stack((zVal, ptVal, etaVal), axis=1)
+    # rawBinAll_I = rawBinAll_I.swapaxes(1,2)
+    # randomBin = np.random.choice(np.arange(zVal.shape[0]), yTest.shape[0]//10, replace=False)
+    # print(randomBin.shape)
+    # for i in range(0, randomBin.shape[0]):
+    #     yTest[i] = pvVal[randomBin[i]]
+    #     xTest[i] = rawBinAll_I[randomBin[i]]    
+    # print(xTest.shape, yTest.shape)
+    # print(np.count_nonzero(yTest==MASK_NO))
+    # print(np.round(100 * np.count_nonzero(yTest==MASK_NO)/yTest.shape[0]),5)
 
     # yTestReg, yValidReg, yTrainReg = pv[:t], pv[t:v], pv[v:]
     # yTestClass, yValidClass, yTrainClass = prob[:t], prob[t:v], prob[v:]
@@ -277,7 +280,7 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     # yValid = [yValidReg, yValidClass]
     # yTest = [yTestReg, yTestClass]
         
-
+    print(xTest.shape, yTest.shape, yTest.shape)
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
 
@@ -476,6 +479,20 @@ def testing(model, hist, xT, yT, name):
     # plt.savefig(f'{name[:start[0]]}_True_vs_predicted_map_{name[start[0]+1:]}.png')
     # print('map plot made')
 
+    # plotting histogram of difference
+    # fig, ax = plt.subplots()
+    # ax.minorticks_on()
+    # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    # ax.set_yscale('log')
+    # diff = yPredicted.flatten() - yT.flatten()
+    # plot = sn.kdeplot(data=diff, linewidth =0.8, ax=ax)
+    # plt.legend()
+    # plt.title('Distribution of errors')
+    # plt.xlabel('Difference between predicted and true PV [cm]')
+    # plt.savefig(f"{nameData}_Hist_loss_{name[start[0]+1:]}.png", dpi=1200)
+    # print('KDE plot made')
+
     # plotting learning rate against epochs
     # print()
     # lr = hist.history['lr']
@@ -493,7 +510,7 @@ def testing(model, hist, xT, yT, name):
     yPredicted = yPredicted.reshape(xT.shape[0]//zRaw.shape[1], zRaw.shape[1])
     indexPred = np.argmax(yPredicted, axis=1).flatten()
     indexTest = np.argwhere(yT.flatten() == 1).flatten()
-    indexTest = indexTest//zRaw.shape[1] + indexTest%zRaw.shape[1]
+    indexTest = indexTest%zRaw.shape[1]
     count = 0
     print(indexTest.shape)
     print(indexTest[:5])
@@ -846,15 +863,7 @@ def testLoadedModel(model, train, xT, yT):
     print(max(diff), min(diff))
     print(np.std(diff), np.mean(diff))
 
-    # # plotting histogram of difference
-    # plt.clf()
-    # sn.kdeplot(data=diff[diff<2], linewidth =0.8)
-    # plt.title('Error of Predicted values historgram')
-    # plt.xlabel('Error')
-    # plt.savefig(f"{name}_Hist_loss_{model[start[0]+1:]}.png", dpi=1000)
-    # print('Hist plot made')
-
-    # # plotting % of predictions vs loss
+    # plotting % of predictions vs loss
     # print()
     # plt.clf()
     # per = 90
@@ -961,6 +970,20 @@ def testLoadedModel(model, train, xT, yT):
     # ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
     # plt.savefig(f'{name}_True_vs_predicted_map_{model[start[0]+1:]}.png')
     # print('map plot made')
+
+    # # plotting histogram of difference
+    # fig, ax = plt.subplots()
+    # ax.minorticks_on()
+    # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    # ax.set_yscale('log')
+    # diff = yPredicted.flatten() - yT.flatten()
+    # plot = sn.kdeplot(data=diff, linewidth =0.8, ax=ax)
+    # plt.legend()
+    # plt.title('Distribution of errors')
+    # plt.xlabel('Difference between predicted and true PV [cm]')
+    # plt.savefig(f"{nameData}_Hist_loss_{model[start[0]+1:]}.png", dpi=1200)
+    # print('KDE plot made')
 
     # # plotting learning rate against epochs
     # print()
@@ -1260,7 +1283,7 @@ print(nameData)
 # zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
 # trackLength = rawD['tl']
 zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-pvPred = rawBinD['pv_pred']
+# pvPred = rawBinD['pv_pred']
 # ptBin, trackBin = binD['ptB'], binD['tB']
 # print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 # print(np.argwhere(probability == 1))
@@ -1298,43 +1321,21 @@ print()
 # prediting the pv given probability
 # rawBinD = np.load('TTbar_Raw_1.0_bin_size_overlap_0.npz')
 # zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
+# pvPred = rawBinD['pv_pred']
 # print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, prob=probability)
 # print(xTest.shape)
-# probModel = 'TTbar_Raw_model_3inputs_pv_to_prob_rnn_adam_binary_crossentropy_bins_size1_1723720042.weights.h5'
+# probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1723649673.keras'
 # xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
 # regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.log'
 # testLoadedModel(model=regModel, train=train, xT=xTestFocus, yT=yTestFocus)
 
 
-# rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
-# zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-# print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
-# print(xTest.shape)
-# probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723130617.keras'
-# xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
-# regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_pv_1723539044.keras'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_pv_1723539044.log'
-# testLoadedModel(model=regModel, train=train, xT=xTestFocus, yT=yTestFocus)
-
-# rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
-# zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-# print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
-# print(xTest.shape)
-# probModel = 'TTbar_Raw_model_3inputs_pv_to_prob_rnn_adam_binary_crossentropy_bins_size1_1723548447.keras'
-# xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
-# regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size05_1723540545.keras'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size05_1723540545.log'
-# testLoadedModel(model=regModel, train=train, xT=xTestFocus, yT=yTestFocus)
-
-
 # Loaded model test and comparison to other models
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
 # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
 # xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
@@ -1356,10 +1357,10 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # # # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
 # testLoadedModel(name, train, xTest, yTest)
 
-# name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723130617.weights.h5'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_1723130617.log'
-# # # # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-# testLoadedModel(name, train, xTest, yTest)
+name = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1723649673.keras'
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1723649673.log'
+# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+testLoadedModel(name, train, xTest, yTest)
 
 # name = 'TTbar_Raw_model_4inputs_rnn_adam_binary_crossentropy_bins_size1_feeding_pv_1723741383.keras'
 # train = 'TTbar_training_Raw_model_4inputs_rnn_adam_binary_crossentropy_bins_size1_feeding_pv_1723741383.log'
