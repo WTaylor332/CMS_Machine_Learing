@@ -149,6 +149,7 @@ def findPVGivenProb(z, modelName, xT, yT):
     print(xTestFocus.shape, yTestFocus.shape)
     print()
     print(yTestFocus[:50])
+    print(pvRaw[indexTest][:50])
     # howFarOff = np.subtract(indexTest, oneDIndex)
     # print(howFarOff.shape)
     # for j in range(0, howFarOff.shape[0], 16):
