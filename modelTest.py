@@ -287,7 +287,7 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     yValid = [yValidReg, yValidClass]
     yTest = [yTestReg, yTestClass]
         
-    print(xTest.shape, yTest[0].shape, yTest[1].shape)
+    # print(xTest.shape, yTest[0].shape, yTest[1].shape)
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
 
