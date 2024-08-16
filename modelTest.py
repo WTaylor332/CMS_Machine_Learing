@@ -129,8 +129,8 @@ def findPVGivenProb(z, modelName, xT, yT):
     print(indexNan)
     print(100*(len(yTestFocus) - len(indexNan))/len(yTestFocus))
     print()    
-    print(np.count_nonzero(yTest==MASK_NO))
-    print(np.round(100 * np.count_nonzero(yTest==MASK_NO)/yTest[1].shape[0], 5))
+    print(np.count_nonzero(yT[1]==MASK_NO))
+    print(np.round(100 * np.count_nonzero(yT[1]==MASK_NO)/yT[1].shape[0], 5))
 
     if len(indexTest) < len(indexPred):
         length = len(indexTest)
@@ -287,7 +287,7 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     yValid = [yValidReg, yValidClass]
     yTest = [yTestReg, yTestClass]
         
-    print(xTest.shape, yTest.shape, yTest.shape)
+    # print(xTest.shape, yTest[0].shape, yTest[1].shape)
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
 
@@ -1331,7 +1331,7 @@ print()
 # pvPred = rawBinD['pv_pred']
 # print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, prob=probability)
-print(xTest.shape)
+# print(xTest.shape)
 probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1723649673.keras'
 xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
 regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.keras'
