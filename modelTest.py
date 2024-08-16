@@ -121,7 +121,8 @@ def findPVGivenProb(z, modelName, xT, yT):
 
     oneDIndex = (z.shape[1]) * np.arange(indexPred.shape[0]) + indexPred
     print(oneDIndex.shape)
-    print(oneDIndex[:30])
+    print(oneDIndex[:50])
+    print(indexTest[:50])
 
     xTestFocus = xT[oneDIndex]
     yTestFocus = yT[0][oneDIndex]
