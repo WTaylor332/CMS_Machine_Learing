@@ -101,12 +101,12 @@ def binModel(xTrain, yTrain, xValid, yValid):
 def findPVGivenProb(z, modelName, xT, yT):
     model = loadModel(modelName)
     # model = loadWeights(modelName, xT)
-    print('\n\n\n\n\n')
+    print('\n\n\n')
     print(yT[0].shape)
-    indexTest = np.argwhere(yT[0] != MASK_NO)
+    indexTest = np.argwhere(yT[0] != MASK_NO).flatten()
     print(np.sum(indexTest))
     print(indexTest[:30])
-    indexTest = indexTest%zRaw.shape[1]
+    # indexTest = indexTest%zRaw.shape[1]
     print(indexTest[:30])
     print()
     testPredProb = model.predict(xT).flatten()
@@ -122,9 +122,6 @@ def findPVGivenProb(z, modelName, xT, yT):
     oneDIndex = (z.shape[1]) * np.arange(indexPred.shape[0]) + indexPred
     print(oneDIndex.shape)
     print(oneDIndex[:30])
-
-    # import sys
-    # sys.exit()
 
     xTestFocus = xT[oneDIndex]
     yTestFocus = yT[0][oneDIndex]
@@ -142,13 +139,14 @@ def findPVGivenProb(z, modelName, xT, yT):
         length = len(indexPred)
     count = 0
     for i in tqdm(range(length)):
-        if indexPred[i] == indexTest[i]:
+        if oneDIndex[i] == indexTest[i]:
             count += 1
     print()
     print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
 
     print(xTestFocus.shape, yTestFocus.shape)
-
+    import sys
+    sys.exit()
     return xTestFocus, yTestFocus
 
 
