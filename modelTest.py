@@ -101,10 +101,14 @@ def binModel(xTrain, yTrain, xValid, yValid):
 def findPVGivenProb(z, modelName, xT, yT):
     model = loadModel(modelName)
     # model = loadWeights(modelName, xT)
-
+    print('\n\n\n\n\n')
+    print(yT[0].shape)
     indexTest = np.argwhere(yT[0] != MASK_NO)
     print(np.sum(indexTest))
+    print(indexTest[:30])
     indexTest = indexTest%zRaw.shape[1]
+    print(indexTest[:30])
+    print()
     testPredProb = model.predict(xT).flatten()
     print('test predict done')
     print(testPredProb.shape)
@@ -115,7 +119,7 @@ def findPVGivenProb(z, modelName, xT, yT):
     print(indexPred[:30])
     print()
 
-    oneDIndex = (z.shape[1]-1) * np.arange(indexPred.shape[0]) + indexPred
+    oneDIndex = (z.shape[1]) * np.arange(indexPred.shape[0]) + indexPred
     print(oneDIndex.shape)
     print(oneDIndex[:30])
 
