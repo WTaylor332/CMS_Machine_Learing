@@ -380,7 +380,7 @@ def rnn(form, op, lossFunc, maskNo):
          keras.layers.Masking(mask_value=maskNo, input_shape=form),
          keras.layers.SimpleRNN(20, return_sequences=True),
          keras.layers.SimpleRNN(20),
-         keras.layers.Dense(1, activation='sigmoid')
+         keras.layers.Dense(1) #, activation='sigmoid')
      ])
     # model = keras.models.Sequential([
     #      keras.layers.Masking(mask_value=maskNo, input_shape=form),
