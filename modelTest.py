@@ -211,30 +211,34 @@ def reshapeRawBin(z, pt, eta,):
 def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     if len(z.shape) > 2:
         z, pt, eta = reshapeRawBin(z, pt, eta)
+        print(z.shape, pt.shape, eta.shape, pv.shape)
+        # scaling z
+        columnZ = z.reshape(z.shape[0]*z.shape[1], 1)
+        scaler = StandardScaler().fit(columnZ)
+        columnZ = scaler.transform(columnZ)
+        z = columnZ.reshape(pt.shape[0], pt.shape[1])
         zVal, ptVal, etaVal = z, pt, eta
         pvVal = pv
-        print(z.shape, pt.shape, eta.shape, pv.shape)
-        if prob is None:
-            indexNan = np.argwhere(np.isnan(pv))
-            z = np.delete(z, indexNan, 0)
-            pt = np.delete(pt, indexNan, 0)
-            eta = np.delete(eta, indexNan, 0)
-            pv = np.delete(pv, indexNan, 0)
-            pv = np.nan_to_num(pv, nan=MASK_NO)
-            print(z.shape, pt.shape, eta.shape, pv.shape)
-        if pvPr is not None:
-            pvReshaped = np.zeros((z.shape[0], z.shape[1]))
-            pvReshaped[pvReshaped==0] = np.nan
-            for i in range(z.shape[0]):
-                numNans = np.count_nonzero(~np.isnan(z[i]))
-                pvReshaped[i, :numNans] = pvPr[i]
-            pvReshaped = np.nan_to_num(pvReshaped, nan=MASK_NO)
 
-    # scaling z
-    columnZ = z.reshape(z.shape[0]*z.shape[1], 1)
-    scaler = StandardScaler().fit(columnZ)
-    columnZ = scaler.transform(columnZ)
-    z = columnZ.reshape(pt.shape[0], pt.shape[1])
+    if prob is None:
+        indexNan = np.argwhere(np.isnan(pv))
+        print(indexNan.shape)
+        z = np.delete(z, indexNan, 0)
+        pt = np.delete(pt, indexNan, 0)
+        eta = np.delete(eta, indexNan, 0)
+        pv = np.delete(pv, indexNan, 0)
+        print(z.shape, pt.shape, eta.shape, pv.shape)
+        # print()
+        # print(z[14:16])
+        # print(np.delete(zVal, indexNan, 0)[14:16])
+        # print(zVal[~indexNan][14:16])
+    if pvPr is not None:
+        pvReshaped = np.zeros((z.shape[0], z.shape[1]))
+        pvReshaped[pvReshaped==0] = np.nan
+        for i in range(z.shape[0]):
+            numNans = np.count_nonzero(~np.isnan(z[i]))
+            pvReshaped[i, :numNans] = pvPr[i]
+        pvReshaped = np.nan_to_num(pvReshaped, nan=MASK_NO)
 
     z = np.nan_to_num(z, nan=MASK_NO)
     pt = np.nan_to_num(pt, nan=MASK_NO)
@@ -250,20 +254,7 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     # ptVal = np.nan_to_num(ptVal, nan=MASK_NO)
     # etaVal = np.nan_to_num(etaVal, nan=MASK_NO)
     # pvVal = np.nan_to_num(pvVal, nan=MASK_NO)
-    
-    # getting jagged data
-    # print(int(sum(trackLength)))
-    # allJag = np.zeros((z.shape[0], z.shape[1], 3))
-    # print(len(allJag))
-    # for i in tqdm(range(z.shape[0])):
-    #     track = np.zeros((z.shape[1],3))
-    #     for j in range(0, z.shape[1]):
-    #         track[j] = [z[i,j], pt[i,j], eta[i,j]]
-    #     allJag[i] = track
-    #     trackLength[i] = int(trackLength[i])
-    # print()
-    # allJag = tf.RaggedTensor.from_tensor(allJag, lengths=trackLength)
-    # print(allJag.shape)
+    # pvVal = pvVal.flatten()
 
     print(z.shape, pt.shape, eta.shape, pv.shape)
 
@@ -276,6 +267,19 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     # splitting data into test, validation and training data
     t = len(pv)//10
     v = len(pv)//5
+
+    print(len(np.argwhere(pv == MASK_NO)))
+    print(len(np.argwhere(pvVal == MASK_NO)))
+    print(indexNan.flatten()[:50])
+    print(np.argwhere(pvVal == MASK_NO).flatten()[:50])
+    print(np.sum(np.subtract(indexNan.flatten(), np.argwhere(pvVal == MASK_NO).flatten())))
+    print()
+
+    indexMask = np.argwhere(pvVal != MASK_NO)
+    zMask = zVal[indexMask]
+    print(indexMask[:5])
+    print('\nFrom np delete:\n', z[:3])
+    print('\n\nFrom indexing:\n', zMask[:3])
 
     # padded data split
     rawDataAll = rawDataAll.swapaxes(1,2)
@@ -323,16 +327,16 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     op = keras.optimizers.Adam(learning_rate=0.001)
     # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
     # lossFunc = keras.losses.Huber()
-    lossFunc = keras.losses.BinaryCrossentropy() #from_logits=True)
+    # lossFunc = keras.losses.BinaryCrossentropy() #from_logits=True)
     # lossFunc = welsch
-    # lossFunc = keras.losses.MeanAbsoluteError()
+    lossFunc = keras.losses.MeanAbsoluteError()
 
     model, typeM = rnn(form, op, lossFunc, MASK_NO)
     # model, typeM = pvToProbRNN(form, op, lossFunc, MASK_NO)
     model.summary()
     
     # saving the model and best weights
-    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_bins_size2_feeding_pv_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=CLOCK)
+    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_bins_size1_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=CLOCK)
     modelDirectory = "models"
     modelName = weights[:-11]
     start =[i for i, letter in enumerate(modelName) if letter == '_']
@@ -435,94 +439,94 @@ def testing(model, hist, xT, yT, name):
     plt.legend()
     plt.savefig(f"{name[:start[0]]}_Percentage_vs_loss_{name[start[0]+1:]}.png", dpi=1200)
 
-    # # plot of scattered train and validation data
-    # print()
-    # yPredTrain = model.predict(xTrain).flatten()
-    # plt.clf()
-    # fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
-    # ax[0].axis('equal')
-    # ax[0].scatter(yTrain.flatten(), yPredTrain.flatten(), marker='^', color='r', edgecolor='k')
-    # line = np.array([-15, 15])
-    # ax[0].plot(line, line, color='black')
-    # ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
-    # ax[0].plot(line, line-max(line)*0.2, '--', c='orange')
-    # ax[0].plot(line, line+max(line)*0.1, '--', c='pink')
-    # ax[0].plot(line, line-max(line)*0.1, '--', c='pink')
-    # ax[0].set_title('Test Set')
-    # ax[0].set_xlabel('True values')
-    # ax[0].set_ylabel('Predicted values')
-    # ax[0].set_ylim(-20,20)
-    # ax[0].set_xlim(-20,20)
-    # ax[0].minorticks_on()
-    # ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
+    # plot of scattered train and validation data
+    print()
+    yPredTrain = model.predict(xTrain).flatten()
+    plt.clf()
+    fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
+    ax[0].axis('equal')
+    ax[0].scatter(yTrain.flatten(), yPredTrain.flatten(), marker='^', color='r', edgecolor='k')
+    line = np.array([-15, 15])
+    ax[0].plot(line, line, color='black')
+    ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[0].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[0].set_title('Test Set')
+    ax[0].set_xlabel('True values')
+    ax[0].set_ylabel('Predicted values')
+    ax[0].set_ylim(-20,20)
+    ax[0].set_xlim(-20,20)
+    ax[0].minorticks_on()
+    ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
 
-    # ax[1].axis('equal')
-    # ax[1].scatter(yT.flatten(), yPredicted.flatten(), marker='^', color='r', edgecolor='k')
-    # ax[1].plot([-15,15], [-15,15], color='black')
-    # ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
-    # ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
-    # ax[1].plot(line, line+max(line)*0.1, '--', c='pink')
-    # ax[1].plot(line, line-max(line)*0.1, '--', c='pink')
-    # ax[1].set_title('Validation Set')
-    # ax[1].set_xlabel('True values')
-    # ax[1].set_ylabel('Predicted values')
-    # ax[1].set_ylim(-20,20)
-    # ax[1].set_xlim(-20,20)
-    # ax[1].minorticks_on()
-    # ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    # plt.savefig(f'{name[:start[0]]}_True_vs_predicted_scatter_{name[start[0]+1:]}.png', dpi=1000)
-    # print('scatter plot made')
+    ax[1].axis('equal')
+    ax[1].scatter(yT.flatten(), yPredicted.flatten(), marker='^', color='r', edgecolor='k')
+    ax[1].plot([-15,15], [-15,15], color='black')
+    ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
+    ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[1].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[1].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[1].set_title('Validation Set')
+    ax[1].set_xlabel('True values')
+    ax[1].set_ylabel('Predicted values')
+    ax[1].set_ylim(-20,20)
+    ax[1].set_xlim(-20,20)
+    ax[1].minorticks_on()
+    ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
+    plt.savefig(f'{name[:start[0]]}_True_vs_predicted_scatter_{name[start[0]+1:]}.png', dpi=1000)
+    print('scatter plot made')
 
-    # # plot of scattered train and validation data
-    # print()
-    # plt.clf()
-    # fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
-    # ax[0].axis('equal')
-    # extent = np.array([[min(yTrain), max(yTrain)], [min(yPredTrain), max(yPredTrain)]])
-    # heatmap = ax[0].hist2d(yTrain, yPredTrain, bins=20, cmap='hot_r', range=extent)
-    # fig.colorbar(heatmap[3], ax=ax[0])
-    # line = np.array([-15, 15])
-    # ax[0].plot(line, line, color='black')
-    # ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
-    # ax[0].plot(line, line-max(line)*0.2, '--', c='orange')
-    # ax[0].plot(line, line+max(line)*0.1, '--', c='pink')
-    # ax[0].plot(line, line-max(line)*0.1, '--', c='pink')
-    # ax[0].set_title('Test Set')
-    # ax[0].set_xlabel('True values')
-    # ax[0].set_ylabel('Predicted values')
-    # ax[0].set_ylim(-15,15)
-    # ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
+    # plot of scattered train and validation data
+    print()
+    plt.clf()
+    fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
+    ax[0].axis('equal')
+    extent = np.array([[min(yTrain), max(yTrain)], [min(yPredTrain), max(yPredTrain)]])
+    heatmap = ax[0].hist2d(yTrain, yPredTrain, bins=20, cmap='hot_r', range=extent)
+    fig.colorbar(heatmap[3], ax=ax[0])
+    line = np.array([-15, 15])
+    ax[0].plot(line, line, color='black')
+    ax[0].plot(line, line+max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[0].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[0].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[0].set_title('Test Set')
+    ax[0].set_xlabel('True values')
+    ax[0].set_ylabel('Predicted values')
+    ax[0].set_ylim(-15,15)
+    ax[0].grid(which='both', alpha=0.7, c='#DDDDDD')
 
-    # ax[1].axis('equal')
-    # extent = np.array([[min(yT), max(yT)], [min(yPredicted), max(yPredicted)]])
-    # heatmap = ax[1].hist2d(yT, yPredicted, bins=20, cmap='hot_r', range=extent)
-    # fig.colorbar(heatmap[3], ax=ax[1])
-    # ax[1].plot([-15,15], [-15,15], color='black')
-    # ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
-    # ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
-    # ax[1].plot(line, line+max(line)*0.1, '--', c='pink')
-    # ax[1].plot(line, line-max(line)*0.1, '--', c='pink')
-    # ax[1].set_title('Validation Set')
-    # ax[1].set_xlabel('True values')
-    # ax[1].set_ylabel('Predicted values')
-    # ax[1].set_ylim(-15,15)
-    # ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    # plt.savefig(f'{name[:start[0]]}_True_vs_predicted_map_{name[start[0]+1:]}.png')
-    # print('map plot made')
+    ax[1].axis('equal')
+    extent = np.array([[min(yT), max(yT)], [min(yPredicted), max(yPredicted)]])
+    heatmap = ax[1].hist2d(yT, yPredicted, bins=20, cmap='hot_r', range=extent)
+    fig.colorbar(heatmap[3], ax=ax[1])
+    ax[1].plot([-15,15], [-15,15], color='black')
+    ax[1].plot(line, line+max(line)*0.2,'--', c='orange')
+    ax[1].plot(line, line-max(line)*0.2, '--', c='orange')
+    ax[1].plot(line, line+max(line)*0.1, '--', c='pink')
+    ax[1].plot(line, line-max(line)*0.1, '--', c='pink')
+    ax[1].set_title('Validation Set')
+    ax[1].set_xlabel('True values')
+    ax[1].set_ylabel('Predicted values')
+    ax[1].set_ylim(-15,15)
+    ax[1].grid(which='both', alpha=0.7, c='#DDDDDD')
+    plt.savefig(f'{name[:start[0]]}_True_vs_predicted_map_{name[start[0]+1:]}.png')
+    print('map plot made')
 
     # plotting histogram of difference
-    # fig, ax = plt.subplots()
-    # ax.minorticks_on()
-    # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # ax.set_yscale('log')
-    # diff = yPredicted.flatten() - yT.flatten()
-    # plot = sn.kdeplot(data=diff, linewidth =0.8, ax=ax)
-    # plt.legend()
-    # plt.title('Distribution of errors')
-    # plt.xlabel('Difference between predicted and true PV [cm]')
-    # plt.savefig(f"{nameData}_Hist_loss_{name[start[0]+1:]}.png", dpi=1200)
-    # print('KDE plot made')
+    fig, ax = plt.subplots()
+    ax.minorticks_on()
+    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    ax.set_yscale('log')
+    diff = yPredicted.flatten() - yT.flatten()
+    plot = sn.kdeplot(data=diff, linewidth =0.8, ax=ax)
+    plt.legend()
+    plt.title('Distribution of errors')
+    plt.xlabel('Difference between predicted and true PV [cm]')
+    plt.savefig(f"{nameData}_Hist_loss_{name[start[0]+1:]}.png", dpi=1200)
+    print('KDE plot made')
 
     # plotting learning rate against epochs
     # print()
@@ -538,29 +542,29 @@ def testing(model, hist, xT, yT, name):
     # print('learning rate plot made')
 
     # % values that predicted the correct bin
-    yPredicted = yPredicted.reshape(xT.shape[0]//zRaw.shape[1], zRaw.shape[1])
-    indexPred = np.argmax(yPredicted, axis=1).flatten()
-    indexTest = np.argwhere(yT.flatten() == 1).flatten()
-    indexTest = indexTest%zRaw.shape[1]
-    count = 0
-    print(indexTest.shape)
-    print(indexTest[:5])
-    print(indexPred.shape)
-    print(indexPred[:5])
-    print(np.round(yPredicted[:10]))
-    print(yT[:10])
-    print(yT.shape)
-    print(yPredicted[:10])
-    print(yPredicted.shape)
-    if len(indexTest) < len(indexPred):
-        length = len(indexTest)
-    else:
-        length = len(indexPred)
-    for i in tqdm(range(length)):
-        if indexPred[i] in indexTest:
-            count += 1
-    print()
-    print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
+    # yPredicted = yPredicted.reshape(xT.shape[0]//zRaw.shape[1], zRaw.shape[1])
+    # indexPred = np.argmax(yPredicted, axis=1).flatten()
+    # indexTest = np.argwhere(yT.flatten() == 1).flatten()
+    # indexTest = indexTest%zRaw.shape[1]
+    # count = 0
+    # print(indexTest.shape)
+    # print(indexTest[:5])
+    # print(indexPred.shape)
+    # print(indexPred[:5])
+    # print(np.round(yPredicted[:10]))
+    # print(yT[:10])
+    # print(yT.shape)
+    # print(yPredicted[:10])
+    # print(yPredicted.shape)
+    # if len(indexTest) < len(indexPred):
+    #     length = len(indexTest)
+    # else:
+    #     length = len(indexPred)
+    # for i in tqdm(range(length)):
+    #     if indexPred[i] in indexTest:
+    #         count += 1
+    # print()
+    # print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
 
 
     # # confunstion matrix
@@ -1276,9 +1280,6 @@ BATCH_SIZE = 2048
 EPOCHS = 500
 CLOCK = int(time.time())
 
-# name = 'Merged_Raw_model_3inputs_rnn_adam_modified01_huber_loss_1722601651.keras'
-# x = loadModel(name)
-
 # loading numpy arrays of data
 nameData = 'TTbar'
 # rawD = np.load('TTbarRaw5.npz')
@@ -1344,12 +1345,12 @@ print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 print()
 # print(zRaw[:3])
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, prob=None)
-print('\n\n\n\n\n')
-print(yTest[:50])
-print(xTest[:3])
+# print('\n\n\n\n\n')
+# print(yTest[:50])
+# print(xTest[:3])
 # print(xTrain.shape)
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xTest, yTest, name)
+model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+testing(model, history, xTest, yTest, name)
 
 
 # prediting the pv given probability
