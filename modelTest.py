@@ -408,8 +408,20 @@ def testing(model, hist, xT, yT, name):
     # plotting histogram of difference
     diff = yPredicted.flatten() - yT.flatten()
     diffDataset = pd.DataFrame(dict(error=diff))
-    # kde = gaussian_kde(diff)
-    # xx = np.linspace(min(diff), max(diff), 1000)
+
+    plt.clf()
+    fig, ax2 = plt.subplots()
+    ax2.minorticks_on()
+    ax2.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax2.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    ax2.set_yscale('symlog')
+    ax2.set_ylabel('Log count')
+    ax2.set_xlim(-20,20)
+    sn.histplot(data=diffDataset, x='error', bins=300, kde=True, ax=ax2)
+    ax2.set_title('Distribution of errors')
+    ax2.set_xlabel('Difference between predicted and true PV [cm]')
+    plt.savefig(f"{nameData}_Hist_loss_log_{name[start[0]+1:]}.png", dpi=1200)
+    print('Hist plot made')
 
     plt.clf()
     fig, ax1 = plt.subplots()
@@ -417,26 +429,14 @@ def testing(model, hist, xT, yT, name):
     ax1.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax1.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     ax1.set_ylabel('Count')
-    sn.displot(data=diffDataset, x='error', kde=False, ax=ax1)
-    plt.title('Distribution of errors')
-    plt.xlabel('Difference between predicted and true PV [cm]')
+    ax1.set_xlim(-20,20)
+    sn.histplot(data=diffDataset, x='error', bins=300, kde=True, ax=ax1)
+    ax1.set_title('Distribution of errors')
+    ax1.set_xlabel('Difference between predicted and true PV [cm]')
     plt.savefig(f"{nameData}_Hist_loss_{name[start[0]+1:]}.png", dpi=1200)
     print('Hist plot made')
-    
-    plt.clf()
-    fig, ax1 = plt.subplots()
-    ax1.minorticks_on()
-    ax1.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    ax1.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    ax1.set_yscale('log')
-    ax1.set_ylabel('Log count')
-    sn.displot(data=diffDataset, x='error', kde=False, ax=ax1)
-    plt.title('Distribution of errors')
-    plt.xlabel('Difference between predicted and true PV [cm]')
-    plt.savefig(f"{nameData}_Hist_loss_log_{name[start[0]+1:]}.png", dpi=1200)
-    print('Hist plot made')
 
-    shortenedDiff = diff[diff<2]
+    shortenedDiff = diff[(diff<2) & (diff>-2)]
     shortDiffDataset = pd.DataFrame(dict(error=shortenedDiff))
     plt.clf()
     fig, ax1 = plt.subplots()
@@ -444,9 +444,10 @@ def testing(model, hist, xT, yT, name):
     ax1.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax1.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     ax1.set_ylabel('Count')
-    sn.displot(data=shortDiffDataset, x='error', kde=False, ax=ax1)
-    plt.title('Distribution of errors')
-    plt.xlabel('Difference between predicted and true PV [cm]')
+    sn.histplot(data=shortDiffDataset, x='error', bins=300, kde=True, ax=ax1)
+    ax1.set_title('Distribution of errors')
+    ax1.set_xlabel('Difference between predicted and true PV [cm]')
+    ax1.set_xlim(-2,2)
     plt.savefig(f"{nameData}_Hist_loss_shortened_{name[start[0]+1:]}.png", dpi=1200)
     print('Hist plot made')
 
@@ -528,7 +529,6 @@ def testing(model, hist, xT, yT, name):
     #         count += 1
     # print()
     # print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
-
 
     # # confunstion matrix
     # print()
