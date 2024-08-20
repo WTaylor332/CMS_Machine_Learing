@@ -5,14 +5,14 @@ from sklearn.preprocessing import StandardScaler
 import random
 from tqdm import tqdm
 
-import matplotlib.pyplot as plt
-
-def loadData(dataFile):
+# function get z, pt, eta, and pv values from decay root file
+def loadData(dataFile): 
     f = uproot.open(dataFile+':L1TrackNtuple/eventTree')
     events = f.arrays(['trk_pt', 'trk_eta','trk_phi','trk_z0','trk_nstub', 'trk_bendchi2','trk_chi2dof','pv_MC','pv_L1reco'])
     return events['trk_z0'], events['trk_pt'], events['pv_MC'], events['trk_eta']
   
 
+# function replaces inf values with nan values and applies a cut to pt values to only get pt values that are greater than 2
 def modifyData(z, pt, eta, ptCut=2):
 
     pt = np.where(pt<2, np.nan, pt)
@@ -31,7 +31,8 @@ def modifyData(z, pt, eta, ptCut=2):
 
     return z, pt, eta
 
-
+# this creates a numpy array for z, pt and eta of shape (No.events, max_track_length) and 
+# is right padded with nan values from the last track to the max track length out of all the events
 def rawPaddedData(eventZ, eventPT, eventEta):
     padSize = 400
     eventZData = np.zeros((len(eventZ), padSize))
@@ -40,14 +41,12 @@ def rawPaddedData(eventZ, eventPT, eventEta):
     trackLength = np.zeros(len(eventZ))
     maxTLength = 0
     for i in tqdm(range(len(eventZ))):
-
         trackLength[i] = len(eventZ[i])
 
         zSort = np.zeros(padSize)
         padding = np.array([np.nan for x in range((padSize-len(eventZ[i])))])
         zSort[:len(eventZ[i])] = eventZ[i]
-        zSort[len(eventZ[i]):] = padding
-
+        zSort[len(eventZ[i]):] = padding # adds padding 
 
         ptSort = np.zeros(padSize)
         ptSort[:len(eventPT[i])] = eventPT[i]
@@ -66,18 +65,14 @@ def rawPaddedData(eventZ, eventPT, eventEta):
         nanIndex = np.argwhere(np.isnan(zSort))
         if len(nanIndex) > 0:
             trackLength[i] = nanIndex[0][0]
-            if nanIndex[0][0] > maxTLength:
+            if nanIndex[0][0] > maxTLength: 
                 maxTLength = np.argwhere(np.isnan(zSort))[0][0]
         else:
             trackLength[i] = len(zSort)
 
-
         eventZData[i] = zSort
         eventPTData[i] = ptSort
         eventEtaData[i] = etaSort
-
-
-
 
     # to scale pt and eta
     zFlat = eventZData.flatten()
@@ -87,15 +82,17 @@ def rawPaddedData(eventZ, eventPT, eventEta):
     print(arr.shape)
     scaler = StandardScaler().fit(arr)
     arrScaled = scaler.transform(arr)
+
     eventPTData = arrScaled[:,1].reshape(len(eventPT), padSize)
     eventEtaData = arrScaled[:,2].reshape(len(eventEta), padSize)
-    eventZData = eventZData[:, :maxTLength]
+    eventZData = eventZData[:, :maxTLength] # makes padding up to the max track length - removes unnecessary padding
     eventPTData = eventPTData[:, :maxTLength]
     eventEtaData = eventEtaData[:, :maxTLength]
     print(eventZData.shape, eventPTData.shape, eventEtaData.shape)
     return eventZData, eventPTData, eventEtaData, trackLength, maxTLength
 
-# binning
+# function to bin raw data produced from rawPaddedData funtion into 300 bins 
+# each bin contains the summed pt between the bin range and the number of tracks associated to that bin
 def histogramData(z, pt):
     ptBinnedMatrix = np.zeros((z.shape[0], 300))
     trackBinnedMatrix = np.zeros((z.shape[0], 300))
@@ -108,7 +105,6 @@ def histogramData(z, pt):
         tracksBin = np.zeros(300)
         trackCount = 0
         while binValue <= 15 and count < len(z[i]):
-
             if z[i][count] <= binValue:
                 ptValue += (pt[i][count])
                 count += 1
@@ -120,12 +116,11 @@ def histogramData(z, pt):
                 ptValue = 0
                 tracksBin[index] = trackCount
                 trackCount = 0
-
         ptBinnedMatrix[i] = ptBin
         trackBinnedMatrix[i] = tracksBin
     return ptBinnedMatrix, trackBinnedMatrix
 
-
+# this function mixes and shuffles data from QCD, WJets and TTbar decay
 def merge():
     rawQ = np.load('QCD_Pt-15To3000.npz')
     rawW = np.load('WJetsToLNu.npz')
@@ -133,8 +128,8 @@ def merge():
 
     print(rawQ['z'].shape, rawW['z'].shape, rawT['z'].shape)
 
-    maxTrackLength = int(max([rawQ['maxValue'], rawT['maxValue'], rawW['maxValue']]))
-    mergedEventsNo = int(rawQ['z'].shape[0] + rawW['z'].shape[0] + rawT['z'].shape[0])
+    maxTrackLength = int(max([rawQ['maxValue'], rawT['maxValue'], rawW['maxValue']])) # finds max track length which will be used for padding data
+    mergedEventsNo = int(rawQ['z'].shape[0] + rawW['z'].shape[0] + rawT['z'].shape[0]) # number of events in mixed data
     print(rawQ['z'].shape[1])
     print(maxTrackLength)
     padNoQ = int(maxTrackLength - rawQ['z'].shape[1])
@@ -158,39 +153,28 @@ def merge():
     zTPadded = np.hstack((rawT['z'], padT))
     ptTPadded = np.hstack((rawT['pt'], padT))
     etaTPadded = np.hstack((rawT['pt'], padT))
-    print(zTPadded[-1])
-    print(rawT['z'][-1])
-    print()
 
     zMerge = np.zeros((mergedEventsNo, maxTrackLength))
     ptMerge = np.zeros((mergedEventsNo, maxTrackLength))
     etaMerge = np.zeros((mergedEventsNo, maxTrackLength))
 
-    zMerge[:rawQ['z'].shape[0]] = zQPadded = np.hstack((rawQ['z'], padQ))
-    zMerge[rawQ['z'].shape[0]:rawQ['z'].shape[0]+rawW['z'].shape[0]] = zWPadded = np.hstack((rawW['z'], padW))
-    zMerge[rawQ['z'].shape[0]+rawW['z'].shape[0]:] = zTPadded = np.hstack((rawT['z'], padT))
-    print(zMerge[-1])
-    print()
-    ptMerge[:rawQ['z'].shape[0]] = ptQPadded = np.hstack((rawQ['pt'], padQ))
-    ptMerge[rawQ['z'].shape[0]:rawQ['z'].shape[0]+rawW['z'].shape[0]] = ptWPadded = np.hstack((rawW['pt'], padW))
-    ptMerge[rawQ['z'].shape[0]+rawW['z'].shape[0]:] = ptTPadded = np.hstack((rawT['pt'], padT))
-    print(ptMerge[-1])
-    print()
-    etaMerge[:rawQ['z'].shape[0]] = etaQPadded = np.hstack((rawQ['pt'], padQ))
-    etaMerge[rawQ['z'].shape[0]:rawQ['z'].shape[0]+rawW['z'].shape[0]] = etaWPadded = np.hstack((rawW['pt'], padW))
-    etaMerge[rawQ['z'].shape[0]+rawW['z'].shape[0]:] = etaTPadded = np.hstack((rawT['pt'], padT))
-    print(etaMerge[-1])
-    print()
+    zMerge[:rawQ['z'].shape[0]] = zQPadded 
+    zMerge[rawQ['z'].shape[0]:rawQ['z'].shape[0]+rawW['z'].shape[0]] = zWPadded 
+    zMerge[rawQ['z'].shape[0]+rawW['z'].shape[0]:] = zTPadded
 
-    print(zMerge.shape, ptMerge.shape, etaMerge.shape)
-    print(zMerge[0])
+    ptMerge[:rawQ['z'].shape[0]] = ptQPadded
+    ptMerge[rawQ['z'].shape[0]:rawQ['z'].shape[0]+rawW['z'].shape[0]] = ptWPadded
+    ptMerge[rawQ['z'].shape[0]+rawW['z'].shape[0]:] = ptTPadded
+
+    etaMerge[:rawQ['z'].shape[0]] = etaQPadded
+    etaMerge[rawQ['z'].shape[0]:rawQ['z'].shape[0]+rawW['z'].shape[0]] = etaWPadded
+    etaMerge[rawQ['z'].shape[0]+rawW['z'].shape[0]:] = etaTPadded
 
     pv = np.concatenate((rawQ['pv'], rawW['pv'], rawT['pv']))
     trackLength = np.concatenate((rawQ['tl'], rawW['tl'], rawT['tl']))
-    print(pv.shape)
-    print(trackLength.shape)
+
     order = list(enumerate(pv))
-    random.shuffle(order)
+    random.shuffle(order) # index list used to shuffle the events in mixed data set
     shuffleIndex, newOrder = zip(*order)
     shuffleIndex =np.array(shuffleIndex)
     zMerge = zMerge[shuffleIndex]
@@ -199,12 +183,9 @@ def merge():
     pvMerge = pv[shuffleIndex]
     trackLength = trackLength[shuffleIndex]
 
-    print()
-    print(zMerge.shape, ptMerge.shape, etaMerge.shape)
-    print(zMerge[0])
     return zMerge, ptMerge, etaMerge, pvMerge, trackLength
 
-
+# finds distribution of the number of tracks in each bin 
 def distributionTrack(z, bins):
     binValues = np.linspace(-15, 15+30/bins, bins)
     numTrackBin = np.zeros((z.shape[0], bins))
@@ -217,23 +198,10 @@ def distributionTrack(z, bins):
     print(averageTrackBin)
     per = 99.9
     print(f'{per}th percentile: ', np.percentile(numTrackBin.flatten(), per))
-    # fig, ax = plt.subplots(2, 2, figsize=(12,6), sharey=True)
-    # ax[0, 0].hist(np.sort(z.flatten()), bins=30)
-    # ax[0, 0].minorticks_on()
-    # ax[0, 0].grid(which='both', alpha=0.7, c='#DDDDDD')
-    # ax[0, 1].hist(np.sort(z.flatten()), bins=15)
-    # ax[0, 1].minorticks_on()
-    # ax[0, 1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    # ax[1, 0].hist(np.sort(numTrackBin.flatten()), bins=30)
-    # ax[1, 0].minorticks_on()
-    # ax[1, 0].grid(which='both', alpha=0.7, c='#DDDDDD')
-    # ax[1, 1].hist(np.sort(numTrackBin.flatten()), bins=15)
-    # ax[1, 1].minorticks_on()
-    # ax[1, 1].grid(which='both', alpha=0.7, c='#DDDDDD')
-    # plt.savefig('Track_distribution_for_each_bin.png', dpi=1000)
+
     return np.percentile(numTrackBin.flatten(), per)
 
-
+# seperate each event into separate bins that are right padded with nan values 
 def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
     maxTrackLength = per
     if lap == 0:
@@ -278,7 +246,7 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
                     etaPad = eta[i, index[:maxTrackLength]].flatten()
                 else:
                     zPad[:len(valuesInBin)] = valuesInBin
-                    zPad[len(valuesInBin):] = np.nan
+                    zPad[len(valuesInBin):] = np.nan # pads if the number of values between the bin boundary value is less than the track length in each bin
                     ptPad[:len(valuesInBin)] = pt[i, index].flatten()
                     ptPad[len(valuesInBin):] = np.nan
                     etaPad [:len(valuesInBin)] = eta[i, index].flatten()
@@ -296,7 +264,7 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
                 etaData[i, whichBin] = etaPad
             if pv[i] < binValues[j] and pv[i] > binValues[j-1]:
                 if (pv[i] - binValues[j]) < 0 and (pv[i] - binValues[j-2]) > 0:
-                    if abs(pv[i] - binValues[j]) > abs(pv[i] - binValues[j-2]):
+                    if abs(pv[i] - binValues[j]) > abs(pv[i] - binValues[j-2]): # used in overlapped bins to ensure pv value is assigned to 1 bin in each event
                         hardVertexProb[i, whichBin] = 1
                         pvData[i, whichBin] = pv[i]
                         count += 1
@@ -314,15 +282,14 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
             else:
                 whichBin = j // 2
 
-        if pv[i] > binValues[-1] or pv[i] < binValues[0]:
+        if pv[i] > binValues[-1] or pv[i] < binValues[0]: # counts the number of pv outside range -15 to 15:
             countPV += 1
 
     pvData = pvData.flatten()
     hardVertexProb = hardVertexProb.flatten()
-    print()
+
     print(countPV)
     print(count)
-    print(zData.shape, ptData.shape, etaData.shape, pvData.shape, hardVertexProb.shape)
 
     return zData, ptData, etaData, pvData, hardVertexProb
 
@@ -333,9 +300,11 @@ def rawBinData(z, pt, eta, pv, binSize, per, lap=0):
 # -----------------------------------------------------------------MAIN----------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------------------------
 
+# to get track data from root file
 # name = "TTbar.root"
 # eventZ,  eventPT, eventPV, eventEta = loadData(name)
 
+# calling rawPaddedData function and saving values into a numpy area
 # zRaw, ptRaw, etaRaw, trackLength, mv = rawPaddedData(eventZ, eventPT, eventEta)
 # np.savez('TTbarRaw5', z=zRaw, pt=ptRaw, eta=etaRaw, pv=np.array(eventPV), tl=trackLength, maxValue=np.array([mv]))
 
@@ -344,63 +313,25 @@ nameData = 'TTbar'
 # zRaw, ptRaw, etaRaw = rawD['z'], rawD['pt'], rawD['eta']
 # t = rawD['tl']
 # m = rawD['maxValue']
-# print(zRaw[0], ptRaw[0], etaRaw[0], '\n', t, '\n', m)
 
+# function to bin data into 300 bins and output pt and number of tracks info for each bin
 # ptBin, trackBin = histogramData(zRaw, ptRaw)
 
-# np.savez('QCD_Pt-15To3000_Bin', ptB=ptBin, tB=trackBin)
-# q = np.load('QCD_Pt-15To3000_Bin.npz')
-# print(q['ptB'].shape)
-# print(q['tB'].shape)
-
-
-# merge and sort all decays
-
+# mixing TTbar, QCD and Wjet decays
 # zMerge, ptMerge, etaMerge, pvMerge, trackLength = merge()
 # np.savez('Merged_deacys_Raw', z=zMerge, pt=ptMerge, eta=etaMerge, pv=np.array(pvMerge), tl=trackLength)
 # rawD = np.load('Merged_deacys_Raw.npz')
 # nameData = 'Merged'
 # z, pt, eta = mergeData['z'], mergeData['pt'], mergeData['eta']
-# print()
-# print(z.shape, pt.shape, eta.shape)
 
-# # bin merged decays
+# bin merged decays
 # ptBin, trackBin = histogramData(z, pt)
 # np.savez('Merged_decays_Bin', ptB=ptBin, tB=trackBin)
 
-# q = np.load('Merged_decays_Bin.npz')
-# print()
-# print(q['ptB'].shape)
-# print(q['tB'].shape)
-
-# adding probability of hard vertex to mixed data
+# adding probability of hard vertex to data
 b = 60
-
-percentile = distributionTrack(rawD['z'], bins=b)
-
-print()
+percentile = distributionTrack(rawD['z'], bins=b) # calling function to find percentile of track distribution
 binS = 30/b
 overlap = binS/2
-print(nameData, binS, overlap)
-# # print(rawD['pv'][:5])
-# # print(rawD['z'][0]) 
-zData, ptData, etaData, pvData, probability = rawBinData(rawD['z'], rawD['pt'], rawD['eta'], rawD['pv'], binS, int(percentile), lap=overlap)
-print(np.sum(probability))
-print(probability.shape)
-print(pvData.shape)
-pv = pvData[~np.isnan(pvData)]
-print(pv.shape)
-np.savez(f'{nameData}_Raw_{binS}_bin_size_overlap_{overlap}_single_pv', z=zData, pt=ptData, eta=etaData, pv=pvData, prob=probability)
-
-
-# rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
-# rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
-# rawBinD = np.load('TTbar_Raw_1.0_bin_size_overlap_0.npz')
-# rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
-# rawBinD = np.load('TTbar_Raw_2.0_bin_size_overlap_0.npz')
-
-# print(rawBinD['z'].shape)
-# print()
-# print(rawBinD['z'][0, :rawBinD['z'].shape[1]//2])
-# print()
-# print(rawBinD['z'][0, rawBinD['z'].shape[1]//2:])
+# zData, ptData, etaData, pvData, probability = rawBinData(rawD['z'], rawD['pt'], rawD['eta'], rawD['pv'], binS, int(percentile), lap=overlap)
+# np.savez(f'{nameData}_Raw_{binS}_bin_size_overlap_{overlap}_single_pv', z=zData, pt=ptData, eta=etaData, pv=pvData, prob=probability)
