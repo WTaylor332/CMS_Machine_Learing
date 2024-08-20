@@ -45,6 +45,11 @@ def binModelSplit(pt, pv, track=np.array([])):
     xTest, xValid, xTrain = binDataAll[:t], binDataAll[t:v], binDataAll[v:]
     yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
 
+    # if conv model used uncomment this code to reshape data
+    # xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
+    # xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
+    # xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
+
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
 
@@ -157,7 +162,7 @@ def reshapeRawBin(z, pt, eta,):
     return zData, ptData, etaData
 
 
-def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
+def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None, probToPV=False):
     if len(z.shape) > 2:
         z, pt, eta = reshapeRawBin(z, pt, eta)
         print(z.shape, pt.shape, eta.shape, pv.shape)
@@ -208,7 +213,6 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
         rawDataAll = np.stack((z,pt,eta, pvReshaped), axis=1)
     else:
         rawDataAll = np.stack((z,pt,eta), axis=1)
-    print(rawDataAll.shape)
 
     # splitting data into test, validation and training data
     t = len(pv)//10
@@ -220,16 +224,23 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     # padded data split
     rawDataAll = rawDataAll.swapaxes(1,2)
     xTest, xValid, xTrain = rawDataAll[:t], rawDataAll[t:v], rawDataAll[v:]
+    print(rawDataAll.shape)
     # jagged data split
     # xTest, xValid, xTrain = allJag[:t], allJag[t:v], allJag[v:]
 
     # desired values
     if prob is None:
         yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
-    else:
+    elif prob is not None and probToPV == False:
         print('probability')
         yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
-
+    elif probToPV == True:
+        yTestReg, yValidReg, yTrainReg = pv[:t], pv[t:v], pv[v:] # regression test data
+        yTestClass, yValidClass, yTrainClass = prob[:t], prob[t:v], prob[v:] # probability test data
+        yTrain = [yTrainReg, yTrainClass]
+        yValid = [yValidReg, yValidClass]
+        yTest = [yTestReg, yTestClass]
+        
     # choosing random bin 10 % of the time
     # rawBinAll_I = np.stack((zVal, ptVal, etaVal), axis=1)
     # rawBinAll_I = rawBinAll_I.swapaxes(1,2)
@@ -242,12 +253,6 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None):
     # print(np.count_nonzero(yTest==MASK_NO))
     # print(np.round(100 * np.count_nonzero(yTest==MASK_NO)/yTest.shape[0]),5)
 
-    # yTestReg, yValidReg, yTrainReg = pv[:t], pv[t:v], pv[v:] # regression test data
-    # yTestClass, yValidClass, yTrainClass = prob[:t], prob[t:v], prob[v:] # probability test data
-    # yTrain = [yTrainReg, yTrainClass]
-    # yValid = [yValidReg, yValidClass]
-    # yTest = [yTestReg, yTestClass]
-        
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
 
@@ -266,7 +271,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     model.summary()
     
     # saving the model and best weights
-    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_bins_size1_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=CLOCK)
+    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_bins_size1_overlap_pv_fpga_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=CLOCK)
     modelDirectory = "models"
     modelName = weights[:-11]
     start =[i for i, letter in enumerate(modelName) if letter == '_']
@@ -277,11 +282,10 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=20, cooldown = 1, min_lr=0.000001, verbose=1)
     csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
     stopTraining = haltCallback()
-    earlyStop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=500)
 
     history = model.fit(xTrain, yTrain, epochs=EPOCHS, batch_size=BATCH_SIZE,\
                         validation_data=(xValid, yValid),\
-                        callbacks=[checkpointCallback, lr, csvLogger, earlyStop])
+                        callbacks=[checkpointCallback, lr, csvLogger])
 
     checkpointFilename = os.path.join(modelDirectory, weights)
     check = os.path.isdir(modelDirectory)
@@ -296,7 +300,7 @@ def rawModel(xTrain, yTrain, xValid, yValid):
     return model, history, modelName
 
 
-def testing(model, hist, xT, yT, name):
+def testingRegression(model, hist, xT, yT, name):
     print()
     print(name)
     yPredicted = model.predict(xT).flatten()
@@ -307,108 +311,106 @@ def testing(model, hist, xT, yT, name):
     start =[i for i, letter in enumerate(name) if letter == '_']
 
     # plot of epochs against training and validation loss
-    # print()
-    # loss = hist['loss']
-    # val_loss = hist['val_loss']
-    # epochs = range(1, len(loss) + 1)
+    print()
+    loss = hist['loss']
+    val_loss = hist['val_loss']
+    epochs = range(1, len(loss) + 1)
+    plt.clf()
+    plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
+    plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
+    plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
+    minX = np.argmin(val_loss) + 1
+    minY = np.min(val_loss)
+    plt.scatter(minX, minY, color='green', label='minimum '+str(round(minY, 5)), s=6)
+    plt.xlabel('Epoch number')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.savefig(f"{name[:start[0]]}_Train_valid_loss_{name[start[0]+1:]}.png", dpi=1200)
+    print('min val loss:', min(val_loss))
+    print('At epoch number:',np.argmin(val_loss)+1)
+    print('min loss:', min(loss))
+    print('At epoch number:',np.argmin(loss)+1)
 
-    # plt.clf()
-    # plt.plot(epochs, loss, color='blue', label='Training Loss', linewidth=0.7)
-    # plt.plot(epochs, val_loss, color='red', label='Validation Loss', linewidth=0.7)
-    # plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
-    # plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
-    # minX = np.argmin(val_loss) + 1
-    # minY = np.min(val_loss)
-    # plt.scatter(minX, minY, color='green', label='minimum '+str(round(minY, 5)), s=6)
-    # plt.xlabel('Epoch number')
-    # plt.ylabel('Loss')
-    # plt.title('Training and Validation Loss')
-    # plt.legend()
-    # plt.savefig(f"{name[:start[0]]}_Train_valid_loss_{name[start[0]+1:]}.png", dpi=1200)
-    # print('min val loss:', min(val_loss))
-    # print('At epoch number:',np.argmin(val_loss)+1)
-    # print('min loss:', min(loss))
-    # print('At epoch number:',np.argmin(loss)+1)
+    # plotting % of predictions vs difference
+    plt.clf()
+    per = 90
+    tol = 0.15
+    sortedDiff = np.sort(diff)
+    shortenedDiff = sortedDiff[sortedDiff<2]
+    percent = (np.arange(0,len(shortenedDiff),1)*100)/len(diff)
+    percentile = np.zeros(len(shortenedDiff)) + per
+    tolerance = np.zeros(len(diff)) + tol
+    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
+    tolIndex = np.where(shortenedDiff <= tol)
+    perIndex = np.where(tolPercent <= per)
+    print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
+    print('Value of', per, 'th percentile:', sortedDiff[perIndex[0][-1]])
+    label = 'Integration of Gaussian distribution'
 
-    # # plotting % of predictions vs difference
-    # plt.clf()
-    # per = 90
-    # tol = 0.15
-    # sortedDiff = np.sort(diff)
-    # shortenedDiff = sortedDiff[sortedDiff<2]
-    # percent = (np.arange(0,len(shortenedDiff),1)*100)/len(diff)
-    # percentile = np.zeros(len(shortenedDiff)) + per
-    # tolerance = np.zeros(len(diff)) + tol
-    # tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
-    # tolIndex = np.where(shortenedDiff <= tol)
-    # perIndex = np.where(tolPercent <= per)
-    # print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    # print('Value of', per, 'th percentile:', sortedDiff[perIndex[0][-1]])
+    fig, ax = plt.subplots()
+    plt.plot(shortenedDiff, percent, color="green", label=label, linewidth=0.7)
+    plt.plot(shortenedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
+    plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
+    plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
+    if sortedDiff[perIndex[0][-1]] < 2:
+        plt.scatter(sortedDiff[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(round(sortedDiff[perIndex[0][-1]], 3)))
+    ax.minorticks_on()
+    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    ax.set_xlim(0,2)
+    plt.xlabel('Difference between predicted and true value')
+    plt.ylabel('Percentage')
+    plt.title(f"{nameData} Percentage of values vs Difference")
+    plt.legend()
+    plt.savefig(f"{name[:start[0]]}_Percentage_vs_loss_up_to_2_{name[start[0]+1:]}.png", dpi=1200)
 
-    # fig, ax = plt.subplots()
-    # plt.plot(shortenedDiff, percent, color="green", label=name[start[3]+1:start[-1]], linewidth=0.7)
-    # plt.plot(shortenedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
-    # plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
-    # plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
-    # if sortedDiff[perIndex[0][-1]] < 2:
-    #     plt.scatter(sortedDiff[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(round(sortedDiff[perIndex[0][-1]], 3)))
-    # ax.minorticks_on()
-    # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # ax.set_xlim(0,2)
-    # plt.xlabel('Difference between predicted and true value')
-    # plt.ylabel('Percentage')
-    # plt.title("Percentage of values vs Difference")
-    # plt.legend()
-    # plt.savefig(f"{name[:start[0]]}_Percentage_vs_loss_up_to_2_{name[start[0]+1:]}.png", dpi=1200)
+    plt.clf()
+    fig, ax = plt.subplots()
+    shortenedDiff = sortedDiff[sortedDiff<10]
+    percent = (np.arange(0,len(shortenedDiff),1)*100)/len(diff)
+    percentile = np.zeros(len(shortenedDiff)) + per
+    plt.plot(shortenedDiff, percent, color="green", label=label, linewidth=0.7)
+    plt.plot(shortenedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
+    plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
+    plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
+    if sortedDiff[perIndex[0][-1]] < 2:
+        plt.scatter(sortedDiff[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(round(sortedDiff[perIndex[0][-1]], 3)))
+    ax.minorticks_on()
+    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    ax.set_xlim(0,10)
+    plt.xlabel('Difference between predicted and true value')
+    plt.ylabel('Percentage')
+    plt.title(f"{nameData} Percentage of values vs Difference")
+    plt.legend()
+    plt.savefig(f"{name[:start[0]]}_Percentage_vs_loss_up_to_10_{name[start[0]+1:]}.png", dpi=1200)
 
-
-    # plt.clf()
-    # fig, ax = plt.subplots()
-    # shortenedDiff = sortedDiff[sortedDiff<10]
-    # percent = (np.arange(0,len(shortenedDiff),1)*100)/len(diff)
-    # percentile = np.zeros(len(shortenedDiff)) + per
-    # plt.plot(shortenedDiff, percent, color="green", label=name[start[3]+1:start[-1]], linewidth=0.7)
-    # plt.plot(shortenedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
-    # plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
-    # plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
-    # if sortedDiff[perIndex[0][-1]] < 2:
-    #     plt.scatter(sortedDiff[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(round(sortedDiff[perIndex[0][-1]], 3)))
-    # ax.minorticks_on()
-    # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # ax.set_xlim(0,10)
-    # plt.xlabel('Difference between predicted and true value')
-    # plt.ylabel('Percentage')
-    # plt.title("Percentage of values vs Difference")
-    # plt.legend()
-    # plt.savefig(f"{name[:start[0]]}_Percentage_vs_loss_up_to_10_{name[start[0]+1:]}.png", dpi=1200)
-
-    # plt.clf()
-    # percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    # percentile = np.zeros(len(sortedDiff)) + per
-    # fig, ax = plt.subplots()
-    # plt.plot(sortedDiff, percent, color="green", label=name[start[3]+1:start[-1]], linewidth=0.7)
-    # plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
-    # plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
-    # plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
-    # if sortedDiff[perIndex[0][-1]] < 2:
-    #     plt.scatter(sortedDiff[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(round(sortedDiff[perIndex[0][-1]], 3)))
-    # ax.minorticks_on()
-    # ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    # ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    # plt.xlabel('Difference between predicted and true value')
-    # plt.ylabel('Percentage')
-    # plt.title("Percentage of values vs Difference")
-    # plt.legend()
-    # plt.savefig(f"{name[:start[0]]}_Percentage_vs_loss_up_to_maxdiff_{name[start[0]+1:]}.png", dpi=1200)
+    plt.clf()
+    percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
+    percentile = np.zeros(len(sortedDiff)) + per
+    fig, ax = plt.subplots()
+    plt.plot(sortedDiff, percent, color="green", label=label, linewidth=0.7)
+    plt.plot(sortedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
+    plt.plot(tolerance, tolPercent, color='red', linestyle=':', label=str(tol)+" tolerance")
+    plt.scatter(tol, percent[tolIndex[0][-1]], color='red', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)))
+    if sortedDiff[perIndex[0][-1]] < 2:
+        plt.scatter(sortedDiff[perIndex[0][-1]], per, color='blue', label=str(per)+' percentile: '+str(round(sortedDiff[perIndex[0][-1]], 3)))
+    ax.minorticks_on()
+    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
+    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
+    plt.xlabel('Difference between predicted and true value')
+    plt.ylabel('Percentage')
+    plt.title(f"{nameData} Percentage of values vs Difference")
+    plt.legend()
+    plt.savefig(f"{name[:start[0]]}_Percentage_vs_loss_up_to_maxdiff_{name[start[0]+1:]}.png", dpi=1200)
 
     print('Integration plot made')
 
     # plotting histogram of difference
     diff = yPredicted.flatten() - yT.flatten()
     diffDataset = pd.DataFrame(dict(error=diff))
-
     plt.clf()
     fig, ax2 = plt.subplots()
     ax2.minorticks_on()
@@ -417,11 +419,10 @@ def testing(model, hist, xT, yT, name):
     ax2.set_yscale('symlog')
     ax2.set_ylabel('Log count')
     ax2.set_xlim(-20,20)
-    sn.histplot(data=diffDataset, x='error', bins=300, kde=True, ax=ax2)
-    ax2.set_title('Distribution of errors')
+    sn.histplot(data=diffDataset, x='error', bins=300, kde=True, ax=ax2, kde_kws=dict(linewidths=0.8))
+    ax2.set_title(f'{nameData} Distribution of errors')
     ax2.set_xlabel('Difference between predicted and true PV [cm]')
     plt.savefig(f"{nameData}_Hist_loss_log_{name[start[0]+1:]}.png", dpi=1200)
-    print('Hist plot made')
 
     plt.clf()
     fig, ax1 = plt.subplots()
@@ -430,11 +431,10 @@ def testing(model, hist, xT, yT, name):
     ax1.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     ax1.set_ylabel('Count')
     ax1.set_xlim(-20,20)
-    sn.histplot(data=diffDataset, x='error', bins=300, kde=True, ax=ax1)
+    sn.histplot(data=diffDataset, x='error', bins=300, kde=True, ax=ax1, kde_kws=dict(linewidths=0.8))
     ax1.set_title('Distribution of errors')
-    ax1.set_xlabel('Difference between predicted and true PV [cm]')
+    ax1.set_xlabel(f'{nameData} Difference between predicted and true PV [cm]')
     plt.savefig(f"{nameData}_Hist_loss_{name[start[0]+1:]}.png", dpi=1200)
-    print('Hist plot made')
 
     shortenedDiff = diff[(diff<2) & (diff>-2)]
     shortDiffDataset = pd.DataFrame(dict(error=shortenedDiff))
@@ -444,8 +444,8 @@ def testing(model, hist, xT, yT, name):
     ax1.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax1.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     ax1.set_ylabel('Count')
-    sn.histplot(data=shortDiffDataset, x='error', bins=300, kde=True, ax=ax1)
-    ax1.set_title('Distribution of errors')
+    sn.histplot(data=shortDiffDataset, x='error', bins=300, kde=True, ax=ax1, kde_kws=dict(linewidths=0.8))
+    ax1.set_title(f'{nameData} Distribution of errors')
     ax1.set_xlabel('Difference between predicted and true PV [cm]')
     ax1.set_xlim(-2,2)
     plt.savefig(f"{nameData}_Hist_loss_shortened_{name[start[0]+1:]}.png", dpi=1200)
@@ -505,49 +505,43 @@ def testing(model, hist, xT, yT, name):
     # else:
     #     print('No learning rate')
 
-    # % values that predicted the correct bin
-    # yPredicted = yPredicted.reshape(xT.shape[0]//zRaw.shape[1], zRaw.shape[1])
-    # indexPred = np.argmax(yPredicted, axis=1).flatten()
-    # indexTest = np.argwhere(yT.flatten() == 1).flatten()
-    # indexTest = indexTest%zRaw.shape[1]
-    # count = 0
-    # print(indexTest.shape)
-    # print(indexTest[:5])
-    # print(indexPred.shape)
-    # print(indexPred[:5])
-    # print(np.round(yPredicted[:10]))
-    # print(yT[:10])
-    # print(yT.shape)
-    # print(yPredicted[:10])
-    # print(yPredicted.shape)
-    # if len(indexTest) < len(indexPred):
-    #     length = len(indexTest)
-    # else:
-    #     length = len(indexPred)
-    # for i in tqdm(range(length)):
-    #     if indexPred[i] == indexTest[i]:
-    #         count += 1
-    # print()
-    # print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
 
-    # # confunstion matrix
-    # print()
-    # plt.clf()
-    # plt.figure(figsize=(30,20))
-    # plt.rcParams.update({'font.size': 40})
-    # yClassPredLabels = np.round(yPredicted)
-    # print(yT.shape)
-    # print(yClassPredLabels.shape)
-    # cm = tf.math.confusion_matrix(labels=yT, predictions=yClassPredLabels)
-    # sn.heatmap(cm, annot=True, fmt='d')
-    # plt.xlabel('Predicted')
-    # plt.ylabel('True')
-    # if nameData != name[:start[0]]:
-    #     plt.savefig(f"{nameData}_cm_probability_{name}.png", dpi=1000)
-    # else:
-    #     plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
-    # print('cm plot made')
-    
+def testingProbability(model, hist, xT, yT, name):
+    print()
+    print(name)
+    yPredicted = model.predict(xT).flatten()
+    start =[i for i, letter in enumerate(name) if letter == '_']
+
+    # % values that predicted the correct bin
+    yPredicted = yPredicted.reshape(xT.shape[0]//zRaw.shape[1], zRaw.shape[1])
+    indexPred = np.argmax(yPredicted, axis=1).flatten()
+    indexTest = np.argwhere(yT.flatten() == 1).flatten()
+    indexTest = indexTest%zRaw.shape[1]
+    count = 0
+    if len(indexTest) < len(indexPred):
+        length = len(indexTest)
+    else:
+        length = len(indexPred)
+    for i in tqdm(range(length)):
+        if indexPred[i] == indexTest[i]:
+            count += 1
+    print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
+
+    # confunstion matrix
+    plt.clf()
+    plt.figure(figsize=(30,20))
+    plt.rcParams.update({'font.size': 40})
+    yClassPredLabels = np.round(yPredicted)
+    cm = tf.math.confusion_matrix(labels=yT, predictions=yClassPredLabels)
+    sn.heatmap(cm, annot=True, fmt='d')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    if nameData != name[:start[0]]:
+        plt.savefig(f"{nameData}_cm_probability_{name}.png", dpi=1000)
+    else:
+        plt.savefig(f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
+    print('cm plot made')
+
 
 def comparison(models, train, xTest, yT):
     print()
@@ -995,8 +989,8 @@ def binSizeCompGivenProb(xT, yT, labels):
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 MASK_NO = -9999.99
-BATCH_SIZE = 30
-EPOCHS = 50
+BATCH_SIZE = 8192
+EPOCHS = 500
 CLOCK = int(time.time())
 
 # loading numpy arrays of data
@@ -1036,17 +1030,6 @@ print(nameData)
 zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
 # pvPred = rawBinD['pv_pred']
 # ptBin, trackBin = binD['ptB'], binD['tB']
-# print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
-# print(np.argwhere(probability == 1))
-# print(len(np.argwhere(probability == 1)))
-# print(pvRaw.shape)
-# print(np.argwhere(pvRaw!=pvRaw[np.isnan(pvRaw)]))
-# print(len(np.argwhere(pvRaw[~np.isnan(pvRaw)])))
-
-# indexProb = np.argwhere(probability == 1)
-# indexNan = np.argwhere(np.isnan(pvRaw))
-# pvRaw = np.argwhere(pvRaw, indexNan, 0)
-
 
 # plt.hist(trackLength, bins=100, color='red')
 # plt.plot()
@@ -1054,62 +1037,42 @@ zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['
 
 # print()
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-# print(xTest.shape)
 # model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history, xTest, yTest, name, lossFunc)
+# testingRegression(model, history, xTest, yTest, name, lossFunc)
 
 print()
-# print(zRaw[:3])
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, prob=None)
-# # print('\n\n\n\n\n')
-# # print(yTest[:50])
-# # print(xTest[:3])
-# # print(xTrain.shape)
-# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# testing(model, history.history, xTest, yTest, name)
-
-
-# prediting the pv given probability
-# zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-# # pvPred = rawBinD['pv_pred']
-# print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, prob=probability)
-# # # print(xTest.shape)
+# model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
+# # testingRegression(model, history.history, xTest, yTest, name)
+# testingProbability(model, history.history, xTest, yTest, name)
+
+# # prediting the pv given probability
+zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
+pvPred = rawBinD['pv_pred']
+print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, prob=probability, probToPV=True)
 # probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1724058679.keras'
 # xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
 # regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_1724059129.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_1724059129.log'
-# testing(model=loadModel(regModel), hist=pd.read_csv(train, sep=',', engine='python'), xT=xTestFocus, yT=yTestFocus, name=regModel[:-6]+'_focus_pred')
+# testingRegression(model=loadModel(regModel), hist=pd.read_csv(train, sep=',', engine='python'), xT=xTestFocus, yT=yTestFocus, name=regModel[:-6]+'_focus_pred')
 
-# probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_fpga_1724061741.weights.h5'
-# xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
-# regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.keras'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.log'
-# testing(model=regModel, hist=pd.read_csv(train, sep=',', engine='python'), xT=xTestFocus, yT=yTestFocus, name=regModel[:-6]+'_focus_pred')
+probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_fpga_1724061741.keras'
+xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
+regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.keras'
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.log'
+testingRegression(model=loadModel(regModel), hist=pd.read_csv(train, sep=',', engine='python'), xT=xTestFocus, yT=yTestFocus, name=regModel[:-6]+'_focus_pred')
 
 
-# Loaded model test and comparison to other models
+# Loaded model for more training and testing
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[1], xTrain.shape[2], 1)
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[1], xValid.shape[2], 1)
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-# print(xTrain[0,0])
-# print(xTrain.shape)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, prob=None)
 
-mod = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.keras'
-train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.log'
-# trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-testing(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine='python'), xT=xTest, yT=yTest, name=mod[:-6])
-
-
-# xTrain = xTrain.reshape(xTrain.shape[0], xTrain.shape[2], xTrain.shape[1])
-# xValid = xValid.reshape(xValid.shape[0], xValid.shape[2], xValid.shape[1])
-# xTest = xTest.reshape(xTest.shape[0], xTest.shape[2], xTest.shape[1], 1)
+# mod = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.keras'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.log'
+# # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
+# testing(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine='python'), xT=xTest, yT=yTest, name=mod[:-6])
 
 # # Comparing various models
 # modelsCompare = ['Merged_Bin_model_2inputs_conv_adam_huber_loss_1721923682.keras',\
@@ -1132,14 +1095,6 @@ testing(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine='python'),
 # mod = loadModel(modelsCompare[2])
 # config = mod.get_config()
 # print(config["layers"][0]["config"])
-
-
-# mod = loadModel('Bin_model_2inputs_wavenet_adam_huber_loss_1721316446.keras')
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# train = 'Merged_training_Bin_model_2inputs_conv_adamax_modified01_huber_loss_1722592046.log'
-# hist = pd.read_csv(train, sep=',', engine='python')
-# print(hist.columns)
 
 # print(xTest.shape)
 # comparison(modelsCompare, trainingCompare, xTest, yTest)
@@ -1166,12 +1121,13 @@ testing(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine='python'),
 # binSizeComp(xT=xTestAll, yT=yTestAll, labels=labels)
 
 
-# calc pv for each event
-# # prevData = np.load('TTbar_Raw_1.0_bin_size_overlap_0.npz')
+# calc pv for each bin in each event - used to feed into model to see if it would boost probability acccuracy
+
+# prevData = np.load('TTbar_Raw_1.0_bin_size_overlap_0.npz')
 # prevData = np.load('TTbar_Raw_2.0_bin_size_overlap_0.npz')
 # zRaw, ptRaw, etaRaw, pvRaw, probability = prevData['z'], prevData['pt'], prevData['eta'], prevData['pv'], prevData['prob']
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
-# # model = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.keras')
+# model = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.keras')
 # model = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650091.keras')
 # print(xTest.shape, xValid.shape, xTrain.shape)
 # rawBinAll = np.concatenate((xTest, xValid, xTrain), axis=0)
@@ -1179,5 +1135,5 @@ testing(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine='python'),
 # pvPredicted = model.predict(rawBinAll).flatten()
 # prevData = dict(prevData)
 # prevData['pv_pred'] = pvPredicted
-# # np.savez('TTbar_Raw_1.0_bin_size_overlap_0', **prevData)
+# np.savez('TTbar_Raw_1.0_bin_size_overlap_0', **prevData)
 # np.savez('TTbar_Raw_2.0_bin_size_overlap_0', **prevData)
