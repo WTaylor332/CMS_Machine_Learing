@@ -419,7 +419,7 @@ def testingRegression(model, hist, xT, yT, name):
     ax2.set_yscale('symlog')
     ax2.set_ylabel('Log count')
     ax2.set_xlim(-20,20)
-    sn.histplot(data=diffDataset, x='error', bins=300, kde=True, ax=ax2, kde_kws=dict(linewidths=0.8))
+    sn.histplot(data=diffDataset, x='error', bins=300, ax=ax2, kde=True)
     ax2.set_title(f'{nameData} Distribution of errors')
     ax2.set_xlabel('Difference between predicted and true PV [cm]')
     plt.savefig(f"{nameData}_Hist_loss_log_{name[start[0]+1:]}.png", dpi=1200)
@@ -431,7 +431,7 @@ def testingRegression(model, hist, xT, yT, name):
     ax1.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     ax1.set_ylabel('Count')
     ax1.set_xlim(-20,20)
-    sn.histplot(data=diffDataset, x='error', bins=300, kde=True, ax=ax1, kde_kws=dict(linewidths=0.8))
+    sn.histplot(data=diffDataset, x='error', bins=300, kde=True, ax=ax1)
     ax1.set_title('Distribution of errors')
     ax1.set_xlabel(f'{nameData} Difference between predicted and true PV [cm]')
     plt.savefig(f"{nameData}_Hist_loss_{name[start[0]+1:]}.png", dpi=1200)
@@ -444,7 +444,7 @@ def testingRegression(model, hist, xT, yT, name):
     ax1.grid(which='major', color='#CCCCCC', linewidth=0.8)
     ax1.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     ax1.set_ylabel('Count')
-    sn.histplot(data=shortDiffDataset, x='error', bins=300, kde=True, ax=ax1, kde_kws=dict(linewidths=0.8))
+    sn.histplot(data=shortDiffDataset, x='error', bins=300, kde=True, ax=ax1)
     ax1.set_title(f'{nameData} Distribution of errors')
     ax1.set_xlabel('Difference between predicted and true PV [cm]')
     ax1.set_xlim(-2,2)
@@ -1084,18 +1084,6 @@ testingRegression(model=loadModel(regModel), hist=pd.read_csv(train, sep=',', en
 #                    'Merged_training_Bin_model_2inputs_conv_adam_huber_loss_1722256533.log',\
 #                    'training_Merged_Bin_model_2inputs_conv_adam_modified015_huber_loss_1722513936.log']
 
-# endStart =[i for i, letter in enumerate(modelsCompare[0]) if letter == '_']
-# print(modelsCompare[0][:endStart[2]])
-# mod = loadModel(modelsCompare[0])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadModel(modelsCompare[1])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-# mod = loadModel(modelsCompare[2])
-# config = mod.get_config()
-# print(config["layers"][0]["config"])
-
 # print(xTest.shape)
 # comparison(modelsCompare, trainingCompare, xTest, yTest)
 
@@ -1106,12 +1094,10 @@ testingRegression(model=loadModel(regModel), hist=pd.read_csv(train, sep=',', en
 # rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
 # zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
 # xTrainZero, yTrainZero, xValidZero, yValidZero, xTestZero, yTestZero = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
-
-# rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
+# rawBinD = np.load('TTbar_Raw_1_bin_size_overlap_0.npz')
 # zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
 # xTrainOne, yTrainOne, xValidOne, yValidOne, xTestOne, yTestOne = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
-
-# rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
+# rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_0.npz')
 # zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
 # xTrainTwo, yTrainTwo, xValidTwo, yValidTwo, xTestTwo, yTestTwo = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
 
@@ -1122,7 +1108,6 @@ testingRegression(model=loadModel(regModel), hist=pd.read_csv(train, sep=',', en
 
 
 # calc pv for each bin in each event - used to feed into model to see if it would boost probability acccuracy
-
 # prevData = np.load('TTbar_Raw_1.0_bin_size_overlap_0.npz')
 # prevData = np.load('TTbar_Raw_2.0_bin_size_overlap_0.npz')
 # zRaw, ptRaw, etaRaw, pvRaw, probability = prevData['z'], prevData['pt'], prevData['eta'], prevData['pv'], prevData['prob']
