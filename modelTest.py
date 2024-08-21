@@ -512,6 +512,14 @@ def testingProbability(model, hist, xT, yT, name):
     yPredicted = model.predict(xT).flatten()
     start =[i for i, letter in enumerate(name) if letter == '_']
 
+    print()
+    loss = hist['loss']
+    val_loss = hist['val_loss']
+    print('min val loss:', min(val_loss))
+    print('At epoch number:',np.argmin(val_loss)+1)
+    print('min loss:', min(loss))
+    print('At epoch number:',np.argmin(loss)+1)
+
     # % values that predicted the correct bin
     yPredicted = yPredicted.reshape(xT.shape[0]//zRaw.shape[1], zRaw.shape[1])
     indexPred = np.argmax(yPredicted, axis=1).flatten()
@@ -531,7 +539,8 @@ def testingProbability(model, hist, xT, yT, name):
     plt.clf()
     plt.figure(figsize=(30,20))
     plt.rcParams.update({'font.size': 40})
-    yClassPredLabels = np.round(yPredicted)
+    yClassPredLabels = np.zeros(xT.shape[0])
+    yClassPredLabels[(zRaw.shape[1]) * np.arange(indexPred.shape[0]) + indexPred] = 1
     cm = tf.math.confusion_matrix(labels=yT, predictions=yClassPredLabels)
     sn.heatmap(cm, annot=True, fmt='d')
     plt.xlabel('Predicted')
