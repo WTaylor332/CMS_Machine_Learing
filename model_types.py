@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 
-def multiLayerPerceptron(form, op, lossFunc):
+def multiLayerPerceptron(form, op, lossFunc): # basic neural networks used to learn 
     # model = keras.models.Sequential([
     #     keras.Input(shape=form),
     #     keras.layers.Dense(100, activation="relu"),
@@ -86,28 +86,8 @@ def convModel(shape, op, lossFunc):
     #     keras.layers.Dense(1)
     # ])
 
-    # model = keras.models.Sequential([
-    #     # convolutional layers
-    #     keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu', input_shape=(shape)),
-    #     keras.layers.MaxPool2D(pool_size=(1,4)),
-
-    #     keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu'),
-    #     keras.layers.MaxPool2D(pool_size=(1,4)),
-
-    #     keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu'),
-    #     keras.layers.MaxPool2D(pool_size=(1,2)),
-
-    #     # multi later perceptron
-    #     keras.layers.Flatten(),
-    #     keras.layers.Dense(8, activation="relu"),
-    #     keras.layers.Dense(8, activation="relu"),
-    #     keras.layers.Dense(8, activation="relu"),
-    #     keras.layers.Dense(8, activation="relu"),
-    #     keras.layers.Dense(8, activation="relu"),
-    #     keras.layers.Dense(8, activation="relu"),
-    #     keras.layers.Dense(1)
-    # ])
-
+    
+    # best conv model so far
     model = keras.models.Sequential([
         # convolutional layers
         keras.layers.Conv2D(10, kernel_size=(1,8), activation='relu', input_shape=(shape)),
@@ -138,8 +118,7 @@ def convModel(shape, op, lossFunc):
     return model, 'conv'
 
 
-def rnn(form, op, lossFunc, maskNo):
-    # raw bin data
+def rnn(form, op, lossFunc, maskNo): # comment out sigmoid activation if you want to train a regression model
     # model = keras.models.Sequential([
     #      keras.layers.Masking(mask_value=maskNo, input_shape=form),
     #      keras.layers.SimpleRNN(20, return_sequences=True),
@@ -177,7 +156,7 @@ def rnn(form, op, lossFunc, maskNo):
     return model, 'rnn'
 
 
-def wavenet(form, op, lossFunc):
+def wavenet(form, op, lossFunc): # various wavenet architectures tested
     # 2D model
     model = keras.models.Sequential([
         # convolutional layers
