@@ -55,7 +55,10 @@ def binModelSplit(pt, pv, track=None):
 
 def binModel(xTrain, yTrain, xValid, yValid):
 
-    form = (xTrain.shape[1], xTrain.shape[2], 1)
+    if len(xTrain.shape) > 3: # input shape used for conv models 
+        form = (xTrain.shape[1], xTrain.shape[2], 1)
+    else: # input shape used for all other models
+        form = (xTrain.shape[1], xTrain.shape[2])
     num = 2
 
     op = keras.optimizers.Adam()
@@ -73,7 +76,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
     # callbacks
     checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
     lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=30, cooldown = 1, min_lr=0.000001, verbose=1)
-    csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
+    csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False) # logs loss changes with epochs 
     stopTraining = haltCallback()
 
     history = model.fit(xTrain, yTrain, epochs=EPOCHS, batch_size=BATCH_SIZE,\
@@ -86,7 +89,7 @@ def binModel(xTrain, yTrain, xValid, yValid):
         os.makedirs(modelDirectory)
         print("Created directory:" , modelDirectory)
 
-    # saves full model
+    # saves full model as a keras file
     modelFilename = os.path.join(modelDirectory, modelName)
     model.save(modelName+".keras")
 
@@ -126,7 +129,7 @@ def findPVGivenProb(z, modelName, xT, yT):
     return xTestFocus, yTestFocus
 
 
-def pvToProbRNN(form , op, lossFunc, maskNo):
+def pvToProbRNN(form, op, lossFunc, maskNo):
 
     # modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size1_1723539163.keras') # not overlap
     # modelLoad = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_pv_1723539044.keras') # not overlap just bin size of 2
@@ -153,7 +156,7 @@ def pvToProbRNN(form , op, lossFunc, maskNo):
 
     return model, 'pv_to_prob_rnn'
 
-
+# reshapes data into shape (No. events x Bins, No. tracks)
 def reshapeRawBin(z, pt, eta,):
     zData = z.reshape(z.shape[0]*z.shape[1], z.shape[2])
     ptData = pt.reshape(z.shape[0]*z.shape[1], z.shape[2])
@@ -161,20 +164,18 @@ def reshapeRawBin(z, pt, eta,):
 
     return zData, ptData, etaData
 
-
-def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None, probToPV=False):
-    if len(z.shape) > 2:
+# funciton to get train-test split for model using dataset of z, pt, and eta values
+def rawModelSplit(z, pt, eta, pv, pvPredicted=None, binProbability=None, probToPV=False):
+    if len(z.shape) > 2: # reshapes data if dataset is in binned regions
         z, pt, eta = reshapeRawBin(z, pt, eta)
-        print(z.shape, pt.shape, eta.shape, pv.shape)
-        # scaling z
-        columnZ = z.reshape(z.shape[0]*z.shape[1], 1)
-        scaler = StandardScaler().fit(columnZ)
-        columnZ = scaler.transform(columnZ)
-        z = columnZ.reshape(pt.shape[0], pt.shape[1])
-        zVal, ptVal, etaVal = z, pt, eta
-        pvVal = pv
 
-    if prob is None:
+    # scaling z
+    columnZ = z.reshape(z.shape[0]*z.shape[1], 1)
+    scaler = StandardScaler().fit(columnZ)
+    columnZ = scaler.transform(columnZ)
+    z = columnZ.reshape(pt.shape[0], pt.shape[1])
+        
+    if binProbability is None and len(z.shape) > 2: # if training a regression model and only want to train against true pv values this is used to delete bins without a pv
         indexNan = np.argwhere(np.isnan(pv))
         print(indexNan.shape)
         z = np.delete(z, indexNan, 0)
@@ -183,33 +184,21 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None, probToPV=False):
         pv = np.delete(pv, indexNan, 0)
         print(z.shape, pt.shape, eta.shape, pv.shape)
 
-    if pvPr is not None:
+    if pvPredicted is not None: # used if we want to send predicted pv values for every bin into the model for training
         pvReshaped = np.zeros((z.shape[0], z.shape[1]))
         pvReshaped[pvReshaped==0] = np.nan
         for i in range(z.shape[0]):
             numNans = np.count_nonzero(~np.isnan(z[i]))
-            pvReshaped[i, :numNans] = pvPr[i]
+            pvReshaped[i, :numNans] = pvPredicted[i]
         pvReshaped = np.nan_to_num(pvReshaped, nan=MASK_NO)
 
-    z = np.nan_to_num(z, nan=MASK_NO)
+    # puts right padded mask number for rnn to ignore
+    z = np.nan_to_num(z, nan=MASK_NO) 
     pt = np.nan_to_num(pt, nan=MASK_NO)
     eta = np.nan_to_num(eta, nan=MASK_NO)
     pv = np.nan_to_num(pv, nan=MASK_NO)
 
-    # columnZ = zVal.reshape(zVal.shape[0]*zVal.shape[1], 1)
-    # scaler = StandardScaler().fit(columnZ)
-    # columnZ = scaler.transform(columnZ)
-    # zVal = columnZ.reshape(ptVal.shape[0], ptVal.shape[1])
-
-    # zVal = np.nan_to_num(zVal, nan=MASK_NO)
-    # ptVal = np.nan_to_num(ptVal, nan=MASK_NO)
-    # etaVal = np.nan_to_num(etaVal, nan=MASK_NO)
-    # pvVal = np.nan_to_num(pvVal, nan=MASK_NO)
-    # pvVal = pvVal.flatten()
-
-    print(z.shape, pt.shape, eta.shape, pv.shape)
-
-    if pvPr is not None:
+    if pvPredicted is not None:
         rawDataAll = np.stack((z,pt,eta, pvReshaped), axis=1)
     else:
         rawDataAll = np.stack((z,pt,eta), axis=1)
@@ -218,41 +207,23 @@ def rawModelSplit(z, pt, eta, pv, pvPr=None, prob=None, probToPV=False):
     t = len(pv)//10
     v = len(pv)//5
 
-    # indexMask = np.argwhere(pvVal != MASK_NO)
-    # zMask = zVal[indexMask]
-
     # padded data split
-    rawDataAll = rawDataAll.swapaxes(1,2)
+    rawDataAll = rawDataAll.swapaxes(1,2) # to get in form (No.events, tracks, 3) or (No.events x Bins, tracks, 3) for binned data
     xTest, xValid, xTrain = rawDataAll[:t], rawDataAll[t:v], rawDataAll[v:]
     print(rawDataAll.shape)
-    # jagged data split
-    # xTest, xValid, xTrain = allJag[:t], allJag[t:v], allJag[v:]
 
     # desired values
-    if prob is None:
+    if binProbability is None:
         yTest, yValid, yTrain = pv[:t], pv[t:v], pv[v:]
-    elif prob is not None and probToPV == False:
-        print('probability')
-        yTest, yValid, yTrain = prob[:t], prob[t:v], prob[v:]
-    elif probToPV == True:
+    elif binProbability is not None and probToPV == False:
+        yTest, yValid, yTrain = binProbability[:t], binProbability[t:v], binProbability[v:]
+    elif probToPV == True: # dataset used when reconstructing the primary vertex based on the predicted bin
         yTestReg, yValidReg, yTrainReg = pv[:t], pv[t:v], pv[v:] # regression test data
-        yTestClass, yValidClass, yTrainClass = prob[:t], prob[t:v], prob[v:] # probability test data
+        yTestClass, yValidClass, yTrainClass = binProbability[:t], binProbability[t:v], binProbability[v:] # probability test data
         yTrain = [yTrainReg, yTrainClass]
         yValid = [yValidReg, yValidClass]
         yTest = [yTestReg, yTestClass]
         
-    # choosing random bin 10 % of the time
-    # rawBinAll_I = np.stack((zVal, ptVal, etaVal), axis=1)
-    # rawBinAll_I = rawBinAll_I.swapaxes(1,2)
-    # randomBin = np.random.choice(np.arange(zVal.shape[0]), yTest.shape[0]//10, replace=False)
-    # print(randomBin.shape)
-    # for i in range(0, randomBin.shape[0]):
-    #     yTest[i] = pvVal[randomBin[i]]
-    #     xTest[i] = rawBinAll_I[randomBin[i]]    
-    # print(xTest.shape, yTest.shape)
-    # print(np.count_nonzero(yTest==MASK_NO))
-    # print(np.round(100 * np.count_nonzero(yTest==MASK_NO)/yTest.shape[0]),5)
-
     return xTrain, yTrain, xValid, yValid, xTest, yTest
 
 
@@ -262,32 +233,31 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
     # creating model
     op = keras.optimizers.Adam(learning_rate=0.001)
-    # lossFunc = keras.losses.Huber(delta=0.1, name='modified01_huber_loss')
-    lossFunc = keras.losses.BinaryCrossentropy() #from_logits=True)
-    # lossFunc = keras.losses.MeanAbsoluteError()
+    lossFunc = keras.losses.BinaryCrossentropy() # use when training a classification model
+    # lossFunc = keras.losses.MeanAbsoluteError() # use when training a regression model
 
+    # get model architecture
     model, typeM = rnn(form, op, lossFunc, MASK_NO)
-    # model, typeM = pvToProbRNN(form, op, lossFunc, MASK_NO)
     model.summary()
     
     # saving the model and best weights
-    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_bins_size1_overlap_pv_fpga_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=CLOCK)
+    weights = "{d}_Raw_model_{n}inputs_{m}_{o}_{l}_bins_size1_fpga_{t}.weights.h5".format(n=num, m=typeM, o='adam', l=lossFunc.name, d=nameData, t=CLOCK)
     modelDirectory = "models"
     modelName = weights[:-11]
     start =[i for i, letter in enumerate(modelName) if letter == '_']
-    print(modelName)
-    print()
+
     # callbacks
-    checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss", save_weights_only=True, save_best_only=True, verbose=1)
-    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=20, cooldown = 1, min_lr=0.000001, verbose=1)
+    checkpointCallback = keras.callbacks.ModelCheckpoint(filepath=weights, monitor="val_loss",\
+                                                         save_weights_only=True, save_best_only=True, verbose=1) # saves the best weights when val loss improves
+    lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=20,\
+                                            cooldown = 1, min_lr=0.000001, verbose=1) # changes learning rate if val loss hasn't improved in number of epochs specified by patience
     csvLogger = keras.callbacks.CSVLogger(f"{nameData}_training_{modelName[start[0]+1:]}.log", separator=',', append=False)
-    stopTraining = haltCallback()
 
     history = model.fit(xTrain, yTrain, epochs=EPOCHS, batch_size=BATCH_SIZE,\
                         validation_data=(xValid, yValid),\
-                        callbacks=[checkpointCallback, lr, csvLogger])
+                        callbacks=[checkpointCallback, lr, csvLogger]) # runs training
 
-    checkpointFilename = os.path.join(modelDirectory, weights)
+    checkpointFilename = os.path.join(modelDirectory, weights) 
     check = os.path.isdir(modelDirectory)
     if not check:
         os.makedirs(modelDirectory)
@@ -301,18 +271,17 @@ def rawModel(xTrain, yTrain, xValid, yValid):
 
 
 def testingRegression(model, hist, xT, yT, name):
-    print()
-    print(name)
-    yPredicted = model.predict(xT).flatten()
+
+    yPredicted = model.predict(xT).flatten() # predicts output using test input data
     diff = abs(yPredicted - yT.flatten())
-    print()
+
     print(max(diff), min(diff))
     print(np.std(diff), np.mean(diff))
-    start =[i for i, letter in enumerate(name) if letter == '_']
+    start =[i for i, letter in enumerate(name) if letter == '_'] # used for naming files
 
     path = '/mercury/data3/bgz16927/tmp/CMS_Machine_Learing/Plots/'
 
-    # plot of epochs against training and validation loss
+    # plot of training and validation loss as the epoch increases
     print()
     loss = hist['loss']
     val_loss = hist['val_loss']
@@ -330,15 +299,15 @@ def testingRegression(model, hist, xT, yT, name):
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.savefig(path+f"{name[:start[0]]}_Train_valid_loss_{name[start[0]+1:]}.png", dpi=1200)
-    print('min val loss:', min(val_loss))
+    print('min val loss:', min(val_loss)) # prints min val loss and the epoch at which the min val loss is reached
     print('At epoch number:',np.argmin(val_loss)+1)
     print('min loss:', min(loss))
     print('At epoch number:',np.argmin(loss)+1)
 
     # plotting % of predictions vs difference
     plt.clf()
-    per = 90
-    tol = 0.15
+    per = 90 # 90th percentile
+    tol = 0.15 # cm difference used as a gauge
     sortedDiff = np.sort(diff)
     shortenedDiff = sortedDiff[sortedDiff<2]
     percent = (np.arange(0,len(shortenedDiff),1)*100)/len(diff)
@@ -351,6 +320,7 @@ def testingRegression(model, hist, xT, yT, name):
     print('Value of', per, 'th percentile:', sortedDiff[perIndex[0][-1]])
     label = 'Integration of Gaussian distribution'
 
+    # plots % of predictions for errors up to 2
     fig, ax = plt.subplots()
     plt.plot(shortenedDiff, percent, color="green", label=label, linewidth=0.7)
     plt.plot(shortenedDiff, percentile, color='blue', linestyle=':', label=str(per)+"th percentile")
@@ -367,7 +337,8 @@ def testingRegression(model, hist, xT, yT, name):
     plt.title(f"{nameData} Percentage of values vs Difference")
     plt.legend()
     plt.savefig(path+f"Integration of Gaussian plots/{name[:start[0]]}_Percentage_vs_loss_up_to_2_{name[start[0]+1:]}.png", dpi=1200)
-
+    
+    # plots % of predictions for errors up to 10
     plt.clf()
     fig, ax = plt.subplots()
     shortenedDiff = sortedDiff[sortedDiff<10]
@@ -388,7 +359,8 @@ def testingRegression(model, hist, xT, yT, name):
     plt.title(f"{nameData} Percentage of values vs Difference")
     plt.legend()
     plt.savefig(path+f"Integration of Gaussian plots/{name[:start[0]]}_Percentage_vs_loss_up_to_10_{name[start[0]+1:]}.png", dpi=1200)
-
+    
+    # plots % of predictions for errors up to max difference
     plt.clf()
     percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
     percentile = np.zeros(len(sortedDiff)) + per
@@ -407,10 +379,10 @@ def testingRegression(model, hist, xT, yT, name):
     plt.title(f"{nameData} Percentage of values vs Difference")
     plt.legend()
     plt.savefig(path+f"Integration of Gaussian plots/{name[:start[0]]}_Percentage_vs_loss_up_to_maxdiff_{name[start[0]+1:]}.png", dpi=1200)
-
     print('Integration plot made')
 
     # plotting histogram of difference
+    # plots difference against log of count to see separation at low counts
     diff = yPredicted.flatten() - yT.flatten()
     diffDataset = pd.DataFrame(dict(error=diff))
     plt.clf()
@@ -425,7 +397,8 @@ def testingRegression(model, hist, xT, yT, name):
     ax2.set_title(f'{nameData} Distribution of errors')
     ax2.set_xlabel('Difference between predicted and true PV [cm]')
     plt.savefig(f"{nameData}_Hist_loss_log_{name[start[0]+1:]}.png", dpi=1200)
-
+    
+    # plots ifference against count
     plt.clf()
     fig, ax1 = plt.subplots()
     ax1.minorticks_on()
@@ -438,6 +411,7 @@ def testingRegression(model, hist, xT, yT, name):
     ax1.set_xlabel(f'{nameData} Difference between predicted and true PV [cm]')
     plt.savefig(path+f"Gaussian distribution plots/{nameData}_Hist_loss_{name[start[0]+1:]}.png", dpi=1200)
 
+    # plots differnce where values are between 2 and -2 against count
     shortenedDiff = diff[(diff<2) & (diff>-2)]
     shortDiffDataset = pd.DataFrame(dict(error=shortenedDiff))
     plt.clf()
@@ -453,7 +427,7 @@ def testingRegression(model, hist, xT, yT, name):
     plt.savefig(path+f"Gaussian distribution plots/{nameData}_Hist_loss_shortened_{name[start[0]+1:]}.png", dpi=1200)
     print('Hist plot made')
 
-    # # plot of scattered train and validation data
+    # plot of scattered train and validation data
     plt.clf()
     fig, ax = plt.subplots()
     line = np.array([-20, 20])
@@ -474,23 +448,7 @@ def testingRegression(model, hist, xT, yT, name):
     plt.savefig(path+f'Scatter plot true vs predicted PV/{name[:start[0]]}_True_vs_predicted_scatter_{name[start[0]+1:]}.png', dpi=1000)
     print('Scatter plot made')
 
-    # # plotting learning rate against epochs
-    # print()
-    # if 'lr' in hist.columns[0]:
-    #     lr = hist['lr']
-    #     plt.clf()
-    #     plt.plot(epochs, lr, color='b', linewidth=0.7)
-    #     plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
-    #     plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.6)
-    #     plt.xlabel('Epoch number')
-    #     plt.ylabel('Learning Rate')
-    #     plt.title('Learning Rate against epochs')
-    #     plt.savefig(path+f"Learning rate plots/{name[:start[0]]}_Learning_rate_{name[start[0]+1:]}.png")
-    #     print('learning rate plot made')
-    # else:
-    #     print('No learning rate')
-
-
+# function to see performances of models ability to predict the correct bin that contains the pv
 def testingProbability(model, hist, xT, yT, name):
     print()
     print(name)
@@ -522,14 +480,18 @@ def testingProbability(model, hist, xT, yT, name):
     print('Percentage of correct predicted bin: ', round(count*100/len(indexTest), 5))
     print(len(indexTest), len(indexPred))
 
+    # plots confusion matrix 
     path = '/mercury/data3/bgz16927/tmp/CMS_Machine_Learing/Plots/CM_Plots/'
     plt.clf()
     plt.figure(figsize=(30,20))
     plt.rcParams.update({'font.size': 40})
     yClassPredLabels = np.zeros(xT.shape[0])
     yClassPredLabels[(zRaw.shape[1]) * np.arange(indexPred.shape[0]) + indexPred] = 1
+    print()
     cm = tf.math.confusion_matrix(labels=yT, predictions=yClassPredLabels)
-    sn.heatmap(cm, annot=True, fmt='d')
+    cmNormalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    print()
+    sn.heatmap(cmNormalized, annot=True, fmt='.2f', xticklabels=['0', '1'], yticklabels=['0', '1'])
     plt.xlabel('Predicted')
     plt.ylabel('True')
     if nameData != name[:start[0]]:
@@ -537,7 +499,6 @@ def testingProbability(model, hist, xT, yT, name):
     else:
         plt.savefig(path+f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
     print('cm plot made')
-
 
 def comparison(models, train, xTest, yT):
     print()
@@ -1034,7 +995,7 @@ zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['
 # testingRegression(model, history, xTest, yTest, name, lossFunc)
 
 print()
-xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, prob=None)
+xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPredicted=None, binProbability=probability)
 # model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
 # # testingRegression(model, history.history, xTest, yTest, name)
 # testingProbability(model, history.history, xTest, yTest, name)
@@ -1043,7 +1004,7 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
 # pvPred = rawBinD['pv_pred']
 # print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, prob=probability, probToPV=True)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, binProbability=probability, probToPV=True)
 # probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1724058679.keras'
 # xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
 # regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_1724059129.keras'
@@ -1060,17 +1021,17 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # Loaded model for more training and testing
 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, prob=None)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, binProbability=None)
 
-mod = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.keras'
-train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.log'
+# mod = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.keras'
+# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-testingRegression(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine='python'), xT=xTest, yT=yTest, name=mod[:-6])
+# testingRegression(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine='python'), xT=xTest, yT=yTest, name=mod[:-6])
 
-# mod = ''
-# train = ''
+mod = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size2_fpga_1724164275.keras'
+train = 'TTbar_training_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size2_fpga_1724164275.log'
 # trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid)
-# testingProbability(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine='python'), xT=xTest, yT=yTest, name=mod[:-6])
+testingProbability(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine='python'), xT=xTest, yT=yTest, name=mod[:-6])
 
 # # Comparing various models
 # modelsCompare = ['Merged_Bin_model_2inputs_conv_adam_huber_loss_1721923682.keras',\
@@ -1091,13 +1052,13 @@ testingRegression(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine=
 
 # rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
 # zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-# xTrainZero, yTrainZero, xValidZero, yValidZero, xTestZero, yTestZero = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
+# xTrainZero, yTrainZero, xValidZero, yValidZero, xTestZero, yTestZero = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), binProbability=None)
 # rawBinD = np.load('TTbar_Raw_1_bin_size_overlap_0.npz')
 # zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-# xTrainOne, yTrainOne, xValidOne, yValidOne, xTestOne, yTestOne = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
+# xTrainOne, yTrainOne, xValidOne, yValidOne, xTestOne, yTestOne = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), binProbability=None)
 # rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_0.npz')
 # zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-# xTrainTwo, yTrainTwo, xValidTwo, yValidTwo, xTestTwo, yTestTwo = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=None)
+# xTrainTwo, yTrainTwo, xValidTwo, yValidTwo, xTestTwo, yTestTwo = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), binProbability=None)
 
 # xTestAll = [xTestZero, xTestOne, xTestTwo]
 # yTestAll = [yTestZero, yTestOne, yTestTwo]
@@ -1108,7 +1069,7 @@ testingRegression(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine=
 # prevData = np.load('TTbar_Raw_1.0_bin_size_overlap_0.npz')
 # prevData = np.load('TTbar_Raw_2.0_bin_size_overlap_0.npz')
 # zRaw, ptRaw, etaRaw, pvRaw, probability = prevData['z'], prevData['pt'], prevData['eta'], prevData['pv'], prevData['prob']
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), prob=probability)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), binProbability=probability)
 # model = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.keras')
 # model = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650091.keras')
 # print(xTest.shape, xValid.shape, xTrain.shape)
