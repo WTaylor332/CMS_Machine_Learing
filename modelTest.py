@@ -10,9 +10,8 @@ print()
 import seaborn as sn
 import matplotlib.pyplot as plt 
 from sklearn.preprocessing import StandardScaler
-from scipy.stats import gaussian_kde
 print()
-from model_types import convModel as cnn, rnn, wavenet, multiLayerPerceptron as mlp
+from model_types import convModel as cnn, rnn
 from customFunction import welsch, learningRate, power_decay, piecewise_constant_fn
 
 # callback used to stop training when the loss has got below a certain value in order to test models quicker
@@ -464,7 +463,7 @@ def testingProbability(model, hist, xT, yT, name):
     print('At epoch number:',np.argmin(loss)+1)
 
     # % values that predicted the correct bin
-    yPredicted = yPredicted.reshape(xT.shape[0]//zRaw.shape[1], zRaw.shape[1])
+    yPredicted = yPredicted.reshape(xT.shape[0]//zRaw.shape[1], zRaw.shape[1]) # reshapes data into (No. events, Bins)
     indexPred = np.argmax(yPredicted, axis=1).flatten()[:-1]
     indexTest = np.argwhere(yT.flatten() == 1).flatten()
     print(len(indexTest))
@@ -487,11 +486,15 @@ def testingProbability(model, hist, xT, yT, name):
     plt.rcParams.update({'font.size': 40})
     yClassPredLabels = np.zeros(xT.shape[0])
     yClassPredLabels[(zRaw.shape[1]) * np.arange(indexPred.shape[0]) + indexPred] = 1
-    print()
     cm = tf.math.confusion_matrix(labels=yT, predictions=yClassPredLabels)
-    cmNormalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-    print()
-    sn.heatmap(cmNormalized, annot=True, fmt='.2f', xticklabels=['0', '1'], yticklabels=['0', '1'])
+    cmNormalized = cm / tf.reduce_sum(cm, axis=0, keepdims=True)
+    countCorrectBin = ['{0:0.0f}'.format(value) for value in tf.reshape(cm, [-1])]
+    percentageCorrectBin = ['{0:.2%}'.format(value) for value in tf.reshape(cmNormalized, [-1])]
+    print(countCorrectBin[:5])
+    print(percentageCorrectBin[:5])
+    labels = [f'{v1}\n{v2}' for v1, v2 in zip(countCorrectBin, percentageCorrectBin)]
+    labels = np.asarray(labels).reshape(2,2)
+    sn.heatmap(cmNormalized, annot=labels, fmt='', xticklabels=['0', '1'], yticklabels=['0', '1'])
     plt.xlabel('Predicted')
     plt.ylabel('True')
     if nameData != name[:start[0]]:
@@ -500,13 +503,11 @@ def testingProbability(model, hist, xT, yT, name):
         plt.savefig(path+f'{nameData}_cm_probability_{name[start[0]+1:]}.png')
     print('cm plot made')
 
+# function used to compare the performance of various models
 def comparison(models, train, xTest, yT):
     print()
     endStart =[i for i, letter in enumerate(models[0]) if letter == '_']
     name = "{start}_comparison_of_rnn_models_{t}".format(start=models[0][endStart[0]+1:endStart[7]], t=CLOCK)
-    print(name)
-    time.sleep(5)
-    # Percentage vs difference plot comparsion
     plt.clf()
     fig, ax = plt.subplots()
     ax.minorticks_on()
@@ -515,32 +516,12 @@ def comparison(models, train, xTest, yT):
     colours = ['green', 'red', 'blue', 'purple', 'goldenrod']
     # labels = ['MAE', 'Huber delta=1','MSE', 'Huber delta=0.1']
     labels = ['Simple RNN', 'GRU']
-    # labels = ['4112 Parameters', '5377 Parameters', '2727 Parameters']
     # labels = ['Mixed model', 'TTbar model']
-    # labels = ['D30 D1', 'D15 D5 D1', 'D15 D10 D5 D1']
     # labels = ['MLP', 'RNN', 'CNN + MLP']
-    # labels = ['GRU100 GRU50 D1', 'GRU20 GRU20 D1']
-    # labels = ['T150 GRU100 GRU50', 'BiGRU20 GRU20', 'MASK GRU50', 'MASK GRU20 GRU20', 'MASK LSTM20 LSTM20']
-    # labels = ['dr(1,2) dr(1,2)', 'dr(1,2)', 'dr(1,3)']
     # labels = ['None', '32', '512', '2048', str(len(xTrain))]
-    for i in range(0, len(models)):    
-        print()
-        # if i == 2:
-        #     print('\n\n\n\n')
-        #     xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-        if models[i][-2:] == 'h5':
-            if i == 0:
-                modelLoaded = loadWeightsSimple(models[i], xTest)
-            elif i == 1:
-                modelLoaded = loadWeightsGRU(models[i], xTest)
-            else:
-                break
-        else:
-            modelLoaded = loadModel(models[i])
+    for i in range(0, len(models)): # loops through all models and plots there performance using the integration of the gaussian distribution plot
 
-        print()
-        print(models[i])
-        print(xTest.shape)
+        modelLoaded = loadModel(models[i])
 
         hist = pd.read_csv(train[i], sep=',', engine='python')
         val_loss = hist['val_loss']
@@ -576,7 +557,6 @@ def comparison(models, train, xTest, yT):
  
     plt.plot(sortedDiff, percentile, color='orange', linestyle=':', label=str(per)+"th percentile")
     plt.plot(tolerance, tolPercent, color='c', linestyle=':', label=str(tol)+" tolerance")
-    
     plt.legend()
     plt.xlabel('Difference between predicted and true value [cm]')
     plt.ylabel('Percentage')
@@ -584,6 +564,7 @@ def comparison(models, train, xTest, yT):
     plt.savefig(f"{nameData}_Percentage_vs_loss_{name}.png", dpi=1200)
     print('percentage vs difference plot made')
 
+    # plots gaussian distribution of models to compare performance
     plt.clf()
     fig, ax = plt.subplots()
     ax.minorticks_on()
@@ -591,30 +572,22 @@ def comparison(models, train, xTest, yT):
     ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
     ax.set_yscale('log')
     for i in range(len(models)):
-        # if i == 2:
-        #     print('\n\n\n\n')
-        #     xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-        if models[i][-2:] == 'h5':
-            if i == 0:
-                modelLoaded = loadWeightsSimple(models[i], xTest)
-            elif i == 1:
-                modelLoaded = loadWeightsGRU(models[i], xTest)
-            else:
-                break
-        else:
-            modelLoaded = loadModel(models[i])
+
+        modelLoaded = loadModel(models[i])
+        
         hist = pd.read_csv(train[i], sep=',', engine='python')
         val_loss = hist['val_loss']
         loss = hist['loss']
         yPredicted = modelLoaded.predict(xTest).flatten()
         diff = yPredicted - yT.flatten()
-        plot = sn.kdeplot(data=diff, label=labels[i], linewidth =0.8, color=colours[i], ax=ax)
+        sn.kdeplot(data=diff, label=labels[i], linewidth =0.8, color=colours[i], ax=ax)
     plt.legend()
     plt.title('Distribution of errors')
     plt.xlabel('Difference between predicted and true PV [cm]')
     plt.savefig(f"{nameData}_Hist_loss_{name}.png", dpi=1200)
     print('KDE plot made')
 
+    # plots gaussian distribution plot only looking at errors between -1 and 1
     plt.clf()
     fig, ax = plt.subplots()
     ax.minorticks_on()
@@ -625,28 +598,12 @@ def comparison(models, train, xTest, yT):
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
     for i in range(len(models)):
-        # if i == 2:
-        #     print('\n\n\n\n')
-        #     xTest = xTest.reshape(xTest.shape[0], xTest.shape[1], xTest.shape[2], 1)
-        if models[i][-2:] == 'h5':
-            if i == 0:
-                modelLoaded = loadWeightsSimple(models[i], xTest)
-            elif i == 1:
-                modelLoaded = loadWeightsGRU(models[i], xTest)
-            else:
-                break
-        else:
-            modelLoaded = loadModel(models[i])
-
-        print()
-        print(models[i])
-        print(xTest.shape)
+        modelLoaded = loadModel(models[i])
 
         hist = pd.read_csv(train[i], sep=',', engine='python')
         val_loss = hist['val_loss']
         loss = hist['loss']
 
-        print(np.sort(val_loss)[:5])
         yPredicted = modelLoaded.predict(xTest).flatten()
         diff = yPredicted - yT.flatten()
         diff = diff[(diff>-1) & (diff<1)]
@@ -659,13 +616,13 @@ def comparison(models, train, xTest, yT):
     plt.savefig(f"{nameData}_Hist_loss_shortened_{name}.png", dpi=1200)
     print('KDE plot made')
 
-
+# function to load a keras model
 def loadModel(name):
     loadedModel = tf.keras.models.load_model(name)
     loadedModel.summary()
     return loadedModel
 
-
+# function to put weights onto a model - need to know model architecture first
 def loadWeights(name, x, lr=0.001):
     form = x.shape[1:]
     print()
@@ -677,41 +634,7 @@ def loadWeights(name, x, lr=0.001):
     model.summary()
     return model
 
-def loadWeightsGRU(name, x):
-    form = x.shape[1:]
-    print()
-    print(form)
-    print(name)
-    model = keras.models.Sequential([
-         keras.layers.Masking(mask_value=MASK_NO, input_shape=form),
-         keras.layers.GRU(20, return_sequences=True, use_cudnn=False),
-         keras.layers.GRU(20, use_cudnn=False),
-         keras.layers.Dense(1)
-     ])
-    model.compile(optimizer=keras.optimizers.Adam(), loss=keras.losses.MeanAbsoluteError())
-    print()
-    model.load_weights(name)
-    model.summary()
-    return model
-
-def loadWeightsSimple(name, x):
-    form = x.shape[1:]
-    print()
-    print(form)
-    print(name)
-    model = keras.models.Sequential([
-         keras.layers.Masking(mask_value=MASK_NO, input_shape=form),
-         keras.layers.SimpleRNN(20, return_sequences=True),
-         keras.layers.SimpleRNN(20),
-         keras.layers.Dense(1)
-     ])
-    model.compile(optimizer=keras.optimizers.Adam(), loss=keras.losses.MeanAbsoluteError())
-    print()
-    model.load_weights(name)
-    model.summary()
-    return model
-
-
+# fucntion to continue training a model that has been trained a bit before
 def trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid):
     hist = pd.read_csv(train, sep=',', engine='python')
     epochs = len(hist['loss'])
@@ -760,187 +683,6 @@ def trainLoadedModel(name, train, xTrain, yTrain, xValid, yValid):
     modelLoaded.save(model)
 
 
-def binSizeComp(xT, yT, labels):
-    plt.clf()
-    fig, ax = plt.subplots()
-    colours = ['green', 'red', 'blue']
-    model = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size05_1723540545.keras')
-    yPredicted = model.predict(xT[0]).flatten()
-    diff = abs(yPredicted - yT[0].flatten())
-    print(max(diff), min(diff))
-    print(np.std(diff), np.mean(diff))
-
-    sortedDiff = np.sort(diff[diff<2])
-    percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
-    per = 90
-    tol = 0.15
-    tolIndex = np.where(sortedDiff <= tol)
-    perIndex = np.where(tolPercent <= per)
-    
-    print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    print('Value of', per, 'th percentile:', np.sort(diff)[perIndex[0][-1]])
-
-    percentile = np.zeros(len(sortedDiff)) + per
-    tolerance = np.zeros(len(diff)) + tol
-    plt.plot(sortedDiff, percent, label=labels[0], color=colours[0], linewidth=0.8)
-    plt.scatter(tol, percent[tolIndex[0][-1]], color='c', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)), s=10)
-    if np.sort(diff)[perIndex[0][-1]] < 2:
-        plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='orange', label=str(per)+'th percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)), s=10)
-    print()
-
-    model = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size1_1723539163.keras')
-    yPredicted = model.predict(xT[1]).flatten()
-    diff = abs(yPredicted - yT[1].flatten())
-    print(max(diff), min(diff))
-    print(np.std(diff), np.mean(diff))
-
-    sortedDiff = np.sort(diff[diff<2])
-    percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
-    per = 90
-    tol = 0.15
-    tolIndex = np.where(sortedDiff <= tol)
-    perIndex = np.where(tolPercent <= per)
-    
-    print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    print('Value of', per, 'th percentile:', np.sort(diff)[perIndex[0][-1]])
-
-    percentile = np.zeros(len(sortedDiff)) + per
-    tolerance = np.zeros(len(diff)) + tol
-    plt.plot(sortedDiff, percent, label=labels[1], color=colours[1], linewidth=0.8)
-    plt.scatter(tol, percent[tolIndex[0][-1]], color='c', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)), s=10)
-    if np.sort(diff)[perIndex[0][-1]] < 2:
-        plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='orange', label=str(per)+'th percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)), s=10)
-    print()
-
-    model = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_overlap_bins_size2_pv_1723539044.keras')
-    yPredicted = model.predict(xT[2]).flatten()
-    diff = abs(yPredicted - yT[2].flatten())
-    print(max(diff), min(diff))
-    print(np.std(diff), np.mean(diff))
-
-    sortedDiff = np.sort(diff[diff<2])
-    percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
-    per = 90
-    tol = 0.15
-    tolIndex = np.where(sortedDiff <= tol)
-    perIndex = np.where(tolPercent <= per)
-    
-    print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    print('Value of', per, 'th percentile:', np.sort(diff)[perIndex[0][-1]])
-
-    percentile = np.zeros(len(sortedDiff)) + per
-    tolerance = np.zeros(len(diff)) + tol
-    plt.plot(sortedDiff, percent, label=labels[2], color=colours[2], linewidth=0.8)
-    plt.scatter(tol, percent[tolIndex[0][-1]], color='c', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)), s=10)
-    if np.sort(diff)[perIndex[0][-1]] < 2:
-        plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='orange', label=str(per)+'th percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)), s=10)
-    print()
-    
-    ax.minorticks_on()
-    ax.grid(which='major', color='#CCCCCC', linewidth=0.8)
-    ax.grid(which='minor', color='#DDDDDD', linestyle='--', linewidth=0.6)
-    plt.xlabel('Difference between predicted and true value [cm]')
-    plt.ylabel('Percentage')
-    plt.title("Percentage of values vs Difference")
-    plt.legend()
-    plt.plot(sortedDiff, percentile, color='orange', linestyle=':', label=str(per)+"th percentile")
-    plt.plot(tolerance, tolPercent, color='c', linestyle=':', label=str(tol)+" tolerance")
-    plt.savefig(f'{nameData}_comparison_of_bin_sizes_after_probabability_applied.png', dpi=1200)
-
-
-def binSizeCompGivenProb(xT, yT, labels):
-    plt.clf()
-
-    colours = ['green', 'red', 'blue']
-    model = loadModel('')
-    xTestFocus, yTestFocus = findPVGivenProb(zRaw, modelName='', xT=xT[0], yT=yT[0])
-    yPredicted = model.predict(xTestFocus).flatten()
-    diff = abs(yPredicted - yTestFocus.flatten())
-    print(max(diff), min(diff))
-    print(np.std(diff), np.mean(diff))
-
-    sortedDiff = np.sort(diff[diff<2])
-    percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
-    per = 90
-    tol = 0.15
-    tolIndex = np.where(sortedDiff <= tol)
-    perIndex = np.where(tolPercent <= per)
-    
-    print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    print('Value of', per, 'th percentile:', np.sort(diff)[perIndex[0][-1]])
-
-    percentile = np.zeros(len(sortedDiff)) + per
-    tolerance = np.zeros(len(diff)) + tol
-    plt.plot(sortedDiff, percent, label=labels[0], color=colours[0], linewidth=0.8)
-    plt.scatter(tol, percent[tolIndex[0][-1]], color='c', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)), s=10)
-    if np.sort(diff)[perIndex[0][-1]] < 2:
-        plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='orange', label=str(per)+'th percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)), s=10)
-    print()
-
-
-    model = loadModel('')
-    xTestFocus, yTestFocus = findPVGivenProb(zRaw, modelName='', xT=xT[1], yT=yT[1])
-    yPredicted = model.predict(xTestFocus).flatten()
-    diff = abs(yPredicted - yTestFocus.flatten())
-    print(max(diff), min(diff))
-    print(np.std(diff), np.mean(diff))
-
-    sortedDiff = np.sort(diff[diff<2])
-    percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
-    per = 90
-    tol = 0.15
-    tolIndex = np.where(sortedDiff <= tol)
-    perIndex = np.where(tolPercent <= per)
-    
-    print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    print('Value of', per, 'th percentile:', np.sort(diff)[perIndex[0][-1]])
-
-    percentile = np.zeros(len(sortedDiff)) + per
-    tolerance = np.zeros(len(diff)) + tol
-    plt.plot(sortedDiff, percent, label=labels[1], color=colours[1], linewidth=0.8)
-    plt.scatter(tol, percent[tolIndex[0][-1]], color='c', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)), s=10)
-    if np.sort(diff)[perIndex[0][-1]] < 2:
-        plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='orange', label=str(per)+'th percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)), s=10)
-    print()
-
-
-    model = loadModel('')
-    xTestFocus, yTestFocus = findPVGivenProb(zRaw, modelName='', xT=xT[2], yT=yT[2])
-    yPredicted = model.predict(xTestFocus).flatten()
-    diff = abs(yPredicted - yTestFocus.flatten())
-    print(max(diff), min(diff))
-    print(np.std(diff), np.mean(diff))
-
-    sortedDiff = np.sort(diff[diff<2])
-    percent = (np.arange(0,len(sortedDiff),1)*100)/len(diff)
-    tolPercent = (np.arange(0,len(diff),1)*100)/len(diff)
-    per = 90
-    tol = 0.15
-    tolIndex = np.where(sortedDiff <= tol)
-    perIndex = np.where(tolPercent <= per)
-    
-    print('Percentage where difference is <=', tol, ":", percent[tolIndex[0][-1]])
-    print('Value of', per, 'th percentile:', np.sort(diff)[perIndex[0][-1]])
-
-    percentile = np.zeros(len(sortedDiff)) + per
-    tolerance = np.zeros(len(diff)) + tol
-    plt.plot(sortedDiff, percent, label=labels[2], color=colours[2], linewidth=0.8)
-    plt.scatter(tol, percent[tolIndex[0][-1]], color='c', label=str(tol)+' tolerance: '+str(round(percent[tolIndex[0][-1]], 3)), s=10)
-    if np.sort(diff)[perIndex[0][-1]] < 2:
-        plt.scatter(np.sort(diff)[perIndex[0][-1]], per, color='orange', label=str(per)+'th percentile: '+str(round(np.sort(diff)[perIndex[0][-1]], 3)), s=10)
-    print()
-
- 
-    plt.plot(sortedDiff, percentile, color='orange', linestyle=':', label=str(per)+"th percentile")
-    plt.plot(tolerance, tolPercent, color='c', linestyle=':', label=str(tol)+" tolerance")
-    plt.savefig(f'{nameData}_comparison_of_bin_sizes_after_probabability_applied.png', dpi=1200)
-
-
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------- MAIN -----------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -958,11 +700,11 @@ nameData = 'TTbar'
 # rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.25.npz')
 # rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.25_single_pv.npz')
 # rawBinD = np.load('TTbar_Raw_1_bin_size.npz')
-rawBinD = np.load('TTbar_Raw_1.0_bin_size_overlap_0.npz')
+# rawBinD = np.load('TTbar_Raw_1.0_bin_size_overlap_0.npz')
 # rawBinD = np.load('TTbar_Raw_1.0_bin_size_overlap_0.5.npz')
 # rawBinD = np.load('TTbar_Raw_1.0_bin_size_overlap_0.5_single_pv.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size.npz')
-# rawBinD = np.load('TTbar_Raw_2.0_bin_size_overlap_0.npz')
+rawBinD = np.load('TTbar_Raw_2.0_bin_size_overlap_0.npz')
 # rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_1.0.npz')
 # rawBinD = np.load('TTbar_Raw_2.0_bin_size_overlap_1.0_single_pv.npz')
 
@@ -980,6 +722,8 @@ rawBinD = np.load('TTbar_Raw_1.0_bin_size_overlap_0.npz')
 # # raw binned 
 # rawBinD = np.load('Merged_Raw_1.0_bin_size_overlap_0.npz')
 
+
+
 print(nameData)
 
 # zRaw, ptRaw, etaRaw, pvRaw = rawD['z'], rawD['pt'], rawD['eta'], rawD['pv']
@@ -988,8 +732,7 @@ zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['
 # pvPred = rawBinD['pv_pred']
 # ptBin, trackBin = binD['ptB'], binD['tB']
 
-
-# print()
+# used to binned data where we looked at summed pt values and summed number of tracks in each bin 
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(pt=ptBin, pv=pvRaw.flatten(), track=trackBin)
 # model, history, name, lossFunc = binModel(xTrain, yTrain, xValid, yValid)
 # testingRegression(model, history, xTest, yTest, name, lossFunc)
@@ -997,7 +740,7 @@ zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['
 print()
 xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPredicted=None, binProbability=probability)
 # model, history, name = rawModel(xTrain, yTrain, xValid, yValid)
-# # testingRegression(model, history.history, xTest, yTest, name)
+# testingRegression(model, history.history, xTest, yTest, name) # choose to test regression or classification model
 # testingProbability(model, history.history, xTest, yTest, name)
 
 # # prediting the pv given probability
@@ -1005,12 +748,6 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 # pvPred = rawBinD['pv_pred']
 # print(zRaw.shape, ptRaw.shape, etaRaw.shape, pvRaw.shape)
 # xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, binProbability=probability, probToPV=True)
-# probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_1724058679.keras'
-# xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
-# regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_1724059129.keras'
-# train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_1724059129.log'
-# testingRegression(model=loadModel(regModel), hist=pd.read_csv(train, sep=',', engine='python'), xT=xTestFocus, yT=yTestFocus, name=regModel[:-6]+'_focus_pred')
-
 # probModel = 'TTbar_Raw_model_3inputs_rnn_adam_binary_crossentropy_bins_size1_fpga_1724061741.keras'
 # xTestFocus, yTestFocus = findPVGivenProb(zRaw, probModel, xTest, yTest)
 # regModel = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.keras'
@@ -1019,9 +756,8 @@ xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw
 
 
 # Loaded model for more training and testing
-
 # xTrain, yTrain, xValid, yValid, xTest, yTest = binModelSplit(ptBin, pvRaw.flatten(), track=trackBin)
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPr=None, binProbability=None)
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPredicted=None, binProbability=None)
 
 # mod = 'TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.keras'
 # train = 'TTbar_training_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.log'
@@ -1042,36 +778,14 @@ testingProbability(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine
 #                 #    'Merged_training_Bin_model_2inputs_conv_adam_modified01_huber_loss_1722587835.log',\
 #                    'Merged_training_Bin_model_2inputs_conv_adam_huber_loss_1722256533.log',\
 #                    'training_Merged_Bin_model_2inputs_conv_adam_modified015_huber_loss_1722513936.log']
-
-# print(xTest.shape)
 # comparison(modelsCompare, trainingCompare, xTest, yTest)
 
 
-# comparing performance of different bin size
-# labels = ['0.5cm bin size', '1cm bin size', '2cm bn size' ]
-
-# rawBinD = np.load('TTbar_Raw_0.5_bin_size_overlap_0.npz')
-# zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-# xTrainZero, yTrainZero, xValidZero, yValidZero, xTestZero, yTestZero = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), binProbability=None)
-# rawBinD = np.load('TTbar_Raw_1_bin_size_overlap_0.npz')
-# zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-# xTrainOne, yTrainOne, xValidOne, yValidOne, xTestOne, yTestOne = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), binProbability=None)
-# rawBinD = np.load('TTbar_Raw_2_bin_size_overlap_0.npz')
-# zRaw, ptRaw, etaRaw, pvRaw, probability = rawBinD['z'], rawBinD['pt'], rawBinD['eta'], rawBinD['pv'], rawBinD['prob']
-# xTrainTwo, yTrainTwo, xValidTwo, yValidTwo, xTestTwo, yTestTwo = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), binProbability=None)
-
-# xTestAll = [xTestZero, xTestOne, xTestTwo]
-# yTestAll = [yTestZero, yTestOne, yTestTwo]
-
-# binSizeComp(xT=xTestAll, yT=yTestAll, labels=labels)
-
 # calc pv for each bin in each event - used to feed into model to see if it would boost probability acccuracy
 # prevData = np.load('TTbar_Raw_1.0_bin_size_overlap_0.npz')
-# prevData = np.load('TTbar_Raw_2.0_bin_size_overlap_0.npz')
 # zRaw, ptRaw, etaRaw, pvRaw, probability = prevData['z'], prevData['pt'], prevData['eta'], prevData['pv'], prevData['prob']
-# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), binProbability=probability)
-# model = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650181.keras')
-# model = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size2_1723650091.keras')
+# xTrain, yTrain, xValid, yValid, xTest, yTest = rawModelSplit(zRaw, ptRaw, etaRaw, pvRaw.flatten(), pvPredicted=None, binProbability=probability)
+# model = loadModel('TTbar_Raw_model_3inputs_rnn_adam_mean_absolute_error_bins_size1_fpga_1724061293.keras')
 # print(xTest.shape, xValid.shape, xTrain.shape)
 # rawBinAll = np.concatenate((xTest, xValid, xTrain), axis=0)
 # print(rawBinAll.shape)
@@ -1079,4 +793,3 @@ testingProbability(model=loadModel(mod), hist=pd.read_csv(train, sep=',', engine
 # prevData = dict(prevData)
 # prevData['pv_pred'] = pvPredicted
 # np.savez('TTbar_Raw_1.0_bin_size_overlap_0', **prevData)
-# np.savez('TTbar_Raw_2.0_bin_size_overlap_0', **prevData)
